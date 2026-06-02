@@ -153,7 +153,7 @@ td.white{
   --seq-weight: 400;     /* sequence-letter weight (was bold/700 = clunky) */
   --vlabel-size: 14px;   /* variant label text size (e.g. "V19E")          */
   --vline-gap: 3px;      /* white space between a variant line and the AA box */
-  --toggle-font: 16px;   /* size of the "Show variants" box (top-right)        */
+  --toggle-font: 14px;   /* size of the "Show variants" box (top-right)        */
   --domain-height: 27px; /* size of the domain-scheme drawing at the bottom */
   --walkerA-color: #E6A23C;  /* Walker A residue letters (light orange)        */
   --walkerA2-color: #FF8C1A; /* G747/G743 (brighter orange, stands out)        */
@@ -12588,28 +12588,28 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- show/hide category toggles ---- */
 #variant-toggles {
-  position:fixed; top:12px; right:14px; z-index:6;
-  background:linear-gradient(158deg, #ffffff 0%, #eef2f9 100%);
-  border:1px solid rgba(70,90,130,.16); border-radius:15px;
-  padding:1.05em 1.3em 1.1em; font-family:var(--ui-font);
-  font-size:var(--toggle-font, 16px);
-  box-shadow:0 8px 26px rgba(40,60,100,.14), inset 0 1px 0 rgba(255,255,255,.8);
+  position:fixed; top:10px; right:12px; z-index:6;
+  background:rgba(255,255,255,.92);
+  -webkit-backdrop-filter:blur(12px) saturate(160%);
+  backdrop-filter:blur(12px) saturate(160%);
+  border:1px solid rgba(220,220,220,.7); border-radius:.75em;
+  padding:.85em 1.1em; font-family:var(--ui-font);
+  font-size:var(--toggle-font, 14px);
+  box-shadow:0 2px 12px rgba(0,0,0,.1);
 }
 #variant-toggles .vt-title {
-  font-weight:700; font-size:.7em; text-transform:uppercase;
-  letter-spacing:.09em; color:#98a2b3; margin-bottom:.75em;
+  font-weight:700; font-size:.78em; text-transform:uppercase;
+  letter-spacing:.07em; color:#aaa; margin-bottom:.55em;
 }
 #variant-toggles label {
-  display:flex; align-items:center; gap:.65em; padding:.32em .45em;
-  margin:0 -.45em; border-radius:9px; cursor:pointer; white-space:nowrap;
-  transition:background .12s ease;
+  display:flex; align-items:center; gap:.6em; padding:.25em 0;
+  cursor:pointer; white-space:nowrap;
 }
-#variant-toggles label:hover { background:rgba(70,90,130,.07); }
-#variant-toggles input { width:1.05em; height:1.05em; accent-color:#7a8699; }
-/* gradient text: category hue -> a slightly darker version of it */
+#variant-toggles input { width:1em; height:1em; accent-color:#888; }
+/* gradient text: color fades from the category hue to a darker version */
 #variant-toggles .vt-name {
-  font-weight:500; font-size:1.05em; letter-spacing:.005em;
-  background:linear-gradient(90deg, var(--vt-c,#333) 0%, color-mix(in srgb, var(--vt-c,#333) 55%, #000) 100%);
+  font-weight:400; font-size:1.05em; letter-spacing:.01em;
+  background:linear-gradient(90deg, var(--vt-c,#333) 0%, color-mix(in srgb, var(--vt-c,#333) 60%, #000) 100%);
   -webkit-background-clip:text; background-clip:text;
   -webkit-text-fill-color:transparent;
 }

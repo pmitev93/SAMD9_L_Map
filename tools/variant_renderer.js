@@ -40,15 +40,32 @@
     return null;
   }
 
+  // ---- data (fetched live; embedded copies are the file:// fallback) ----
+  var DATA = [], OV = {}, PAPERS = {}, DETAILS = {};
+  function ovFor(v) { return OV[v.label] || OV[v.protein + ":" + v.label] || null; }
+
+  async function getJSON(url, embedId) {
+    try { var r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.json(); }
+    catch (e) {}
+    if (embedId) {
+      var el = document.getElementById(embedId);
+      if (el) { try { return JSON.parse(el.textContent); } catch (e) {} }
+    }
+    return null;
+  }
+
+  async function init() {
+    DATA    = (await getJSON("variants.json", "variant-data")) || [];
+    OV      = (await getJSON("variant_overrides.json", "variant-overrides")) || {};
+    PAPERS  = (await getJSON("papers.json")) || {};
+    DETAILS = (await getJSON("variant_details.json")) || {};
+    run();
+    setupPopup();
+  }
+
   function run() {
-    var dataEl = document.getElementById("variant-data");
     var table = document.querySelector("table");
-    if (!dataEl || !table) return;
-    var DATA = JSON.parse(dataEl.textContent);
-    var OV = {};
-    var ovEl = document.getElementById("variant-overrides");
-    if (ovEl) { try { OV = JSON.parse(ovEl.textContent || "{}"); } catch (e) {} }
-    function ovFor(v) { return OV[v.label] || OV[v.protein + ":" + v.label] || null; }
+    if (!table) return;
 
     // 1. drop legacy markers + any previous render (idempotent on resize)
     table.querySelectorAll(".vertical-line").forEach(function (n) { n.remove(); });
@@ -178,6 +195,7 @@
     tick.style.left = (v._x - 1) + "px";
     tick.style.height = len + "px";
     tick.style.background = v._color;
+    tick.style.color = v._color;   // for the hover glow (currentColor)
     tick.style[top ? "bottom" : "top"] = (-base) + "px";
     setData(tick, v);
     sr.container.appendChild(tick);
@@ -200,8 +218,83 @@
     el.setAttribute("data-residue", v.residue);
     el.setAttribute("data-mutation", v.label);
     el.setAttribute("data-origin", v.origin || "");
-    el.title = v.label + "  —  " + v.protein + " · " +
-               (v.effect || v.category) + (v.origin ? " · " + v.origin : "");
+    el.title = v.label + " — click for details";
+  }
+
+  // ---- click-a-variant popup (glassy card with the paper / gnomAD info) ----
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function setupPopup() {
+    if (window.__vpop) return;
+    var pop = document.createElement("div");
+    pop.id = "variant-popup"; pop.style.display = "none";
+    document.body.appendChild(pop);
+    window.__vpop = pop;
+    document.addEventListener("click", function (e) {
+      var m = e.target.closest && e.target.closest(".vtick,.vlabel");
+      if (m) { e.stopPropagation(); openPopup(m, pop); }
+      else if (!(e.target.closest && e.target.closest("#variant-popup"))) hide(pop);
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(pop); });
+    window.addEventListener("resize", function () { hide(pop); });
+  }
+  function hide(pop) { pop.style.display = "none"; }
+
+  function openPopup(marker, pop) {
+    var protein = marker.getAttribute("data-protein");
+    var mut = marker.getAttribute("data-mutation");
+    var cat = marker.getAttribute("data-category");
+    var origin = marker.getAttribute("data-origin");
+    var color = (CFG[cat] || CFG.Other).color;
+    var d = DETAILS[protein + ":" + mut] || DETAILS[mut];
+
+    var h = '<button class="vpop-close" aria-label="Close">&times;</button>';
+    h += '<div class="vpop-head"><span class="vpop-chip" style="background:' + color +
+         '"></span>' + esc(mut) + '<span class="vpop-prot">' + esc(protein) + '</span></div>';
+
+    if (d) {
+      var paper = (d.paper && PAPERS[d.paper]) || {};
+      var url = paper.url || (paper.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + paper.pmid + "/" : null);
+      if (paper.title) {
+        h += '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
+             ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a>";
+      }
+      if (paper.pmid) {
+        h += '<div class="vpop-row vpop-dim">PMID ' +
+             '<a href="https://pubmed.ncbi.nlm.nih.gov/' + esc(paper.pmid) + '/" target="_blank" rel="noopener">' +
+             esc(paper.pmid) + "</a></div>";
+      }
+      if (d.gnomad) {
+        var g = d.gnomad.present
+          ? "Yes" + (d.gnomad.maf ? " (MAF " + esc(d.gnomad.maf) + ")" : "")
+          : "No";
+        h += '<div class="vpop-row"><b>gnomAD:</b> ' + g + "</div>";
+      }
+      var eff = d.effect || cat;
+      h += '<div class="vpop-row"><b>' + esc(eff) + "</b>" +
+           (d.method ? ' <span class="vpop-dim">(' + esc(d.method) + ")</span>" : "") + "</div>";
+    } else {
+      h += '<div class="vpop-row vpop-dim">Details not added yet' +
+           (origin ? " &middot; source: " + esc(origin) : "") + "</div>";
+    }
+    pop.innerHTML = h;
+    pop.style.display = "block";
+    pop.querySelector(".vpop-close").onclick = function () { hide(pop); };
+    positionPopup(pop, marker);
+  }
+
+  function positionPopup(pop, marker) {
+    var r = marker.getBoundingClientRect();
+    var pw = pop.offsetWidth, ph = pop.offsetHeight, M = 8;
+    var left = window.scrollX + r.left + r.width / 2 - pw / 2;
+    left = Math.max(window.scrollX + M, Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - M));
+    var below = r.bottom + ph + M < window.innerHeight;
+    var top = window.scrollY + (below ? r.bottom + M : r.top - ph - M);
+    pop.style.left = left + "px";
+    pop.style.top = Math.max(window.scrollY + M, top) + "px";
   }
 
   // Hover an amino-acid box -> show its exact position (e.g. "K133"), above the
@@ -252,7 +345,7 @@
   var t;
   function schedule() { clearTimeout(t); t = setTimeout(run, 120); }
   if (document.readyState === "loading")
-    document.addEventListener("DOMContentLoaded", run);
-  else run();
+    document.addEventListener("DOMContentLoaded", init);
+  else init();
   window.addEventListener("resize", schedule);
 })();

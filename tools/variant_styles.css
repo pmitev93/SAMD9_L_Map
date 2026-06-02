@@ -10,10 +10,45 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   position:absolute; white-space:nowrap;
   font-size:var(--vlabel-size, 13px); line-height:1.05;
   font-weight:400; transform:translateX(-50%);
-  font-variant-numeric:tabular-nums; cursor:default;
+  font-variant-numeric:tabular-nums; cursor:pointer;
   /* subtle backdrop so a neighbouring tick passing behind stays readable */
   background:rgba(255,255,255,.82); padding:0 2px; border-radius:2px;
+  transition:background-color .12s ease, box-shadow .12s ease;
 }
+/* hover affordance — variants are clickable */
+.vtick { cursor:pointer; transition:filter .12s ease, transform .12s ease; }
+.vtick:hover { filter:brightness(1.25) drop-shadow(0 0 3px currentColor);
+               transform:scaleX(2.5); }
+.vlabel:hover { background:rgba(255,255,150,.95);
+                box-shadow:0 0 0 1px rgba(0,0,0,.12); text-decoration:underline; }
+
+/* ---- click-a-variant info popup (glassy) ---- */
+#variant-popup {
+  position:absolute; z-index:30; min-width:230px; max-width:344px;
+  font-family:var(--ui-font); color:#161616; font-size:13px; line-height:1.5;
+  padding:13px 15px 14px; border-radius:14px;
+  background:rgba(255,255,255,.5);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+  backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,.65);
+  box-shadow:0 10px 34px rgba(0,0,0,.22);
+  animation:vpop-in .14s ease-out;
+}
+@keyframes vpop-in { from{opacity:0; transform:translateY(4px);} to{opacity:1;} }
+.vpop-close { position:absolute; top:5px; right:9px; border:0; background:none;
+  font-size:19px; line-height:1; color:#888; cursor:pointer; padding:2px; }
+.vpop-close:hover { color:#333; }
+.vpop-head { font-weight:700; font-size:14px; display:flex; align-items:center;
+  gap:7px; margin-bottom:7px; padding-right:16px; }
+.vpop-chip { width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+.vpop-prot { font-weight:500; color:#666; font-size:12px; }
+.vpop-title { display:block; font-weight:600; color:#0b48c2; text-decoration:none;
+  max-width:312px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vpop-title:hover { text-decoration:underline; }
+.vpop-row { margin-top:3px; }
+.vpop-dim { color:#5a5a5a; font-size:12px; }
+.vpop-dim a, .vpop-row a { color:#0b48c2; text-decoration:none; }
+.vpop-dim a:hover, .vpop-row a:hover { text-decoration:underline; }
 
 /* ---- show/hide category toggles (size via --toggle-font knob) ---- */
 #variant-toggles {

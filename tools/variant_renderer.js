@@ -12,7 +12,14 @@
     Other:  { color: "#000000", label: true,  on: true,  legend: "Other (somatic / NoF)" }
   };
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
-  var TICK = 16, LANE_H = 16, LABEL_H = 15, PAD = 5;
+  // TICK = base stem above the AA box (before any stacking).
+  var TICK = 9, LANE_H = 15, LABEL_H = 15, PAD = 5;
+  // white space between a line's bottom and the AA box (the --vline-gap knob)
+  function whiteGap() {
+    var v = parseFloat(getComputedStyle(document.documentElement)
+              .getPropertyValue("--vline-gap"));
+    return isNaN(v) ? 5 : v;
+  }
 
   function estW(s) { return s.length * 7.0 + 8; }   // ~ label pixel width
 
@@ -141,14 +148,16 @@
   function draw(sr, v) {
     var top = (sr.side === "top");
     var gap = sr._gap || 0;
+    var W = whiteGap();                  // white space before the AA box
+    var reach = gap - W;                 // how far the line crosses toward the box
     var tickLen = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0);
 
     var tick = document.createElement("div");
     tick.className = "vtick";
     tick.style.left = (v._x - 1) + "px";
-    tick.style.height = (tickLen + gap) + "px";   // +gap reaches the letter box
+    tick.style.height = Math.max(2, tickLen + reach) + "px";
     tick.style.background = v._color;
-    tick.style[top ? "bottom" : "top"] = (-gap) + "px";
+    tick.style[top ? "bottom" : "top"] = (-reach) + "px";  // stop W above the box
     setData(tick, v);
     sr.container.appendChild(tick);
 

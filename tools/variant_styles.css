@@ -9,7 +9,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 .vlabel {
   position:absolute; white-space:nowrap;
   font-size:var(--vlabel-size, 13px); line-height:1.05;
-  font-weight:500; transform:translateX(-50%);
+  font-weight:400; transform:translateX(-50%);
   font-variant-numeric:tabular-nums; cursor:default;
   /* subtle backdrop so a neighbouring tick passing behind stays readable */
   background:rgba(255,255,255,.82); padding:0 2px; border-radius:2px;

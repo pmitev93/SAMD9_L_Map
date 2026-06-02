@@ -6,10 +6,10 @@
   "use strict";
 
   var CFG = {
-    GoF:    { color: "#e02424", label: true,  legend: "GoF (gain of function)" },
-    LoF:    { color: "#1f56bc", label: true,  legend: "LoF (loss of function)" },
-    gnomAD: { color: "#3aa83a", label: false, legend: "gnomAD (truncating)" },
-    Other:  { color: "#333333", label: true,  legend: "Other (somatic / NoF)" }
+    GoF:    { color: "#FF0000", label: true,  on: true,  legend: "GoF (gain of function)" },
+    LoF:    { color: "#1f56bc", label: true,  on: true,  legend: "LoF (loss of function)" },
+    gnomAD: { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
+    Other:  { color: "#000000", label: true,  on: true,  legend: "Other (somatic / NoF)" }
   };
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
   var TICK = 16, LANE_H = 16, LABEL_H = 15, PAD = 5;
@@ -125,6 +125,11 @@
 
       var stackH = (maxLane + 1) * LANE_H + (maxLane >= 0 ? LABEL_H : 0) + PAD;
       sr.container.style.height = (TICK + stackH) + "px";
+      // distance from the container edge to the sequence letters (the number
+      // ruler sits in this gap); ticks extend across it so they touch the box.
+      var cr = sr.container.getBoundingClientRect(), rr = sr.row.getBoundingClientRect();
+      sr._gap = Math.max(0, Math.round(sr.side === "top" ? rr.top - cr.bottom
+                                                         : cr.top - rr.bottom));
       list.forEach(function (v) { draw(sr, v); });
     });
 
@@ -135,14 +140,15 @@
 
   function draw(sr, v) {
     var top = (sr.side === "top");
+    var gap = sr._gap || 0;
     var tickLen = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0);
 
     var tick = document.createElement("div");
     tick.className = "vtick";
     tick.style.left = (v._x - 1) + "px";
-    tick.style.height = tickLen + "px";
+    tick.style.height = (tickLen + gap) + "px";   // +gap reaches the letter box
     tick.style.background = v._color;
-    tick.style[top ? "bottom" : "top"] = "0px";
+    tick.style[top ? "bottom" : "top"] = (-gap) + "px";
     setData(tick, v);
     sr.container.appendChild(tick);
 
@@ -174,7 +180,10 @@
     box.id = "variant-toggles";
     var html = '<div class="vt-title">Show variants</div>';
     Object.keys(CFG).forEach(function (cat) {
-      html += '<label><input type="checkbox" checked data-cat="' + cat + '">' +
+      var on = CFG[cat].on !== false;
+      if (!on) document.body.classList.add("hide-cat-" + cat);   // default state
+      html += '<label><input type="checkbox" ' + (on ? "checked" : "") +
+              ' data-cat="' + cat + '">' +
               '<span class="vt-sw" style="background:' + CFG[cat].color + '"></span>' +
               CFG[cat].legend + '</label>';
     });

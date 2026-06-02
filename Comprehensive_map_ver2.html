@@ -206,15 +206,15 @@ tr.seq-gap td, td.seq-gap{ height: 6px; line-height: 6px; padding: 0; font-size:
 <body>
 <div class="center-content">
 <br>
-<div style="position: fixed; top: 0; width: 100%; height: 70px; background: white; z-index: 1;"></div>
-<h1 style="position: fixed; top: 0; width: 100%; text-align: center; padding-bottom: 70px; z-index: 1;">SAMD9(L) Conservation and Mutational Landscape</h1>
+<div style="position: fixed; top: 0; width: 100%; height: 70px; background: white; z-index: 1; pointer-events: none;"></div>
+<h1 style="position: fixed; top: 0; width: 100%; text-align: center; padding-bottom: 70px; z-index: 1; pointer-events: none;">SAMD9(L) Conservation and Mutational Landscape</h1>
 <style>
 
 .center-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 92px;   /* clear the fixed title bar so the top row is clickable */
+    padding-top: 30px;   /* small gap below the fixed title (header ignores clicks) */
 }
 
 .vertical-line{
@@ -12514,7 +12514,7 @@ You add this to the numbers rows:
 </div>
 
 </div>
-<div id="author-box"><div class="ab-name">Created by Petar Mitev</div><div>For more information contact <a href="mailto:pmitev93@gmail.com">pmitev93@gmail.com</a></div></div>
+<div id="author-box"><div class="ab-name">Created by Petar Mitev</div><div>For more information contact:</div><div><a href="mailto:pmitev93@gmail.com">pmitev93@gmail.com</a></div></div>
 </body>
 
 
@@ -12542,8 +12542,11 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 .vtick { cursor:pointer; transition:filter .12s ease, transform .12s ease; }
 .vtick:hover { filter:brightness(1.25) drop-shadow(0 0 3px currentColor);
                transform:scaleX(2.5); }
-.vlabel:hover { background:rgba(255,255,150,.95);
-                box-shadow:0 0 0 1px rgba(0,0,0,.12); }
+/* hover tint per category (light/transparent) */
+.vlabel[data-category="GoF"]:hover    { background:rgba(255,0,0,.13); }
+.vlabel[data-category="LoF"]:hover    { background:rgba(31,86,188,.14); }
+.vlabel[data-category="gnomAD"]:hover { background:rgba(60,160,60,.16); }
+.vlabel[data-category="Other"]:hover  { background:rgba(60,60,60,.13); }
 
 /* ---- click-a-variant info popup (glassy) ---- */
 #variant-popup {
@@ -12586,13 +12589,11 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   letter-spacing:.06em; color:#888; margin-bottom:.5em;
 }
 #variant-toggles label {
-  display:flex; align-items:center; gap:.5em; padding:.15em 0;
-  color:#222; cursor:pointer; white-space:nowrap;
+  display:flex; align-items:center; gap:.55em; padding:.22em 0;
+  cursor:pointer; white-space:nowrap;
 }
-#variant-toggles input { width:1em; height:1em; }
-#variant-toggles .vt-sw {
-  width:1em; height:1em; border-radius:.2em; display:inline-block;
-}
+#variant-toggles input { width:1em; height:1em; accent-color:#888; }
+#variant-toggles .vt-name { font-weight:600; }
 
 /* ---- domain-marker legend (replaces Mutations_Legend.svg) ---- */
 .mut-legend { font-family:var(--ui-font); font-size:13px; }
@@ -12612,10 +12613,10 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
 /* ---- author / contact box (bottom-right) ---- */
 #author-box {
   position:fixed; right:14px; bottom:16px; z-index:6; text-align:right;
-  max-width:150px;
-  font-family:var(--ui-font); font-size:11px; color:#555; line-height:1.4;
+  white-space:nowrap;
+  font-family:var(--ui-font); font-size:10.5px; color:#555; line-height:1.45;
   background:rgba(255,255,255,.85); border:1px solid #ececec; border-radius:7px;
-  padding:6px 10px; box-shadow:0 1px 6px rgba(0,0,0,.07);
+  padding:6px 9px; box-shadow:0 1px 6px rgba(0,0,0,.07);
 }
 #author-box .ab-name { font-weight:600; color:#333; }
 #author-box a { color:#1f56bc; text-decoration:none; }
@@ -12961,8 +12962,8 @@ body.hide-cat-Other  [data-category="Other"] { display:none !important; }
       if (!on) document.body.classList.add("hide-cat-" + cat);   // default state
       html += '<label><input type="checkbox" ' + (on ? "checked" : "") +
               ' data-cat="' + cat + '">' +
-              '<span class="vt-sw" style="background:' + CFG[cat].color + '"></span>' +
-              CFG[cat].legend + '</label>';
+              '<span class="vt-name" style="color:' + CFG[cat].color + '">' +
+              CFG[cat].legend + '</span></label>';
     });
     box.innerHTML = html;
     box.addEventListener("change", function (e) {

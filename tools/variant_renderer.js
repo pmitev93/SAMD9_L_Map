@@ -321,8 +321,8 @@
       if (!on) document.body.classList.add("hide-cat-" + cat);   // default state
       html += '<label><input type="checkbox" ' + (on ? "checked" : "") +
               ' data-cat="' + cat + '">' +
-              '<span class="vt-sw" style="background:' + CFG[cat].color + '"></span>' +
-              CFG[cat].legend + '</label>';
+              '<span class="vt-name" style="color:' + CFG[cat].color + '">' +
+              CFG[cat].legend + '</span></label>';
     });
     box.innerHTML = html;
     box.addEventListener("change", function (e) {

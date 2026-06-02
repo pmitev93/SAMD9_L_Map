@@ -155,9 +155,6 @@ td.white{
   --vline-gap: 3px;      /* white space between a variant line and the AA box */
   --toggle-font: 14px;   /* size of the "Show variants" box (top-right)        */
   --domain-height: 27px; /* size of the domain-scheme drawing at the bottom */
-  --walkerA-color: #E6A23C;  /* Walker A residue letters (light orange)        */
-  --walkerA2-color: #FF8C1A; /* G747/G743 (brighter orange, stands out)        */
-  --walkerB-color: #B388EB;  /* Walker B residue letters (light purple)        */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }
@@ -5741,14 +5738,14 @@ You add this to the numbers rows:
 <td class="Score6">I</td>
 <td class="Score7">I</td>
 <td class="Score8">N</td>
-<td class="Score9 wA">L</td>
-<td class="Score7 wA">Y</td>
-<td class="Score9 wA">H</td>
-<td class="Score8 wA">H</td>
-<td class="Score9 wA">P</td>
-<td class="Score9 wA">G</td>
-<td class="Score9 wA">C</td>
-<td class="Score9 wA">G</td>
+<td class="Score9" style="color: red;">L</td>
+<td class="Score7" style="color: red;">Y</td>
+<td class="Score9" style="color: red;">H</td>
+<td class="Score8" style="color: red;">H</td>
+<td class="Score9" style="color: red;">P</td>
+<td class="Score9" style="color: red;">G</td>
+<td class="Score9" style="color: red;">C</td>
+<td class="Score9" style="color: red;">G</td>
 
 </tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red2">
@@ -5796,14 +5793,14 @@ You add this to the numbers rows:
 <td class="Score6">I</td>
 <td class="Score6">I</td>
 <td class="Score8">H</td>
-<td class="Score8 wA">L</td>
-<td class="Score7 wA">Y</td>
-<td class="Score9 wA">H</td>
-<td class="Score7 wA">H</td>
-<td class="Score9 wA">P</td>
-<td class="Score9 wA">G</td>
-<td class="Score9 wA">C</td>
-<td class="Score9 wA">G</td>
+<td class="Score8" style="color: red;">L</td>
+<td class="Score7" style="color: red;">Y</td>
+<td class="Score9" style="color: red;">H</td>
+<td class="Score7" style="color: red;">H</td>
+<td class="Score9" style="color: red;">P</td>
+<td class="Score9" style="color: red;">G</td>
+<td class="Score9" style="color: red;">C</td>
+<td class="Score9" style="color: red;">G</td>
 
 </tr>
 <tr class="top-align">
@@ -6092,9 +6089,9 @@ You add this to the numbers rows:
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9L  </font></td>
 <td class="Score11"></td>
-<td class="Score9 wA2">G</td>
-<td class="Score9 wA">T</td>
-<td class="Score9 wA">T</td>
+<td class="Score9" style="color: ff73c0;">G</td>
+<td class="Score9" style="color: red;">T</td>
+<td class="Score9" style="color: red;">T</td>
 <td class="Score9">L</td>
 <td class="Score9">A</td>
 <td class="Score9">M</td>
@@ -6147,9 +6144,9 @@ You add this to the numbers rows:
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
-<td class="Score9 wA2">G</td>
-<td class="Score9 wA">T</td>
-<td class="Score9 wA">T</td>
+<td class="Score9" style="color: ff73c0;">G</td>
+<td class="Score9" style="color: red;">T</td>
+<td class="Score9" style="color: red;">T</td>
 <td class="Score8">L</td>
 <td class="Score9">A</td>
 <td class="Score9">M</td>
@@ -6536,13 +6533,13 @@ You add this to the numbers rows:
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9L  </font></td>
 <td class="Score11"></td>
 <td class="Score9">P</td>
-<td class="Score9 wB">V</td>
-<td class="Score9 wB">L</td>
-<td class="Score9 wB">L</td>
-<td class="Score9 wB">L</td>
-<td class="Score8 wB">V</td>
-<td class="Score9 wB">D</td>
-<td class="Score9 wB">D</td>
+<td class="Score9" style="color: 00ff54;">V</td>
+<td class="Score9" style="color: 00ff54;">L</td>
+<td class="Score9" style="color: 00ff54;">L</td>
+<td class="Score9" style="color: 00ff54;">L</td>
+<td class="Score8" style="color: 00ff54;">V</td>
+<td class="Score9" style="color: 00ff54;">D</td>
+<td class="Score9" style="color: 00ff54;">D</td>
 <td class="Score7">F</td>
 <td class="Score7">E</td>
 <td class="Score7">E</td>
@@ -6591,13 +6588,13 @@ You add this to the numbers rows:
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score9">P</td>
-<td class="Score9 wB">V</td>
-<td class="Score8 wB">L</td>
-<td class="Score9 wB">L</td>
-<td class="Score9 wB">L</td>
-<td class="Score9 wB">V</td>
-<td class="Score9 wB">D</td>
-<td class="Score9 wB">D</td>
+<td class="Score9" style="color: 00ff54;">V</td>
+<td class="Score8" style="color: 00ff54;">L</td>
+<td class="Score9" style="color: 00ff54;">L</td>
+<td class="Score9" style="color: 00ff54;">L</td>
+<td class="Score9" style="color: 00ff54;">V</td>
+<td class="Score9" style="color: 00ff54;">D</td>
+<td class="Score9" style="color: 00ff54;">D</td>
 <td class="Score7">F</td>
 <td class="Score7">E</td>
 <td class="Score7">E</td>
@@ -12496,14 +12493,14 @@ You add this to the numbers rows:
 <td class="Score11">.</td></tr></tbody></table><br><br><br>
 <div style="position: fixed; bottom: 0; width: 100%; height: 20px; background: white;"></div>
 <div style="position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: center; padding-top: 20px;">
-<div class="legend-block"><div class="consurf-row"><span class="cs-box Score1">1</span><span class="cs-box Score2">2</span><span class="cs-box Score3">3</span><span class="cs-box Score4">4</span><span class="cs-box Score5">5</span><span class="cs-box Score6">6</span><span class="cs-box Score7">7</span><span class="cs-box Score8">8</span><span class="cs-box Score9">9</span></div><div class="consurf-labels"><span>Variable</span><span>Average</span><span>Conserved</span></div></div>
+<div class="legend-block"><div class="consurf-row"><span class="cs-box Score1">1</span><span class="cs-box Score2">2</span><span class="cs-box Score3">3</span><span class="cs-box Score4">4</span><span class="cs-box Score5">5</span><span class="cs-box Score6">6</span><span class="cs-box Score7">7</span><span class="cs-box Score8">8</span><span class="cs-box Score9">9</span></div><div class="consurf-labels"><span>Variable</span><span>Average</span><span>Conserved</span></div><!-- INSUFFICIENT-DATA BOX (only 1 such residue exists; delete this block to remove): --><div class="consurf-isd"><span class="cs-isd"></span>Insufficient Data</div><!-- /INSUFFICIENT-DATA BOX --></div>
 <div class="legend-block">
 <!-- DOMAIN-MARKER LEGEND (was Mutations_Legend.svg). Copy a .mut-row to add
      SIRT2 / Alba catalytic residues, etc. Colour = the letter colour used in
      the sequence for that motif. -->
 <div class="mut-legend">
-  <div class="mut-row"><span class="mut-aa" style="color:var(--walkerA-color)">A</span><span class="mut-txt">– Walker A</span></div>
-  <div class="mut-row"><span class="mut-aa" style="color:var(--walkerB-color)">A</span><span class="mut-txt">– Walker B</span></div>
+  <div class="mut-row"><span class="mut-aa" style="color:#FF0000">A</span><span class="mut-txt">– Walker A</span></div>
+  <div class="mut-row"><span class="mut-aa" style="color:#00ff54">A</span><span class="mut-txt">– Walker B</span></div>
 </div></div>
 <div class="legend-block">
 <!-- DOMAIN TITLE (delete this line to remove it): -->
@@ -12513,7 +12510,6 @@ You add this to the numbers rows:
 </div>
 
 </div>
-<div id="author-box"><div class="ab-name">Created by Petar Mitev</div><div>For more information contact <a href="mailto:pmitev93@gmail.com">pmitev93@gmail.com</a></div></div>
 </body>
 
 
@@ -12565,24 +12561,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
            text-align:center; }
 .mut-txt { color:#222; }
 .domain-title { font-family:var(--ui-font); font-size:12px; font-weight:600;
-                color:#555; margin-bottom:11px; letter-spacing:.02em; }
-
-/* Domain-motif letter colours in the sequence (NOT the boxes). Retune via the
-   --walkerA-color / --walkerA2-color / --walkerB-color knobs in the head. */
-td.wA  { color: var(--walkerA-color,  #E6A23C) !important; }  /* Walker A     */
-td.wA2 { color: var(--walkerA2-color, #FF8C1A) !important; }  /* G747 / G743  */
-td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
-
-/* ---- author / contact box (bottom-right) ---- */
-#author-box {
-  position:fixed; right:12px; bottom:96px; z-index:6; text-align:right;
-  font-family:var(--ui-font); font-size:11.5px; color:#555; line-height:1.45;
-  background:rgba(255,255,255,.85); border:1px solid #ececec; border-radius:7px;
-  padding:6px 10px; box-shadow:0 1px 6px rgba(0,0,0,.07);
-}
-#author-box .ab-name { font-weight:600; color:#333; }
-#author-box a { color:#1f56bc; text-decoration:none; }
-#author-box a:hover { text-decoration:underline; }
+                color:#555; margin-bottom:3px; letter-spacing:.02em; }
 
 /* ---- amino-acid position tooltip (#aa-postip) ---- */
 #aa-postip {

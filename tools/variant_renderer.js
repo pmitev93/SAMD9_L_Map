@@ -5,15 +5,16 @@
 (function () {
   "use strict";
 
+  // ---- Toggle/legend text: edit the "legend" strings below to rename a category.
   var CFG = {
-    GoF:    { color: "#FF0000", label: true,  on: true,  legend: "GoF (gain of function)" },
-    LoF:    { color: "#1f56bc", label: true,  on: true,  legend: "LoF (loss of function)" },
+    GoF:    { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
+    LoF:    { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
     gnomAD: { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
     Other:  { color: "#000000", label: true,  on: true,  legend: "Other (somatic / NoF)" }
   };
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
-  // TICK = base stem above the AA box (before any stacking).
-  var TICK = 9, LANE_H = 15, LABEL_H = 15, PAD = 5;
+  // TICK = the (fixed) line length for a lane-0 variant; +LANE_H per stack level.
+  var TICK = 26, LANE_H = 15, LABEL_H = 15, PAD = 5;
   // white space between a line's bottom and the AA box (the --vline-gap knob)
   function whiteGap() {
     var v = parseFloat(getComputedStyle(document.documentElement)
@@ -24,6 +25,20 @@
   function estW(s) { return s.length * 7.0 + 8; }   // ~ label pixel width
 
   function hasDigit(el) { return el && /\d/.test(el.textContent || ""); }
+
+  // Find the number-ruler row next to a sequence row, skipping blank spacer rows
+  // (some blocks have an empty <tr> between the sequence and its ruler). dir = +1
+  // looks below (SAMD9), -1 looks above (SAMD9L). Returns the ruler row or null.
+  function findRuler(row, dir) {
+    var n = dir > 0 ? row.nextElementSibling : row.previousElementSibling;
+    for (var s = 0; n && s < 4; s++) {
+      var t = (n.textContent || "").trim();
+      if (/\d/.test(t)) return n;            // the ruler
+      if (t !== "" && t !== ".") return null; // hit real content -> no ruler here
+      n = dir > 0 ? n.nextElementSibling : n.previousElementSibling;
+    }
+    return null;
+  }
 
   function run() {
     var dataEl = document.getElementById("variant-data");
@@ -62,12 +77,10 @@
       div.className = "vlayer";
       td.appendChild(div); tr.appendChild(td);
       if (side === "top") {
-        var prev = row.previousElementSibling;
-        var anchor = hasDigit(prev) ? prev : row;       // the ruler, if present
+        var anchor = findRuler(row, -1) || row;          // ruler above SAMD9L
         anchor.parentNode.insertBefore(tr, anchor);
       } else {
-        var next = row.nextElementSibling;
-        var a2 = hasDigit(next) ? next : row;
+        var a2 = findRuler(row, 1) || row;               // ruler below SAMD9
         a2.parentNode.insertBefore(tr, a2.nextSibling);
       }
       seqRows.push({ protein: t, row: row, side: side, container: div });
@@ -85,6 +98,8 @@
           counters[sr.protein]++;
           maps[sr.protein][counters[sr.protein]] = cells[i];
           cellRow.set(cells[i], sr);
+          cells[i].dataset.pos = txt + counters[sr.protein];   // e.g. "K133"
+          cells[i].dataset.side = sr.side;                     // top / bottom
         }
       }
     });
@@ -130,17 +145,23 @@
         if (v._lane > maxLane) maxLane = v._lane;
       });
 
-      var stackH = (maxLane + 1) * LANE_H + (maxLane >= 0 ? LABEL_H : 0) + PAD;
-      sr.container.style.height = (TICK + stackH) + "px";
-      // distance from the container edge to the sequence letters (the number
-      // ruler sits in this gap); ticks extend across it so they touch the box.
+      // distance from the container edge to the sequence letters. A number ruler
+      // (when present) sits in this gap; it varies block to block, so we use it
+      // only to anchor the whitespace — NOT the line length (kept fixed below).
       var cr = sr.container.getBoundingClientRect(), rr = sr.row.getBoundingClientRect();
-      sr._gap = Math.max(0, Math.round(sr.side === "top" ? rr.top - cr.bottom
+      var gap = Math.max(0, Math.round(sr.side === "top" ? rr.top - cr.bottom
                                                          : cr.top - rr.bottom));
+      sr._gap = gap;
+      // reserve only the part of the tallest stack that rises above the ruler band
+      var W = whiteGap();
+      var maxLen = TICK + (maxLane >= 0 ? maxLane * LANE_H : 0);
+      var topAboveBox = W + maxLen + (maxLane >= 0 ? LABEL_H : 0) + PAD;
+      sr.container.style.height = Math.max(0, topAboveBox - gap) + "px";
       list.forEach(function (v) { draw(sr, v); });
     });
 
     buildToggles();
+    setupPosTip(table);
     window.__variantInfo = { total: DATA.length, missing: missing, counts: counters };
     if (missing) console.warn("variant renderer: " + missing + " unmapped variants");
   }
@@ -148,16 +169,16 @@
   function draw(sr, v) {
     var top = (sr.side === "top");
     var gap = sr._gap || 0;
-    var W = whiteGap();                  // white space before the AA box
-    var reach = gap - W;                 // how far the line crosses toward the box
-    var tickLen = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0);
+    var W = whiteGap();              // white space before the AA box
+    var len = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0);  // FIXED line length
+    var base = gap - W;              // line bottom sits W above the actual letter box
 
     var tick = document.createElement("div");
     tick.className = "vtick";
     tick.style.left = (v._x - 1) + "px";
-    tick.style.height = Math.max(2, tickLen + reach) + "px";
+    tick.style.height = len + "px";
     tick.style.background = v._color;
-    tick.style[top ? "bottom" : "top"] = (-reach) + "px";  // stop W above the box
+    tick.style[top ? "bottom" : "top"] = (-base) + "px";
     setData(tick, v);
     sr.container.appendChild(tick);
 
@@ -167,7 +188,7 @@
       lab.textContent = v.label;
       lab.style.left = (v._x + v._dx) + "px";
       lab.style.color = v._color;
-      lab.style[top ? "bottom" : "top"] = (tickLen + 1) + "px";
+      lab.style[top ? "bottom" : "top"] = (-base + len + 1) + "px";
       setData(lab, v);
       sr.container.appendChild(lab);
     }
@@ -181,6 +202,29 @@
     el.setAttribute("data-origin", v.origin || "");
     el.title = v.label + "  —  " + v.protein + " · " +
                (v.effect || v.category) + (v.origin ? " · " + v.origin : "");
+  }
+
+  // Hover an amino-acid box -> show its exact position (e.g. "K133"), above the
+  // box for SAMD9L, below it for SAMD9. Plain black text, no background.
+  function setupPosTip(table) {
+    if (table.__posTip) return;
+    table.__posTip = true;
+    var tip = document.createElement("div");
+    tip.id = "aa-postip";
+    document.body.appendChild(tip);
+    table.addEventListener("mouseover", function (e) {
+      var cell = e.target.closest ? e.target.closest("td[data-pos]") : null;
+      if (!cell) return;
+      var r = cell.getBoundingClientRect();
+      tip.textContent = cell.dataset.pos;
+      tip.style.display = "block";
+      tip.style.left = (window.scrollX + r.left + r.width / 2) + "px";
+      var above = cell.dataset.side === "top";
+      tip.style.top = (window.scrollY + (above ? r.top - 16 : r.bottom + 4)) + "px";
+    });
+    table.addEventListener("mouseout", function (e) {
+      if (e.target.closest && e.target.closest("td[data-pos]")) tip.style.display = "none";
+    });
   }
 
   function buildToggles() {

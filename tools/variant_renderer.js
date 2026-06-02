@@ -40,25 +40,16 @@
     return null;
   }
 
-  // ---- data (fetched live; embedded copies are the file:// fallback) ----
+  // ---- data: read from the data_*.js globals (loaded via <script src>, which
+  //      works even on a double-clicked file). Edit a data_*.js + refresh = live.
   var DATA = [], OV = {}, PAPERS = {}, DETAILS = {};
   function ovFor(v) { return OV[v.label] || OV[v.protein + ":" + v.label] || null; }
 
-  async function getJSON(url, embedId) {
-    try { var r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.json(); }
-    catch (e) {}
-    if (embedId) {
-      var el = document.getElementById(embedId);
-      if (el) { try { return JSON.parse(el.textContent); } catch (e) {} }
-    }
-    return null;
-  }
-
-  async function init() {
-    DATA    = (await getJSON("variants.json", "variant-data")) || [];
-    OV      = (await getJSON("variant_overrides.json", "variant-overrides")) || {};
-    PAPERS  = (await getJSON("papers.json")) || {};
-    DETAILS = (await getJSON("variant_details.json")) || {};
+  function init() {
+    DATA    = window.VARIANTS || [];
+    OV      = window.VARIANT_OVERRIDES || {};
+    PAPERS  = window.PAPERS || {};
+    DETAILS = window.VARIANT_DETAILS || {};
     run();
     setupPopup();
   }

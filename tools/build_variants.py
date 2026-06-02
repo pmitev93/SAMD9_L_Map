@@ -17,7 +17,7 @@ from xml.etree import ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 XLSX = ROOT / "Conservation_Mutational_Landscape_Both.xlsx"
-OUT  = ROOT / "variants.json"
+OUT  = ROOT / "data_variants.js"   # loaded via <script src> (works on double-click)
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 # Column indices (1-based) in Sheet1, from the row-4 header.
@@ -93,7 +93,9 @@ def main():
                                  "label": label, "effect": eff, "origin": ori,
                                  "category": category(eff)})
     variants.sort(key=lambda v: (v["protein"], v["residue"], v["label"]))
-    OUT.write_text(json.dumps(variants, ensure_ascii=False, indent=0), encoding="utf-8")
+    OUT.write_text("window.VARIANTS =\n" +
+                   json.dumps(variants, ensure_ascii=False, indent=0) + ";\n",
+                   encoding="utf-8")
 
     # ---- stats ----
     from collections import Counter

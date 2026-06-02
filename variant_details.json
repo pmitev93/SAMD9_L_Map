@@ -1,8 +1,0 @@
-{
-  "SAMD9L:V19E": {
-    "paper": "klco_2021",
-    "gnomad": { "present": false },
-    "effect": "Somatic",
-    "method": "clonal/growth expansion"
-  }
-}

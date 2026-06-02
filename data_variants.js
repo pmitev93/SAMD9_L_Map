@@ -1,3 +1,4 @@
+window.VARIANTS =
 [
 {
 "protein": "SAMD9",
@@ -5679,4 +5680,4 @@
 "origin": "single",
 "category": "gnomAD"
 }
-]
+];

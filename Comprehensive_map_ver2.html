@@ -3,7 +3,179 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="Mitev_MSA_Colored.NEW.EM.css">
+    <style>
+table {
+	/*	table-layout: auto; */
+		table-layout: fixed;
+        margin-left: 0em;
+        margin-right: 0em;
+        padding:1em 1em 1em 1em;
+	    margin:1em 1em 1em 1em;
+        border-collapse: collapse;
+      }
+td {
+        font-family: "Arial", Arial, monospace;
+        font-size:1em;
+        font-weight: bold;
+        text-align: center;
+        overflow:visible;
+     /*   white-space:nowrap; */
+		 white-space:pre;
+/*	 	padding:0.1em 0.1em 0.1em 0.1em; */
+/*	 	margin:0.5em 0.5em 0.5em 0.5em;*/
+		width: 1em;
+      }
+td.Seq_Name{
+        text-align: left;
+        width: 15em;
+        padding-right:1em;
+      }
+td.Score9{
+        color: #FFFFFF;
+        background: #a12561;
+  	}
+td.Score8{
+        background: #f07dab;
+        }
+td.Score7{
+        background: #f9c9dd;
+        }
+td.Score6{
+        background: #fbecf4;
+        }
+td.Score5{
+        background: #FFFFFF;
+        }
+td.Score4{
+        background: #d7eef2;
+	}
+td.Score3{
+        background: #a6dde7;
+	}
+td.Score2{
+        background: #44afbf;
+        }
+td.Score1{
+        color: #FFFFFF;
+        background: #107f84;
+        }
+td.ScoreNaN{
+	    background: #C0C0C0;
+	}
+td.Score0{
+        color: #d11d1d;
+        background: #30343b;
+        }
+td.Score11{
+        color: #FFFFFF;
+        background: #FFFFFF;
+        }
+
+/* ISD COLORES */
+td.Score9_ISD{
+		color: #FFFF00;
+        background: #A02560;
+  	}
+td.Score8_ISD{
+		color: #FFFF00;
+	    background: #F07DAB;
+        }
+td.Score7_ISD{
+		color: #FFFF00;
+        background: #FAC9DE;
+        }
+td.Score6_ISD{
+		color: #FFFF00;
+        background: #FCEDF4;
+        }
+td.Score5_ISD{
+		color: #FFFF00;
+        background: #FFFFFF;
+        }
+td.Score4_ISD{
+		color: #FFFF00;
+        background: #EAFFFF;
+	}
+td.Score3_ISD{
+		color: #FFFF00;
+        background: #D7FFFF;
+	}
+td.Score2_ISD{
+		color: #FFFF00;
+        background: #8CFFFF;
+        }
+td.Score1_ISD{
+		color: #FFFF00;
+        background: #10C8D1;
+        }
+
+td.white{
+        background: #FFFFFF;
+        }
+/* GRAPH STYLING */
+
+.barGraph {
+/*	background: url(images/horizontal_grid_line_50_pixel.png) bottom left;*/
+/*	border-bottom: 3px solid #333;*/
+/*	font: 9px Helvetica, Geneva, sans-serif; */
+	height: 20em;
+	margin: 0em 0em;
+	padding: 0em;
+	position: relative;
+	}
+
+.barGraph p {
+	font-size:1em;
+	}
+
+.barGraph li {
+/*	background: #666 url(images/bar_50_percent_highlight.png) repeat-y top right;*/
+/*	border: 0.2em solid #555;*/
+	border-bottom: none;
+	bottom: 0em;
+	color: #FFF;
+	margin: 0em;
+	padding: 0em 0em 0em 0em;
+	position: absolute;
+	list-style: none;
+	text-align: center;
+	width: 1em;
+	}
+
+.barGraph li.p1{ background-color:#666666; }
+.barGraph li:hover {font-weight:bold;}
+
+/* ===================== Stage 1 enhancements ===================== */
+:root{
+  --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+             Arial, sans-serif;
+}
+body{ font-family: var(--ui-font); }
+h1{ font-family: var(--ui-font); font-weight: 600; letter-spacing: .01em; }
+/* modern font everywhere, overriding legacy <font face="..."> attributes.
+   Column alignment is preserved because the table is table-layout:fixed with
+   fixed 1em-wide, centered cells (alignment comes from cell width, not glyph). */
+td, td font, font{ font-family: var(--ui-font); }
+
+/* Proper vertical gap between the SAMD9L and SAMD9 rows.
+   Replaces the old white-on-white "B" character hack. */
+tr.seq-gap td, td.seq-gap{ height: 6px; line-height: 6px; padding: 0; font-size: 0; }
+
+/* ---- Legends (bottom bar) ---- */
+.legend-block{ display:flex; flex-direction:column; align-items:center;
+               margin:0 28px; font-family:var(--ui-font); }
+.consurf-row{ display:flex; }
+.cs-box{ width:22px; height:22px; box-sizing:border-box; display:inline-flex;
+         align-items:center; justify-content:center; font-size:13px;
+         font-weight:600; border:1px solid #cccccc; }
+.consurf-labels{ display:flex; justify-content:space-between; width:198px;
+                 font-size:11px; color:#333; margin-top:3px; }
+.consurf-isd{ display:flex; align-items:center; gap:6px; font-size:11px;
+              color:#333; margin-top:5px; }
+.cs-isd{ width:18px; height:14px; background:#ffff99; border:1px solid #cccccc;
+         display:inline-block; }
+
+    </style>
     <title>SAMD9/SAMD9L Conservation & Mutational Landscape</title>
 
 
@@ -445,7 +617,7 @@ You add this to the numbers rows:
 <td class="Score1">E</td>
 <td class="Score5">L</td>
 </tr>
-<tr><td class="Score11" style="font-size: 5px;">B</td>
+<tr><td class="seq-gap"></td>
 </tr>
 <tr class="outlined-row-all-yellow">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
@@ -833,7 +1005,7 @@ You add this to the numbers rows:
 <td class="Score1">T</td>
 <td class="Score1">E</td>
 <td class="Score2">H</td>
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-yellow3">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -1165,7 +1337,7 @@ You add this to the numbers rows:
 <td class="Score1">A</td>
 <td class="Score1">K</td>
 <td class="Score1">H</td>
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score5">T</td>
 <td class="Score1">V</td>
@@ -1552,7 +1724,7 @@ You add this to the numbers rows:
 <td class="Score6">F</td>
 <td class="Score9">K</td>
 </tr>
-<tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+<tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-blue3">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -1879,7 +2051,7 @@ You add this to the numbers rows:
 <td class="Score6">E</td>
 <td class="Score9">I</td>
 <td class="Score5">V</td>
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-blue">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -2272,7 +2444,7 @@ You add this to the numbers rows:
 <td class="Score6">T</td>
 
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-blue">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -2605,7 +2777,7 @@ You add this to the numbers rows:
 <td class="Score8">S</td>
 
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-blue">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -2997,7 +3169,7 @@ You add this to the numbers rows:
 <td class="Score1">L</td>
 <td class="Score8">K</td>
 </tr>
-<tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+<tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-blue5">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -3331,7 +3503,7 @@ You add this to the numbers rows:
 <td class="Score9">F</td>
 <td class="Score9">D</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-orange">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -3667,7 +3839,7 @@ You add this to the numbers rows:
 <td class="Score8">I</td>
 <td class="Score8">F</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-orange">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -4113,7 +4285,7 @@ You add this to the numbers rows:
 <td class="Score7">V</td>
 <td class="Score8">F</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-orange">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -4449,7 +4621,7 @@ You add this to the numbers rows:
 <td class="Score8">R</td>
 
 </tr>
-<tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+<tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-orange">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -4838,7 +5010,7 @@ You add this to the numbers rows:
 <td class="Score9">L</td>
 <td class="Score1">E</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-orange2">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -5170,7 +5342,7 @@ You add this to the numbers rows:
 <td class="Score8">W</td>
 <td class="Score9">W</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score6">K</td>
 <td class="Score7">K</td>
@@ -5556,7 +5728,7 @@ You add this to the numbers rows:
 <td class="Score9" style="color: red;">C</td>
 <td class="Score9" style="color: red;">G</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red2">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -5949,7 +6121,7 @@ You add this to the numbers rows:
 <td class="Score6">Y</td>
 <td class="Score6">I</td>
 
-</tr><tr><td class="Score11" style="font-size: 2px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -6392,7 +6564,7 @@ You add this to the numbers rows:
 <td class="Score7">P</td>
 <td class="Score3">D</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -6830,7 +7002,7 @@ You add this to the numbers rows:
 <td class="Score9">N</td>
 <td class="Score9">F</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -7215,7 +7387,7 @@ You add this to the numbers rows:
 <td class="Score7">F</td>
 <td class="Score8">L</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -7667,7 +7839,7 @@ You add this to the numbers rows:
 <td class="Score1">Y</td>
 <td class="Score8">C</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -8056,7 +8228,7 @@ You add this to the numbers rows:
 <td class="Score6">K</td>
 <td class="Score6">V</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-red3">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -8441,7 +8613,7 @@ You add this to the numbers rows:
 <td class="Score7">H</td>
 <td class="Score6">F</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-green">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -8825,7 +8997,7 @@ You add this to the numbers rows:
 <td class="Score1">C</td>
 <td class="Score1">R</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-green">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -9213,7 +9385,7 @@ You add this to the numbers rows:
 <td class="Score4">M</td>
 <td class="Score7">Y</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-green2">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -9540,7 +9712,7 @@ You add this to the numbers rows:
 <td class="Score1">D</td>
 <td class="Score1">P</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score9">N</td><td class="Score8">I</td>
 <td class="Score8">A</td>
@@ -9973,7 +10145,7 @@ You add this to the numbers rows:
 <td class="Score3">M</td>
 <td class="Score4">L</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score1">N</td><td class="Score2">N</td>
 <td class="Score4">E</td>
@@ -10353,7 +10525,7 @@ You add this to the numbers rows:
 <td class="Score9">A</td>
 <td class="Score8">D</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score6">R</td>
 <td class="Score1">R</td>
@@ -10734,7 +10906,7 @@ You add this to the numbers rows:
 <td class="Score8">A</td>
 <td class="Score9">N</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score6">K</td><td class="Score8">F</td>
 <td class="Score8">S</td>
@@ -11058,7 +11230,7 @@ You add this to the numbers rows:
 <td class="Score9">P</td>
 <td class="Score3">E</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score7">I</td><td class="Score8">I</td>
 <td class="Score9">L</td>
@@ -11383,7 +11555,7 @@ You add this to the numbers rows:
 <td class="Score7">S</td>
 <td class="Score5">I</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
+</tr><tr><td class="seq-gap"></td></tr><tr><td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
 <td class="Score4">N</td><td class="Score2">Q</td>
 <td class="Score2">Q</td>
@@ -11765,7 +11937,7 @@ You add this to the numbers rows:
 <td class="Score4">V</td>
 <td class="Score6">E</td>
 
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td></tr>
+</tr><tr><td class="seq-gap"></td></tr>
 <tr class="outlined-row-all-purple"> 
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
 <td class="Score11"></td>
@@ -12142,7 +12314,7 @@ You add this to the numbers rows:
 <td class="Score4">E</td>
 <td class="Score4">V</td>
 <td class="Score7">I</td>
-</tr><tr><td class="Score11" style="font-size: 5px;">B</td>
+</tr><tr><td class="seq-gap"></td>
 </tr>
 <tr class="outlined-row-all-purple2">
 <td style="text-align: left;"><font face="Calibri" color="black" size="+0.4">SAMD9  </font></td>
@@ -12302,9 +12474,9 @@ You add this to the numbers rows:
 <td class="Score11">.</td></tr></tbody></table><br><br><br>
 <div style="position: fixed; bottom: 0; width: 100%; height: 20px; background: white;"></div>
 <div style="position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: center; padding-top: 20px;">
-<img src="ConSurf_Color_Scale.png" alt="Italian Trulli" style="width:200px;height:50px; margin-left:10px;">
-<img src="Mutations_Legend.svg" alt="Italian Trulli" style="height:80px; margin-left:40px;"> 
-<img src="Domains_Scheme.svg" alt="Italian Trulli" style="height:80px; margin-left:40px;">
+<div class="legend-block"><div class="consurf-row"><span class="cs-box Score1">1</span><span class="cs-box Score2">2</span><span class="cs-box Score3">3</span><span class="cs-box Score4">4</span><span class="cs-box Score5">5</span><span class="cs-box Score6">6</span><span class="cs-box Score7">7</span><span class="cs-box Score8">8</span><span class="cs-box Score9">9</span></div><div class="consurf-labels"><span>Variable</span><span>Average</span><span>Conserved</span></div><div class="consurf-isd"><span class="cs-isd"></span>Insufficient Data</div></div>
+<div class="legend-block"><svg viewBox="0 0 1888 578" style="height:80px;width:auto;display:block;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" overflow="hidden"><g transform="translate(-710 -485)"><g><text fill="#FF0200" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 763.582 590)">A </text><text fill="#FF0200" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 828.895 590)">–</text><text fill="#FF0200" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 883.322 590)">GoF</text><text fill="#73D73C" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 763.582 689)">A </text><text fill="#73D73C" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 828.895 689)">–</text><text fill="#73D73C" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 883.322 689)">gnomAD  (</text><text fill="#73D73C" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1247.12 689)">nonsense)</text><text fill="#1E56BD" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 763.582 788)">A </text><text fill="#1E56BD" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 828.895 788)">–</text><text fill="#1E56BD" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 883.322 788)">LoF </text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 763.582 887)">A </text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 828.895 887)">–</text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 883.322 887)">Other (Somatic, </text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1477.07 887)">NoF,  etc )</text><text fill="#FFA500" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 763.582 986)">A</text><text fill="#FFA500" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 828.895 986)">–</text><text fill="#FFA500" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 883.322 986)">SIRT2</text><path d="M1969.23 512.464 1985.84 512.464 1985.84 613.464 1969.23 613.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M1985.84 512.464 2002.46 512.464 2002.46 613.464 1985.84 613.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M2002.46 512.464 2084.38 512.464 2084.38 613.464 2002.46 613.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M1969.23 611.464 1985.84 611.464 1985.84 712.464 1969.23 712.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M1985.84 611.464 2002.46 611.464 2002.46 712.464 1985.84 712.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M2002.46 611.464 2051.15 611.464 2051.15 712.464 2002.46 712.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><path d="M2051.15 611.464 2084.38 611.464 2084.38 712.464 2051.15 712.464Z" fill="#A12561" fill-rule="evenodd" fill-opacity="1"/><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1969.23 590)"> </text><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1985.84 590)"> </text><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2002.46 590)">A  </text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2084.38 590)">-</text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2129.07 590)">Walker A</text><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1969.23 689)"> </text><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 1985.84 689)"> </text><text fill="#47D45A" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2002.46 689)">A</text><text fill="#FF0000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2051.15 689)">  </text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2084.38 689)">-</text><text fill="#000000" fill-opacity="1" font-family="Aptos,Aptos_MSFontService,sans-serif" font-style="normal" font-variant="normal" font-weight="400" font-stretch="normal" font-size="83" text-anchor="start" direction="ltr" writing-mode="lr-tb" unicode-bidi="normal" text-decoration="none" transform="matrix(1 0 0 1 2129.07 689)">Walker B</text></g></g></svg></div>
+<div class="legend-block"><img src="Domains_Scheme.svg" alt="Domain scheme" style="height:80px;"></div>
 <td class="Score11"></td></tr></tbody></table><br><br><br>
 </div>
 

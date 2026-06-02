@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "samd9", "runtimeExecutable": "python3", "runtimeArgs": ["/tmp/samd9_preview/serve.py"], "port": 8137 }
+  ]
+}

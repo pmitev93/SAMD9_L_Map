@@ -1,6 +1,7 @@
 /* Data-driven variant renderer for the SAMD9/SAMD9L map.
-   Reads embedded variants.json, removes the old hand-placed markers, and draws
-   colored ticks + lane-stacked labels above SAMD9L / below SAMD9. */
+   Reads embedded variant-data (+ optional variant-overrides), removes the old
+   hand-placed markers, and draws colored ticks + lane-stacked labels above
+   SAMD9L / below SAMD9. Also builds the show/hide category toggles. */
 (function () {
   "use strict";
 
@@ -8,24 +9,37 @@
     GoF:    { color: "#e02424", label: true,  legend: "GoF (gain of function)" },
     LoF:    { color: "#1f56bc", label: true,  legend: "LoF (loss of function)" },
     gnomAD: { color: "#3aa83a", label: false, legend: "gnomAD (truncating)" },
-    Other:  { color: "#333333", label: true,  legend: "Other (somatic, NoF, ...)" }
+    Other:  { color: "#333333", label: true,  legend: "Other (somatic / NoF)" }
   };
-  var TICK = 16, LANE_H = 13, LABEL_H = 13, PAD = 4;
+  // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
+  var TICK = 16, LANE_H = 16, LABEL_H = 15, PAD = 5;
 
-  function estW(s) { return s.length * 6.1 + 6; }
+  function estW(s) { return s.length * 7.0 + 8; }   // ~ label pixel width
+
+  function hasDigit(el) { return el && /\d/.test(el.textContent || ""); }
 
   function run() {
     var dataEl = document.getElementById("variant-data");
     var table = document.querySelector("table");
     if (!dataEl || !table) return;
     var DATA = JSON.parse(dataEl.textContent);
+    var OV = {};
+    var ovEl = document.getElementById("variant-overrides");
+    if (ovEl) { try { OV = JSON.parse(ovEl.textContent || "{}"); } catch (e) {} }
+    function ovFor(v) { return OV[v.label] || OV[v.protein + ":" + v.label] || null; }
 
-    // 1. remove old hand-placed markers
+    // 1. drop legacy markers + any previous render (idempotent on resize)
     table.querySelectorAll(".vertical-line").forEach(function (n) { n.remove(); });
-    // clear any previous render (idempotent on resize)
     table.querySelectorAll("tr.vmark").forEach(function (n) { n.remove(); });
+    // 2. drop the now-empty old marker rows (top/bottom-align rows with no text).
+    //    Number rulers keep their digits and survive; sequence rows aren't
+    //    top/bottom-align, so they're untouched.
+    table.querySelectorAll("tr.top-align, tr.bottom-align").forEach(function (r) {
+      if (!(r.textContent || "").trim()) r.remove();
+    });
 
-    // 2. locate sequence rows and insert a reserved-height container next to each
+    // 3. insert a reserved-height container OUTSIDE the number ruler, so the
+    //    ruler stays glued to the sequence (above SAMD9L / below SAMD9).
     var seqRows = [];
     Array.prototype.forEach.call(table.querySelectorAll("tr"), function (row) {
       var first = row.querySelector("td");
@@ -39,14 +53,20 @@
       td.colSpan = 60;
       var div = document.createElement("div");
       div.className = "vlayer";
-      td.appendChild(div);
-      tr.appendChild(td);
-      if (side === "top") row.parentNode.insertBefore(tr, row);
-      else row.parentNode.insertBefore(tr, row.nextSibling);
+      td.appendChild(div); tr.appendChild(td);
+      if (side === "top") {
+        var prev = row.previousElementSibling;
+        var anchor = hasDigit(prev) ? prev : row;       // the ruler, if present
+        anchor.parentNode.insertBefore(tr, anchor);
+      } else {
+        var next = row.nextElementSibling;
+        var a2 = hasDigit(next) ? next : row;
+        a2.parentNode.insertBefore(tr, a2.nextSibling);
+      }
       seqRows.push({ protein: t, row: row, side: side, container: div });
     });
 
-    // 3. residue -> cell map (cumulative per protein, in document order)
+    // 4. residue -> cell map (cumulative per protein, document order)
     var maps = { SAMD9: {}, SAMD9L: {} };
     var cellRow = new Map();
     var counters = { SAMD9: 0, SAMD9L: 0 };
@@ -62,9 +82,8 @@
       }
     });
 
-    // 4. attach variants to their block group
-    var groups = new Map();
-    var missing = 0;
+    // 5. group variants by block
+    var groups = new Map(), missing = 0;
     DATA.forEach(function (v) {
       var cell = maps[v.protein] && maps[v.protein][v.residue];
       if (!cell) { missing++; return; }
@@ -74,7 +93,7 @@
       groups.get(sr).push(v);
     });
 
-    // 5. lay out + draw each group
+    // 6. lay out + draw
     groups.forEach(function (list, sr) {
       var base = sr.container.getBoundingClientRect().left;
       list.forEach(function (v) {
@@ -92,22 +111,25 @@
           while (l < lanes.length && lanes[l] > leftEdge - 3) l++;
           lanes[l] = v._x + w / 2;
           v._lane = l;
-          if (l > maxLane) maxLane = l;
         } else {
           v._lane = -1;
         }
       });
+      // apply manual overrides (horizontal nudge dx, optional lane bump)
+      list.forEach(function (v) {
+        var o = ovFor(v);
+        v._dx = (o && o.dx) || 0;
+        if (o && o.lane != null && v._lane >= 0) v._lane = o.lane;
+        if (v._lane > maxLane) maxLane = v._lane;
+      });
 
       var stackH = (maxLane + 1) * LANE_H + (maxLane >= 0 ? LABEL_H : 0) + PAD;
-      var H = TICK + stackH;
-      sr.container.style.height = H + "px";
-
+      sr.container.style.height = (TICK + stackH) + "px";
       list.forEach(function (v) { draw(sr, v); });
     });
 
-    // 6. expose for toggles/tooltips (Stage 3)
-    window.__variantInfo = { total: DATA.length, missing: missing,
-                             counts: counters };
+    buildToggles();
+    window.__variantInfo = { total: DATA.length, missing: missing, counts: counters };
     if (missing) console.warn("variant renderer: " + missing + " unmapped variants");
   }
 
@@ -128,7 +150,7 @@
       var lab = document.createElement("div");
       lab.className = "vlabel";
       lab.textContent = v.label;
-      lab.style.left = v._x + "px";
+      lab.style.left = (v._x + v._dx) + "px";
       lab.style.color = v._color;
       lab.style[top ? "bottom" : "top"] = (tickLen + 1) + "px";
       setData(lab, v);
@@ -144,6 +166,25 @@
     el.setAttribute("data-origin", v.origin || "");
     el.title = v.label + "  —  " + v.protein + " · " +
                (v.effect || v.category) + (v.origin ? " · " + v.origin : "");
+  }
+
+  function buildToggles() {
+    if (document.getElementById("variant-toggles")) return;
+    var box = document.createElement("div");
+    box.id = "variant-toggles";
+    var html = '<div class="vt-title">Show variants</div>';
+    Object.keys(CFG).forEach(function (cat) {
+      html += '<label><input type="checkbox" checked data-cat="' + cat + '">' +
+              '<span class="vt-sw" style="background:' + CFG[cat].color + '"></span>' +
+              CFG[cat].legend + '</label>';
+    });
+    box.innerHTML = html;
+    box.addEventListener("change", function (e) {
+      var cb = e.target;
+      if (cb.tagName !== "INPUT") return;
+      document.body.classList.toggle("hide-cat-" + cb.getAttribute("data-cat"), !cb.checked);
+    });
+    document.body.appendChild(box);
   }
 
   var t;

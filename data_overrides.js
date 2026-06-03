@@ -6,5 +6,5 @@ window.VARIANT_OVERRIDES = {
   "Y72C": { "lane": 0, "dx": 14 },
   "R70C": { "dx": -14 },
   "A1195V": { "dx": -14 },
-  "V1276I": { "dlen": 16 }
+  "V1276I": { "dlen": 10 }
 };

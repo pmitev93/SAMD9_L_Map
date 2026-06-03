@@ -12578,8 +12578,9 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   gap:7px; margin-bottom:7px; padding-right:16px; }
 .vpop-chip { width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
 .vpop-prot { font-weight:500; color:#666; font-size:12px; }
-.vpop-title { display:block; font-weight:600; color:#0b48c2; text-decoration:none;
-  max-width:312px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vpop-title { display:inline-block; vertical-align:bottom; font-weight:600;
+  color:#0b48c2; text-decoration:none;
+  max-width:258px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vpop-title:hover { text-decoration:underline; }
 .vpop-row { margin-top:3px; }
 .vpop-dim { color:#5a5a5a; font-size:12px; }
@@ -12912,11 +12913,12 @@ body.hide-cat-Other  [data-category="Other"] { display:none !important; }
       var paper = (d.paper && PAPERS[d.paper]) || {};
       var url = paper.url || (paper.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + paper.pmid + "/" : null);
       if (paper.title) {
-        h += '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
-             ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a>";
+        h += '<div class="vpop-row"><b>Source:</b> ' +
+             '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
+             ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a></div>";
       }
       if (paper.pmid) {
-        h += '<div class="vpop-row vpop-dim">PMID ' +
+        h += '<div class="vpop-row vpop-dim"><b>PMID:</b> ' +
              '<a href="https://pubmed.ncbi.nlm.nih.gov/' + esc(paper.pmid) + '/" target="_blank" rel="noopener">' +
              esc(paper.pmid) + "</a></div>";
       }

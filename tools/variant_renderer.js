@@ -255,11 +255,12 @@
       var paper = (d.paper && PAPERS[d.paper]) || {};
       var url = paper.url || (paper.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + paper.pmid + "/" : null);
       if (paper.title) {
-        h += '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
-             ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a>";
+        h += '<div class="vpop-row"><b>Source:</b> ' +
+             '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
+             ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a></div>";
       }
       if (paper.pmid) {
-        h += '<div class="vpop-row vpop-dim">PMID ' +
+        h += '<div class="vpop-row vpop-dim"><b>PMID:</b> ' +
              '<a href="https://pubmed.ncbi.nlm.nih.gov/' + esc(paper.pmid) + '/" target="_blank" rel="noopener">' +
              esc(paper.pmid) + "</a></div>";
       }

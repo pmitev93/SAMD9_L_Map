@@ -6,5 +6,11 @@ window.VARIANT_DETAILS = {
     "gnomad": { "present": false },
     "effect": "Somatic",
     "method": "clonal/growth expansion"
+  },
+  "SAMD9L:W1180R": {
+    "paper": "sch_2017",
+    "gnomad": { "present": false },
+    "effect": "GoF",
+    "method": "Verified by: EdU assay"
   }
 };

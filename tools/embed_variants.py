@@ -19,9 +19,6 @@ HTML = ROOT / "Comprehensive_map_ver2.html"
 CSS  = ROOT / "tools" / "variant_styles.css"
 JS   = ROOT / "tools" / "variant_renderer.js"
 
-DATA_FILES = ["data_variants.js", "data_overrides.js",
-              "data_papers.js", "data_details.js"]
-
 START = "<!-- VARIANT-LAYER-START -->"
 END   = "<!-- VARIANT-LAYER-END -->"
 
@@ -30,11 +27,9 @@ def main():
     css  = CSS.read_text(encoding="utf-8")
     js   = JS.read_text(encoding="utf-8")
 
-    scripts = "".join('<script src="%s"></script>\n' % f for f in DATA_FILES)
     block = (
         START + "\n"
         "<style>\n" + css + "\n</style>\n"
-        + scripts
         + "<script>\n" + js + "\n</script>\n"
         + END
     )

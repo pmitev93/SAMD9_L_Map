@@ -335,8 +335,23 @@
 
   var t;
   function schedule() { clearTimeout(t); t = setTimeout(run, 120); }
+
+  // Load the editable data files fresh each time so "edit a data_*.js + refresh"
+  // always shows your changes (browsers otherwise cache <script src>). On a
+  // double-clicked file:// page we skip the query (not needed, and keeps it simple).
+  function boot() {
+    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_details.js"];
+    var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
+    var left = files.length;
+    files.forEach(function (f) {
+      var s = document.createElement("script");
+      s.src = f + bust;
+      s.onload = s.onerror = function () { if (--left === 0) init(); };
+      document.head.appendChild(s);
+    });
+  }
   if (document.readyState === "loading")
-    document.addEventListener("DOMContentLoaded", init);
-  else init();
+    document.addEventListener("DOMContentLoaded", boot);
+  else boot();
   window.addEventListener("resize", schedule);
 })();

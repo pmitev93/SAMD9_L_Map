@@ -3355,7 +3355,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 359,
-"label": "R359Q, Y1118C",
+"label": "R359Q",
 "effect": "NoF",
 "origin": "Klco",
 "category": "Other"
@@ -4787,7 +4787,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1118,
-"label": "R359Q, Y1118C",
+"label": "Y1118C",
 "effect": "GoF",
 "origin": "Klco",
 "category": "GoF"
@@ -4933,7 +4933,7 @@ window.VARIANTS =
 "residue": 1180,
 "label": "W1180R",
 "effect": "GoF",
-"origin": "Klco",
+"origin": "Sch",
 "category": "GoF"
 },
 {

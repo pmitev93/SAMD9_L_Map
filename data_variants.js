@@ -5179,7 +5179,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1281,
-"label": "R1281K, R1281S / L635F, R1281del",
+"label": "R1281K, R1281S, R1281del",
 "effect": "GoF, GoF",
 "origin": "Klco, Bryceson",
 "category": "GoF"

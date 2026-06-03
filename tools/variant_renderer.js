@@ -258,15 +258,18 @@
              '<a href="https://pubmed.ncbi.nlm.nih.gov/' + esc(paper.pmid) + '/" target="_blank" rel="noopener">' +
              esc(paper.pmid) + "</a></div>";
       }
-      if (d.gnomad) {
-        var g = d.gnomad.present
-          ? "Yes" + (d.gnomad.maf ? " (MAF " + esc(d.gnomad.maf) + ")" : "")
-          : "No";
+      if (d.gnomad != null) {
+        // gnomad is free text now (e.g. "Not present", "Present (MAF 0.0003)").
+        // Still accept the old {present, maf} object for backward compatibility.
+        var g = (typeof d.gnomad === "object")
+          ? (d.gnomad.present ? "Yes" + (d.gnomad.maf ? " (MAF " + esc(d.gnomad.maf) + ")" : "") : "No")
+          : esc(d.gnomad);
         h += '<div class="vpop-row"><b>gnomAD:</b> ' + g + "</div>";
       }
-      var eff = d.effect || cat;
-      h += '<div class="vpop-row"><b>' + esc(eff) + "</b>" +
-           (d.method ? ' <span class="vpop-dim">(' + esc(d.method) + ")</span>" : "") + "</div>";
+      var pheno = d.phenotype || d.effect;
+      if (pheno) h += '<div class="vpop-row"><b>Phenotype:</b> ' + esc(pheno) + "</div>";
+      if (d.method) h += '<div class="vpop-row"><b>Method of functional assessment:</b> ' +
+                         esc(d.method) + "</div>";
     } else {
       h += '<div class="vpop-row vpop-dim">Details not added yet' +
            (origin ? " &middot; source: " + esc(origin) : "") + "</div>";

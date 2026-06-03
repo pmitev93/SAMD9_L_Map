@@ -145,10 +145,12 @@
           v._lane = -1;
         }
       });
-      // apply manual overrides (horizontal nudge dx, optional lane bump)
+      // apply manual overrides: dx = horizontal label nudge; lane = stack level;
+      // dlen = extra line length in px (label moves out with the line).
       list.forEach(function (v) {
         var o = ovFor(v);
         v._dx = (o && o.dx) || 0;
+        v._dlen = (o && o.dlen) || 0;
         if (o && o.lane != null && v._lane >= 0) v._lane = o.lane;
         if (v._lane > maxLane) maxLane = v._lane;
       });
@@ -163,6 +165,9 @@
       // reserve only the part of the tallest stack that rises above the ruler band
       var W = whiteGap();
       var maxLen = TICK + (maxLane >= 0 ? maxLane * LANE_H : 0);
+      list.forEach(function (v) {                       // account for any dlen extensions
+        if (v._lane >= 0) maxLen = Math.max(maxLen, TICK + v._lane * LANE_H + v._dlen);
+      });
       var topAboveBox = W + maxLen + (maxLane >= 0 ? LABEL_H : 0) + PAD;
       sr.container.style.height = Math.max(0, topAboveBox - gap) + "px";
       list.forEach(function (v) { draw(sr, v); });
@@ -178,7 +183,7 @@
     var top = (sr.side === "top");
     var gap = sr._gap || 0;
     var W = whiteGap();              // white space before the AA box
-    var len = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0);  // FIXED line length
+    var len = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0) + (v._dlen || 0);  // line length (+dlen)
     var base = gap - W;              // line bottom sits W above the actual letter box
 
     var tick = document.createElement("div");

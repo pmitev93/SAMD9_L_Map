@@ -10,7 +10,7 @@
     GoF:    { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
     LoF:    { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
     gnomAD: { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
-    Other:  { color: "#000000", label: true,  on: true,  legend: "Other (somatic / NoF)" }
+    Other:  { color: "#000000", label: true,  on: false, legend: "Other (somatic / NoF)" }
   };
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
   // TICK = the (fixed) line length for a lane-0 variant; +LANE_H per stack level.

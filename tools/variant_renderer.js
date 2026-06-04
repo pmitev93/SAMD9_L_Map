@@ -277,8 +277,7 @@
       if (d.method) h += '<div class="vpop-row"><b>Method of functional assessment:</b> ' +
                          esc(d.method) + "</div>";
     } else {
-      h += '<div class="vpop-row vpop-dim">Details not added yet' +
-           (origin ? " &middot; source: " + esc(origin) : "") + "</div>";
+      h += '<div class="vpop-row vpop-dim"><i>In progress</i></div>';
     }
     pop.innerHTML = h;
     pop.style.display = "block";

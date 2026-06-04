@@ -15,7 +15,7 @@ Run:  python3 tools/embed_variants.py
 import pathlib, re, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-HTML = ROOT / "Comprehensive_map_ver2.html"
+HTML = ROOT / "index.html"
 CSS  = ROOT / "tools" / "variant_styles.css"
 JS   = ROOT / "tools" / "variant_renderer.js"
 

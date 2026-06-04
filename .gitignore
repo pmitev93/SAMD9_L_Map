@@ -1,3 +1,20 @@
 .DS_Store
 node_modules/
 font_preview.html
+
+# Local backups (kept on disk, not published)
+Comprehensive_map_ver2.BACKUP.html
+Comprehensive_map_ver2.STAGE1.html
+Comprehensive_map_ver2_Backup4.html
+Comprehensive_map_ver2_Backup5.html
+Comprehensive_map_ver2_another_backup.html
+
+# Superseded source assets — now inlined into index.html / rebuilt in HTML
+ConSurf_Color_Scale.png
+Mitev_MSA_Colored.NEW.EM.css
+Mutations_Legend.svg
+Domains_Scheme.svg
+Domains_Scheme_New.svg
+
+# R cruft
+.Rhistory

@@ -4825,10 +4825,29 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 986,
-"label": "R986C, R986C, T233N (in trans), R986H",
+"label": "R986C",
 "effect": "GoF",
 "origin": "Klco",
-"category": "GoF"
+"category": "GoF",
+"group": "SAMD9L-R986"
+},
+{
+"protein": "SAMD9L",
+"residue": 986,
+"label": "R986C, T233N (in trans)",
+"effect": "GoF",
+"origin": "Klco",
+"category": "GoF",
+"group": "SAMD9L-R986"
+},
+{
+"protein": "SAMD9L",
+"residue": 986,
+"label": "R986H",
+"effect": "GoF",
+"origin": "Klco",
+"category": "GoF",
+"group": "SAMD9L-R986"
 },
 {
 "protein": "SAMD9L",

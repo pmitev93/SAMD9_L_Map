@@ -15,5 +15,10 @@ window.PAPERS = {
     "title": "Gain-of-function SAMD9L mutations cause a syndrome of cytopenia, immunodeficiency, MDS, and neurological symptoms",
     "pmid": "28202457",
     "url": "https://ashpublications.org/blood/article/129/16/2266/35935/Gain-of-function-SAMD9L-mutations-cause-a-syndrome"
+  },
+  "Mitev": {
+    "title": "Truncating variants reveal functional divergence of the SAMD9 and SAMD9L paralogues",
+    "pmid": "pending",
+    "url": "pending"
   }
 };

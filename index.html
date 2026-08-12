@@ -12531,13 +12531,16 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   position:absolute; width:2px; border-radius:1px;
 }
 .vlabel {
-  position:absolute; white-space:nowrap;
+  position:absolute; white-space:nowrap; z-index:1;
   font-size:var(--vlabel-size, 13px); line-height:1.05;
   font-weight:400; transform:translateX(-50%);
   font-variant-numeric:tabular-nums; cursor:pointer;
   background:rgba(255,255,255,.82); padding:2px 7px; border-radius:999px;
   transition:background-color .15s ease, box-shadow .15s ease, padding .15s ease;
 }
+/* on hover/while its popup is open, bring a label in front of its neighbors
+   (adjacent labels in a same-line group can sit edge-to-edge / slightly overlap) */
+.vlabel:hover, .vlabel.vlabel-active { z-index:3; }
 /* hover affordance — variants are clickable */
 .vtick { cursor:pointer; transition:filter .12s ease, transform .12s ease; }
 .vtick:hover { filter:brightness(1.25) drop-shadow(0 0 3px currentColor);
@@ -12930,9 +12933,18 @@ body.hide-cat-Other  [data-category="Other"] { display:none !important; }
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(pop); });
     window.addEventListener("resize", function () { hide(pop); });
   }
-  function hide(pop) { pop.style.display = "none"; }
+  // keep the clicked label's popup-owner in front of same-line neighbors even
+  // after the mouse leaves it (e.g. moves onto the popup itself)
+  var activeMarker = null;
+  function hide(pop) {
+    pop.style.display = "none";
+    if (activeMarker) { activeMarker.classList.remove("vlabel-active"); activeMarker = null; }
+  }
 
   function openPopup(marker, pop) {
+    if (activeMarker) activeMarker.classList.remove("vlabel-active");
+    activeMarker = marker.classList.contains("vlabel") ? marker : null;
+    if (activeMarker) activeMarker.classList.add("vlabel-active");
     var protein = marker.getAttribute("data-protein");
     var mut = marker.getAttribute("data-mutation");
     var cat = marker.getAttribute("data-category");

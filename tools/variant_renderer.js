@@ -272,9 +272,18 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(pop); });
     window.addEventListener("resize", function () { hide(pop); });
   }
-  function hide(pop) { pop.style.display = "none"; }
+  // keep the clicked label's popup-owner in front of same-line neighbors even
+  // after the mouse leaves it (e.g. moves onto the popup itself)
+  var activeMarker = null;
+  function hide(pop) {
+    pop.style.display = "none";
+    if (activeMarker) { activeMarker.classList.remove("vlabel-active"); activeMarker = null; }
+  }
 
   function openPopup(marker, pop) {
+    if (activeMarker) activeMarker.classList.remove("vlabel-active");
+    activeMarker = marker.classList.contains("vlabel") ? marker : null;
+    if (activeMarker) activeMarker.classList.add("vlabel-active");
     var protein = marker.getAttribute("data-protein");
     var mut = marker.getAttribute("data-mutation");
     var cat = marker.getAttribute("data-category");

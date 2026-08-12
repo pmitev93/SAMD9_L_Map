@@ -219,10 +219,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 104,
-"label": "K104RfsX25, K104X",
+"label": "K104RfsX25",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R104"
+},
+{
+"protein": "SAMD9",
+"residue": 104,
+"label": "K104X",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9-R104"
 },
 {
 "protein": "SAMD9",
@@ -731,10 +741,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 388,
-"label": "E388KfsX11, E388RfsX9",
+"label": "E388KfsX11",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R388"
+},
+{
+"protein": "SAMD9",
+"residue": 388,
+"label": "E388RfsX9",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9-R388"
 },
 {
 "protein": "SAMD9",
@@ -811,10 +831,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 436,
-"label": "W436CfsX25, W436X",
+"label": "W436CfsX25",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R436"
+},
+{
+"protein": "SAMD9",
+"residue": 436,
+"label": "W436X",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9-R436"
 },
 {
 "protein": "SAMD9",
@@ -891,10 +921,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 469,
-"label": "Y469S, Y469C",
+"label": "Y469S",
 "effect": "LoF",
 "origin": "Klco",
-"category": "LoF"
+"category": "LoF",
+"group": "SAMD9-R469"
+},
+{
+"protein": "SAMD9",
+"residue": 469,
+"label": "Y469C",
+"effect": "LoF",
+"origin": "Klco",
+"category": "LoF",
+"group": "SAMD9-R469"
 },
 {
 "protein": "SAMD9",
@@ -1107,10 +1147,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 607,
-"label": "S607CfsX5, S607LfsX3",
+"label": "S607CfsX5",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R607"
+},
+{
+"protein": "SAMD9",
+"residue": 607,
+"label": "S607LfsX3",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9-R607"
 },
 {
 "protein": "SAMD9",
@@ -1267,10 +1317,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 689,
-"label": "V689A, V689L",
+"label": "V689A",
 "effect": "LoF",
 "origin": "Klco",
-"category": "LoF"
+"category": "LoF",
+"group": "SAMD9-R689"
+},
+{
+"protein": "SAMD9",
+"residue": 689,
+"label": "V689L",
+"effect": "LoF",
+"origin": "Klco",
+"category": "LoF",
+"group": "SAMD9-R689"
 },
 {
 "protein": "SAMD9",
@@ -1899,10 +1959,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 982,
-"label": "R982H, R982C",
+"label": "R982H",
 "effect": "GoF",
 "origin": "Klco",
-"category": "GoF"
+"category": "GoF",
+"group": "SAMD9-R982"
+},
+{
+"protein": "SAMD9",
+"residue": 982,
+"label": "R982C",
+"effect": "GoF",
+"origin": "Klco",
+"category": "GoF",
+"group": "SAMD9-R982"
 },
 {
 "protein": "SAMD9",
@@ -1947,10 +2017,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 999,
-"label": "S999TfsX4, S999AfsX4",
+"label": "S999TfsX4",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R999"
+},
+{
+"protein": "SAMD9",
+"residue": 999,
+"label": "S999AfsX4",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9-R999"
 },
 {
 "protein": "SAMD9",
@@ -2499,10 +2579,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1293,
-"label": "R1293Q, R1293W",
+"label": "R1293Q",
 "effect": "GoF",
 "origin": "Klco",
-"category": "GoF"
+"category": "GoF",
+"group": "SAMD9-R1293"
+},
+{
+"protein": "SAMD9",
+"residue": 1293,
+"label": "R1293W",
+"effect": "GoF",
+"origin": "Klco",
+"category": "GoF",
+"group": "SAMD9-R1293"
 },
 {
 "protein": "SAMD9",
@@ -2523,10 +2613,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1332,
-"label": "C1332GfsX4, C1332DfsX6",
+"label": "C1332GfsX4",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R1332"
+},
+{
+"protein": "SAMD9",
+"residue": 1332,
+"label": "C1332DfsX6",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9-R1332"
 },
 {
 "protein": "SAMD9",
@@ -2803,10 +2903,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1495,
-"label": "K1495E / R344X, K1495E",
+"label": "K1495E / R344X",
 "effect": "LoF",
 "origin": "Klco",
-"category": "LoF"
+"category": "LoF",
+"group": "SAMD9-R1495"
+},
+{
+"protein": "SAMD9",
+"residue": 1495,
+"label": "K1495E",
+"effect": "LoF",
+"origin": "Klco",
+"category": "LoF",
+"group": "SAMD9-R1495"
 },
 {
 "protein": "SAMD9",
@@ -2891,10 +3001,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1529,
-"label": "R1529H, R1529C",
+"label": "R1529H",
 "effect": "Somatic",
 "origin": "Klco",
-"category": "Other"
+"category": "Other",
+"group": "SAMD9-R1529"
+},
+{
+"protein": "SAMD9",
+"residue": 1529,
+"label": "R1529C",
+"effect": "Somatic",
+"origin": "Klco",
+"category": "Other",
+"group": "SAMD9-R1529"
 },
 {
 "protein": "SAMD9",
@@ -2947,18 +3067,38 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1549,
-"label": "I1549NfsX14, I1549SfsX10",
+"label": "I1549NfsX14",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R1549"
+},
+{
+"protein": "SAMD9",
+"residue": 1549,
+"label": "I1549SfsX10",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9-R1549"
 },
 {
 "protein": "SAMD9",
 "residue": 1558,
-"label": "L1558FfsX5, L1558X",
+"label": "L1558FfsX5",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9-R1558"
+},
+{
+"protein": "SAMD9",
+"residue": 1558,
+"label": "L1558X",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9-R1558"
 },
 {
 "protein": "SAMD9",
@@ -3019,10 +3159,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 4,
-"label": "Q4X, Q4HfsX9",
+"label": "Q4X",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R4"
+},
+{
+"protein": "SAMD9L",
+"residue": 4,
+"label": "Q4HfsX9",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9L-R4"
 },
 {
 "protein": "SAMD9L",
@@ -3067,10 +3217,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 59,
-"label": "G59RfsX19, G59EfsX10",
+"label": "G59RfsX19",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R59"
+},
+{
+"protein": "SAMD9L",
+"residue": 59,
+"label": "G59EfsX10",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9L-R59"
 },
 {
 "protein": "SAMD9L",
@@ -3403,10 +3563,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 398,
-"label": "L398TfsX5, L398_V399insKPLLX",
+"label": "L398TfsX5",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R398"
+},
+{
+"protein": "SAMD9L",
+"residue": 398,
+"label": "L398_V399insKPLLX",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R398"
 },
 {
 "protein": "SAMD9L",
@@ -3595,10 +3765,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 514,
-"label": "P514HfsX15, P514S",
-"effect": "gnomAD, LoF",
-"origin": "single, Bryceson",
-"category": "gnomAD"
+"label": "P514HfsX15",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R514"
+},
+{
+"protein": "SAMD9L",
+"residue": 514,
+"label": "P514S",
+"effect": "LoF",
+"origin": "Bryceson",
+"category": "LoF",
+"group": "SAMD9L-R514"
 },
 {
 "protein": "SAMD9L",
@@ -3635,10 +3815,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 522,
-"label": "A522SfsX14, A522LfsX7",
+"label": "A522SfsX14",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R522"
+},
+{
+"protein": "SAMD9L",
+"residue": 522,
+"label": "A522LfsX7",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R522"
 },
 {
 "protein": "SAMD9L",
@@ -3995,10 +4185,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 727,
-"label": "E727X, E727VfsX3",
+"label": "E727X",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R727"
+},
+{
+"protein": "SAMD9L",
+"residue": 727,
+"label": "E727VfsX3",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R727"
 },
 {
 "protein": "SAMD9L",
@@ -4203,10 +4403,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 832,
-"label": "T832NfsX16, T832HfsX3",
+"label": "T832NfsX16",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R832"
+},
+{
+"protein": "SAMD9L",
+"residue": 832,
+"label": "T832HfsX3",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9L-R832"
 },
 {
 "protein": "SAMD9L",
@@ -4331,18 +4541,38 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 876,
-"label": "I876Lfs*15, I876T",
+"label": "I876Lfs*15",
 "effect": "NoF",
 "origin": "Klco",
-"category": "Other"
+"category": "Other",
+"group": "SAMD9L-R876"
+},
+{
+"protein": "SAMD9L",
+"residue": 876,
+"label": "I876T",
+"effect": "NoF",
+"origin": "Klco",
+"category": "Other",
+"group": "SAMD9L-R876"
 },
 {
 "protein": "SAMD9L",
 "residue": 878,
-"label": "K878SfsX12, K878SfsX13",
+"label": "K878SfsX12",
 "effect": "NoF",
 "origin": "Klco",
-"category": "Other"
+"category": "Other",
+"group": "SAMD9L-R878"
+},
+{
+"protein": "SAMD9L",
+"residue": 878,
+"label": "K878SfsX13",
+"effect": "NoF",
+"origin": "Klco",
+"category": "Other",
+"group": "SAMD9L-R878"
 },
 {
 "protein": "SAMD9L",
@@ -4619,10 +4849,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 999,
-"label": "E999FfsX2, E999NfsX15",
+"label": "E999FfsX2",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R999"
+},
+{
+"protein": "SAMD9L",
+"residue": 999,
+"label": "E999NfsX15",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R999"
 },
 {
 "protein": "SAMD9L",
@@ -4731,10 +4971,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1077,
-"label": "R1077X, R1077Q",
+"label": "R1077X",
 "effect": "Somatic",
 "origin": "Klco",
-"category": "Other"
+"category": "Other",
+"group": "SAMD9L-R1077"
+},
+{
+"protein": "SAMD9L",
+"residue": 1077,
+"label": "R1077Q",
+"effect": "Somatic",
+"origin": "Klco",
+"category": "Other",
+"group": "SAMD9L-R1077"
 },
 {
 "protein": "SAMD9L",
@@ -5206,10 +5456,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1286,
-"label": "E1286X, E1286KfsX7",
+"label": "E1286X",
 "effect": "gnomAD",
 "origin": "single",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R1286"
+},
+{
+"protein": "SAMD9L",
+"residue": 1286,
+"label": "E1286KfsX7",
+"effect": "gnomAD",
+"origin": "single",
+"category": "gnomAD",
+"group": "SAMD9L-R1286"
 },
 {
 "protein": "SAMD9L",
@@ -5222,10 +5482,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1294,
-"label": "K1294X, K1294RfsX39",
+"label": "K1294X",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R1294"
+},
+{
+"protein": "SAMD9L",
+"residue": 1294,
+"label": "K1294RfsX39",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9L-R1294"
 },
 {
 "protein": "SAMD9L",
@@ -5558,10 +5828,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1512,
-"label": "V1512M, V1512A",
+"label": "V1512M",
 "effect": "GoF",
 "origin": "Klco",
-"category": "GoF"
+"category": "GoF",
+"group": "SAMD9L-R1512"
+},
+{
+"protein": "SAMD9L",
+"residue": 1512,
+"label": "V1512A",
+"effect": "GoF",
+"origin": "Klco",
+"category": "GoF",
+"group": "SAMD9L-R1512"
 },
 {
 "protein": "SAMD9L",
@@ -5582,10 +5862,20 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1516,
-"label": "N1516MfsX10, N1516KfsX2",
+"label": "N1516MfsX10",
 "effect": "gnomAD",
 "origin": "mt1",
-"category": "gnomAD"
+"category": "gnomAD",
+"group": "SAMD9L-R1516"
+},
+{
+"protein": "SAMD9L",
+"residue": 1516,
+"label": "N1516KfsX2",
+"effect": "gnomAD",
+"origin": "mt1",
+"category": "gnomAD",
+"group": "SAMD9L-R1516"
 },
 {
 "protein": "SAMD9L",

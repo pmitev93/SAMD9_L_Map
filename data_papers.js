@@ -10,5 +10,10 @@ window.PAPERS = {
     "title": "The genomic landscape of pediatric myelodysplastic syndromes",
     "pmid": "29146900",
     "url": "https://pubmed.ncbi.nlm.nih.gov/29146900/"
+  },
+  "tesi_2017": {
+    "title": "Gain-of-function SAMD9L mutations cause a syndrome of cytopenia, immunodeficiency, MDS, and neurological symptoms",
+    "pmid": "28202457",
+    "url": "https://ashpublications.org/blood/article/129/16/2266/35935/Gain-of-function-SAMD9L-mutations-cause-a-syndrome"
   }
 };

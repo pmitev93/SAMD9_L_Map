@@ -49,5 +49,35 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "GoF",
     "method": "EdU assay"
+  },
+  "SAMD9L:T233N": {
+    "paper": "tesi_2017",
+    "gnomad": "Allele frequency: 4.34e-6",
+    "phenotype": "LoF",
+    "method": "CellTrace"
+  },
+  "SAMD9L:I891T": {
+    "paper": "tesi_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "CellTrace"
+  },
+  "SAMD9L:R986C": {
+    "paper": "tesi_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "CellTrace"
+  },
+  "SAMD9L:R986F": {
+    "paper": "tesi_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "CellTrace"
+  },
+  "SAMD9L:R986H": {
+    "paper": "tesi_2017",
+    "gnomad": "Allele frequency: 9.30e-6",
+    "phenotype": "GoF",
+    "method": "CellTrace"
   }
 };

@@ -13,5 +13,41 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "GoF",
     "method": "EdU assay"
+  },
+    "SAMD9:E1136Q": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:T778I": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:R1293W": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:S626L": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:R1281K": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:H880Q": {
+    "paper": "sch_2017",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
   }
 };

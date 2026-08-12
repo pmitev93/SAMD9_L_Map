@@ -5179,10 +5179,29 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 1281,
-"label": "R1281K, R1281S, R1281del",
-"effect": "GoF, GoF",
+"label": "R1281K",
+"effect": "GoF",
 "origin": "Klco, Bryceson",
-"category": "GoF"
+"category": "GoF",
+"group": "SAMD9L-R1281"
+},
+{
+"protein": "SAMD9L",
+"residue": 1281,
+"label": "R1281S",
+"effect": "GoF",
+"origin": "Klco, Bryceson",
+"category": "GoF",
+"group": "SAMD9L-R1281"
+},
+{
+"protein": "SAMD9L",
+"residue": 1281,
+"label": "R1281del",
+"effect": "GoF",
+"origin": "Klco, Bryceson",
+"category": "GoF",
+"group": "SAMD9L-R1281"
 },
 {
 "protein": "SAMD9L",

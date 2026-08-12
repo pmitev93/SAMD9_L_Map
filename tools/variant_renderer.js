@@ -132,17 +132,39 @@
       });
       list.sort(function (a, b) { return a._x - b._x || a.residue - b.residue; });
 
-      var lanes = [], maxLane = -1;
+      list.forEach(function (v) { v._color = (CFG[v.category] || CFG.Other).color; });
+
+      // Cluster same-residue variants sharing an explicit `group` id into one
+      // visual unit: one tick, labels placed side-by-side on the same line
+      // (comma-separated), each still independently clickable/colored. A
+      // variant without `group` is its own 1-item cluster (unchanged behavior).
+      var clusters = [], seenGroups = {};
       list.forEach(function (v) {
-        var cfg = CFG[v.category] || CFG.Other;
-        v._color = cfg.color;
-        if (cfg.label) {
-          var w = estW(v.label), leftEdge = v._x - w / 2, l = 0;
-          while (l < lanes.length && lanes[l] > leftEdge - 3) l++;
-          lanes[l] = v._x + w / 2;
-          v._lane = l;
+        if (v.group) {
+          if (seenGroups[v.group]) return;
+          seenGroups[v.group] = true;
+          clusters.push(list.filter(function (o) { return o.group === v.group; }));
         } else {
-          v._lane = -1;
+          clusters.push([v]);
+        }
+      });
+
+      var lanes = [], maxLane = -1;
+      clusters.forEach(function (c) {
+        var rep = c[0];
+        var showLabel = c.some(function (m) { return (CFG[m.category] || CFG.Other).label; });
+        c.forEach(function (m, i) {
+          m._text = m.label + (i < c.length - 1 ? ", " : "");
+          m._w = estW(m._text);
+        });
+        var totalW = c.reduce(function (s, m) { return s + m._w; }, 0);
+        if (showLabel) {
+          var leftEdge = rep._x - totalW / 2, l = 0;
+          while (l < lanes.length && lanes[l] > leftEdge - 3) l++;
+          lanes[l] = rep._x + totalW / 2;
+          c.forEach(function (m) { m._lane = l; });
+        } else {
+          c.forEach(function (m) { m._lane = -1; });
         }
       });
       // apply manual overrides: dx = horizontal label nudge; lane = stack level;
@@ -170,7 +192,7 @@
       });
       var topAboveBox = W + maxLen + (maxLane >= 0 ? LABEL_H : 0) + PAD;
       sr.container.style.height = Math.max(0, topAboveBox - gap) + "px";
-      list.forEach(function (v) { draw(sr, v); });
+      clusters.forEach(function (c) { drawCluster(sr, c); });
     });
 
     buildToggles();
@@ -179,33 +201,46 @@
     if (missing) console.warn("variant renderer: " + missing + " unmapped variants");
   }
 
-  function draw(sr, v) {
+  // Draws one cluster: a single tick (at the shared/representative residue)
+  // plus one `.vlabel` per member, laid out side-by-side on the same line so
+  // grouped variants (e.g. "R1281K, R1281S, R1281del") read as one line while
+  // each label stays its own independently clickable/colored element. A plain
+  // (ungrouped) variant is just a 1-member cluster — identical to the old draw().
+  function drawCluster(sr, c) {
     var top = (sr.side === "top");
     var gap = sr._gap || 0;
     var W = whiteGap();              // white space before the AA box
-    var len = TICK + (v._lane >= 0 ? v._lane * LANE_H : 0) + (v._dlen || 0);  // line length (+dlen)
+    var rep = c[0];
+    var len = TICK + (rep._lane >= 0 ? rep._lane * LANE_H : 0) + (rep._dlen || 0);
     var base = gap - W;              // line bottom sits W above the actual letter box
 
     var tick = document.createElement("div");
     tick.className = "vtick";
-    tick.style.left = (v._x - 1) + "px";
+    tick.style.left = (rep._x - 1) + "px";
     tick.style.height = len + "px";
-    tick.style.background = v._color;
-    tick.style.color = v._color;   // for the hover glow (currentColor)
+    tick.style.background = rep._color;
+    tick.style.color = rep._color;   // for the hover glow (currentColor)
     tick.style[top ? "bottom" : "top"] = (-base) + "px";
-    setData(tick, v);
+    setData(tick, rep);
     sr.container.appendChild(tick);
 
-    if (v._lane >= 0) {
+    if (rep._lane < 0) return;
+
+    var totalW = c.reduce(function (s, m) { return s + m._w; }, 0);
+    var leftEdge = rep._x - totalW / 2 + (rep._dx || 0);
+    var running = 0;
+    c.forEach(function (m) {
+      var cx = leftEdge + running + m._w / 2 + (m === rep ? 0 : (m._dx || 0));
+      running += m._w;
       var lab = document.createElement("div");
       lab.className = "vlabel";
-      lab.textContent = v.label;
-      lab.style.left = (v._x + v._dx) + "px";
-      lab.style.color = v._color;
+      lab.textContent = m._text;
+      lab.style.left = cx + "px";
+      lab.style.color = m._color;
       lab.style[top ? "bottom" : "top"] = (-base + len + 1) + "px";
-      setData(lab, v);
+      setData(lab, m);
       sr.container.appendChild(lab);
-    }
+    });
   }
 
   function setData(el, v) {

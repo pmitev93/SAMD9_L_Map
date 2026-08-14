@@ -103,5 +103,59 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "GoF",
     "method": "EdU assay"
+  },
+  "SAMD9L:C883X": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:W1105R": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:F679L": {
+    "paper": "Mitev",
+    "gnomad": "Allele frequency: 1.24e-6",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:I1553T": {
+    "paper": "Mitev",
+    "gnomad": "Allele frequency: 9.61e-5",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:Q937K": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:H195R": {
+    "paper": "Mitev",
+    "gnomad": "Allele frequency: 6.20e-7",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:R843W": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:R1524H": {
+    "paper": "Mitev",
+    "gnomad": "Allele frequency: 4.21e-5",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:R1524QfsX9": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "NoF",
+    "method": "EdU assay"
   }
 };

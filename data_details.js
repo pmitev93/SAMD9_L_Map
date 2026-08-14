@@ -79,5 +79,29 @@ window.VARIANT_DETAILS = {
     "gnomad": "Allele frequency: 9.30e-6",
     "phenotype": "GoF",
     "method": "CellTrace"
+  },
+  "SAMD9L:E807K": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:E1176K": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:R1281del": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:C883X": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU assay"
   }
 };

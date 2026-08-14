@@ -1,4 +1,12 @@
-/* ---- Data-driven variant layer ---- */
+/* ---- Data-driven variant layer ----
+   Z-INDEX STACK (keep these in order when adding anything new):
+      1  variant ticks/labels        3  hovered/active label
+      6  corner info boxes (bottom)  50 fixed title bar (inline in index.html)
+     55  AA position tooltip         60 "Show variants" toggle box
+     70  variant detail popup
+   The title sits above the variant labels (so they scroll cleanly under it),
+   but below the controls — a toggle you cannot click is worse than a title
+   that is briefly overlapped. */
 /* hide the legacy hand-placed markers (the renderer also removes them) */
 .vertical-line { display:none !important; }
 tr.vmark > td { padding:0; border:0; background:transparent; }
@@ -39,7 +47,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- click-a-variant info popup (glassy) ---- */
 #variant-popup {
-  position:absolute; z-index:30; min-width:230px; max-width:344px;
+  position:absolute; z-index:70; min-width:230px; max-width:344px;
   font-family:var(--ui-font); color:#161616; font-size:13px; line-height:1.5;
   padding:13px 15px 14px; border-radius:14px;
   background:rgba(255,255,255,.5);
@@ -68,7 +76,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- show/hide category toggles ---- */
 #variant-toggles {
-  position:fixed; top:12px; right:14px; z-index:6;
+  position:fixed; top:12px; right:14px; z-index:60;
   background:#ffffff;
   border:1px solid rgba(120,140,175,.35); border-radius:14px;
   padding:1.05em 1.3em 1.1em; font-family:var(--ui-font);
@@ -124,7 +132,7 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
 
 /* ---- amino-acid position tooltip (#aa-postip) ---- */
 #aa-postip {
-  position:absolute; display:none; z-index:7; pointer-events:none;
+  position:absolute; display:none; z-index:55; pointer-events:none;
   transform:translateX(-50%); font-family:var(--ui-font);
   font-size:12px; font-weight:600; color:#000; white-space:nowrap;
 }

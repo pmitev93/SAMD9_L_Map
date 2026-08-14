@@ -1,12 +1,14 @@
 /* ---- Data-driven variant layer ----
    Z-INDEX STACK (keep these in order when adding anything new):
-      1  variant ticks/labels        3  hovered/active label
-      6  corner info boxes (bottom)  50 fixed title bar (inline in index.html)
-     55  AA position tooltip         60 "Show variants" toggle box
-     70  variant detail popup
-   The title sits above the variant labels (so they scroll cleanly under it),
-   but below the controls — a toggle you cannot click is worse than a title
-   that is briefly overlapped. */
+      1  variant ticks/labels          3  hovered/active label
+     40  bottom legend bar*           45  corner info boxes (bottom)
+     50  fixed title bar*             55  AA position tooltip
+     60  "Show variants" toggle box   70  variant detail popup
+   (* = styled inline in index.html, not here)
+   Everything fixed to the viewport must outrank the variant labels (1-3) or
+   the labels scroll over it. The title/legend chrome in turn sits below the
+   controls — a toggle you cannot click is worse than chrome briefly
+   overlapped. */
 /* hide the legacy hand-placed markers (the renderer also removes them) */
 .vertical-line { display:none !important; }
 tr.vmark > td { padding:0; border:0; background:transparent; }
@@ -37,7 +39,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- last-updated box (bottom-left) ---- */
 #last-updated {
-  position:fixed; left:14px; bottom:16px; z-index:6;
+  position:fixed; left:14px; bottom:16px; z-index:45;
   font-family:var(--ui-font); font-size:13px; color:#555; line-height:1.5;
   background:rgba(255,255,255,.88); border:1px solid #e8e8e8; border-radius:8px;
   padding:8px 12px; box-shadow:0 1px 7px rgba(0,0,0,.08); white-space:nowrap;
@@ -120,7 +122,7 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
 
 /* ---- author / contact box (bottom-right) ---- */
 #author-box {
-  position:fixed; right:14px; bottom:16px; z-index:6; text-align:right;
+  position:fixed; right:14px; bottom:16px; z-index:45; text-align:right;
   white-space:nowrap;
   font-family:var(--ui-font); font-size:13px; color:#555; line-height:1.5;
   background:rgba(255,255,255,.88); border:1px solid #e8e8e8; border-radius:8px;

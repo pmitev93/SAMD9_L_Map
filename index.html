@@ -12495,8 +12495,8 @@ You add this to the numbers rows:
 <td><font color="000000" face="Arial" size="+1"> </font></td>
 </tr>
 <td class="Score11">.</td></tr></tbody></table><br><br><br>
-<div style="position: fixed; bottom: 0; width: 100%; height: 20px; background: white;"></div>
-<div style="position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: center; align-items: flex-end; padding-top: 20px; padding-bottom: 16px;">
+<div style="position: fixed; bottom: 0; width: 100%; height: 20px; background: white; z-index: 40;"></div>
+<div style="position: fixed; bottom: 0; width: 100%; background: white; z-index: 40; display: flex; justify-content: center; align-items: flex-end; padding-top: 20px; padding-bottom: 16px;">
 <div class="legend-block"><div class="consurf-row"><span class="cs-box Score1">1</span><span class="cs-box Score2">2</span><span class="cs-box Score3">3</span><span class="cs-box Score4">4</span><span class="cs-box Score5">5</span><span class="cs-box Score6">6</span><span class="cs-box Score7">7</span><span class="cs-box Score8">8</span><span class="cs-box Score9">9</span></div><div class="consurf-labels"><span>Variable</span><span>Average</span><span>Conserved</span></div></div>
 <div class="legend-block">
 <!-- DOMAIN-MARKER LEGEND (was Mutations_Legend.svg). Copy a .mut-row to add
@@ -12522,7 +12522,17 @@ You add this to the numbers rows:
 
 <!-- VARIANT-LAYER-START -->
 <style>
-/* ---- Data-driven variant layer ---- */
+/* ---- Data-driven variant layer ----
+   Z-INDEX STACK (keep these in order when adding anything new):
+      1  variant ticks/labels          3  hovered/active label
+     40  bottom legend bar*           45  corner info boxes (bottom)
+     50  fixed title bar*             55  AA position tooltip
+     60  "Show variants" toggle box   70  variant detail popup
+   (* = styled inline in index.html, not here)
+   Everything fixed to the viewport must outrank the variant labels (1-3) or
+   the labels scroll over it. The title/legend chrome in turn sits below the
+   controls — a toggle you cannot click is worse than chrome briefly
+   overlapped. */
 /* hide the legacy hand-placed markers (the renderer also removes them) */
 .vertical-line { display:none !important; }
 tr.vmark > td { padding:0; border:0; background:transparent; }
@@ -12553,7 +12563,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- last-updated box (bottom-left) ---- */
 #last-updated {
-  position:fixed; left:14px; bottom:16px; z-index:6;
+  position:fixed; left:14px; bottom:16px; z-index:45;
   font-family:var(--ui-font); font-size:13px; color:#555; line-height:1.5;
   background:rgba(255,255,255,.88); border:1px solid #e8e8e8; border-radius:8px;
   padding:8px 12px; box-shadow:0 1px 7px rgba(0,0,0,.08); white-space:nowrap;
@@ -12563,7 +12573,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- click-a-variant info popup (glassy) ---- */
 #variant-popup {
-  position:absolute; z-index:30; min-width:230px; max-width:344px;
+  position:absolute; z-index:70; min-width:230px; max-width:344px;
   font-family:var(--ui-font); color:#161616; font-size:13px; line-height:1.5;
   padding:13px 15px 14px; border-radius:14px;
   background:rgba(255,255,255,.5);
@@ -12592,7 +12602,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- show/hide category toggles ---- */
 #variant-toggles {
-  position:fixed; top:12px; right:14px; z-index:6;
+  position:fixed; top:12px; right:14px; z-index:60;
   background:#ffffff;
   border:1px solid rgba(120,140,175,.35); border-radius:14px;
   padding:1.05em 1.3em 1.1em; font-family:var(--ui-font);
@@ -12636,7 +12646,7 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
 
 /* ---- author / contact box (bottom-right) ---- */
 #author-box {
-  position:fixed; right:14px; bottom:16px; z-index:6; text-align:right;
+  position:fixed; right:14px; bottom:16px; z-index:45; text-align:right;
   white-space:nowrap;
   font-family:var(--ui-font); font-size:13px; color:#555; line-height:1.5;
   background:rgba(255,255,255,.88); border:1px solid #e8e8e8; border-radius:8px;
@@ -12648,7 +12658,7 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
 
 /* ---- amino-acid position tooltip (#aa-postip) ---- */
 #aa-postip {
-  position:absolute; display:none; z-index:7; pointer-events:none;
+  position:absolute; display:none; z-index:55; pointer-events:none;
   transform:translateX(-50%); font-family:var(--ui-font);
   font-size:12px; font-weight:600; color:#000; white-space:nowrap;
 }

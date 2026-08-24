@@ -3894,7 +3894,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 876,
-"label": "I876Lfs*15",
+"label": "I876LfsX15",
 "effect": "NoF",
 "origin": "Klco",
 "group": "SAMD9L-R876"
@@ -3968,7 +3968,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 886,
-"label": "F886Lfs*11",
+"label": "F886LfsX11",
 "effect": "GoF",
 "origin": "Klco"
 },
@@ -3982,7 +3982,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 889,
-"label": "F889Sfs*",
+"label": "F889SfsX2",
 "effect": "NoF",
 "origin": "Klco"
 },

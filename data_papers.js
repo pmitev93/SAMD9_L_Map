@@ -25,5 +25,20 @@ window.PAPERS = {
     "title": "Human SAMD9 is a poxvirus-activatable anticodon nuclease inhibiting codon-specific protein synthesis",
     "pmid": "37285440",
     "url": "https://www.science.org/doi/10.1126/sciadv.adh8502"
+  },
+  "Alsp": {
+    "title": "Germline SAMD9L truncation variants trigger global translational repression",
+    "pmid": "33724365",
+    "url": "https://rupress.org/jem/article/218/5/e20201195/211891/Germline-SAMD9L-truncation-variants-trigger-global"
+  },
+  "Rsl": {
+    "title": "SAMD9L autoinflammatory or ataxia pancytopenia disease mutations activate cell-autonomous translational repression",
+    "pmid": "34417303",
+    "url": "https://www.pnas.org/doi/10.1073/pnas.2110190118?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed"
+  },
+  "NM": {
+    "title": "Clinical evolution, genetic landscape and trajectories of clonal hematopoiesis in SAMD9/SAMD9L syndromes",
+    "pmid": "34621053",
+    "url": "https://www.nature.com/articles/s41591-021-01511-6"
   }
 };

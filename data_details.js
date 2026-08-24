@@ -157,5 +157,101 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "LoF",
     "method": "Northern blot"
+  },
+  "SAMD9:E184A": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9L:F886LfsX11": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:E898X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:K910X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:K917X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:L927X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:S938X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:Y950X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:I876LfsX15": {
+    "paper": "Rsl",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:K878SfsX13": {
+    "paper": "Rsl",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:N885TfsX6": {
+    "paper": "Rsl",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:F886LfsX11": {
+    "paper": "Rsl",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:F889SfsX2": {
+    "paper": "Rsl",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
+  "SAMD9L:T665P": {
+    "paper": "NM",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:K770E": {
+    "paper": "NM",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:E1455VfsX14": {
+    "paper": "NM",
+    "gnomad": "Allele frequency: 1.24e-6",
+    "phenotype": "GoF",
+    "method": "EdU Assay"
   }
 };

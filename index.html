@@ -158,16 +158,15 @@ td.white{
   --walkerA-color: #E6A23C;  /* Walker A residue letters (light orange)        */
   --walkerA2-color: #FF8C1A; /* G747/G743 (brighter orange, stands out)        */
   --walkerB-color: #B388EB;  /* Walker B residue letters (light purple)        */
-  /* Domain outline colors — each domain fades from -light to -dark, left to
-     right (N-term to C-term), and the top/bottom border always match exactly
-     at every point. Edit any of these, save, refresh, no rebuild needed: */
-  --domain-sam-light:     #FFF176; --domain-sam-dark:     #C9A600; /* SAM (from original yellow) */
-  --domain-alba-light:    #6FA8F5; --domain-alba-dark:    #0D3C8C; /* AlbA (from original blue) */
-  --domain-sir2-light:    #FFC670; --domain-sir2-dark:    #B36A00; /* SIR2 (from original orange) */
-  --domain-ploop-light:   #FF7F73; --domain-ploop-dark:   #B31B0E; /* P-loop NTPase (from original red) */
-  --domain-tpr-light:     #7FE881; --domain-tpr-dark:     #0F8A2E; /* TPR (from original green) */
-  --domain-obfold-light:  #C97FE0; --domain-obfold-dark:  #6B1F8C; /* OB-fold (from original purple) */
-  --domain-helical-light: #7DE0F0; --domain-helical-dark: #007A94; /* Helical (cyan) */
+  /* Domain outline colors — flat, original colors (light=dark on purpose, so
+     there is no gradient at all). Edit directly, save, refresh: */
+  --domain-sam-light:     #FFFF00; --domain-sam-dark:     #FFFF00; /* SAM (yellow) */
+  --domain-alba-light:    #0000FF; --domain-alba-dark:    #0000FF; /* AlbA (blue) */
+  --domain-sir2-light:    #FFA500; --domain-sir2-dark:    #FFA500; /* SIR2 (orange) */
+  --domain-ploop-light:   #FF0000; --domain-ploop-dark:   #FF0000; /* P-loop NTPase (red) */
+  --domain-tpr-light:     #16D715; --domain-tpr-dark:     #16D715; /* TPR (green) */
+  --domain-obfold-light:  #800080; --domain-obfold-dark:  #800080; /* OB-fold (purple) */
+  --domain-helical-light: #00FFFF; --domain-helical-dark: #00FFFF; /* Helical (cyan) */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }

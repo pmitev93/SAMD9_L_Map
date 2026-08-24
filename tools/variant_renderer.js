@@ -139,10 +139,13 @@
     // gets outlined, not skipped), with a left cap ONLY on the very first
     // residue and a right cap ONLY on the very last — matching the original
     // domains' convention, where a row the domain merely passes through gets
-    // no side caps at all. light/dark = a subtle top-to-bottom gradient feel.
+    // no side caps at all. One flat color per domain (see --domain-helical in
+    // the HTML head's EASY TUNING KNOBS — edit it directly to retune).
+    var domainHelical = getComputedStyle(document.documentElement)
+      .getPropertyValue("--domain-helical").trim() || "#17B8CE";
     var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 1193, end: 1497, light: "#67E8F4", dark: "#0891B2" }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, light: "#67E8F4", dark: "#0891B2" }  // Helical
+      { protein: "SAMD9L", start: 1193, end: 1497, color: domainHelical }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, color: domainHelical }  // Helical
     ];
     DOMAIN_OUTLINES.forEach(function (d) {
       var startCell = maps[d.protein] && maps[d.protein][d.start];
@@ -151,10 +154,10 @@
       var idxStart = cellIndex.get(startCell), idxEnd = cellIndex.get(endCell);
       var cells = allCells[d.protein].slice(idxStart, idxEnd + 1);
       cells.forEach(function (cell, i) {
-        cell.style.borderTop = "3px solid " + d.light;
-        cell.style.borderBottom = "3px solid " + d.dark;
-        cell.style.borderLeft = (i === 0 ? "3px solid " + d.light : "0px solid " + d.dark);
-        cell.style.borderRight = (i === cells.length - 1 ? "3px solid " + d.dark : "0px solid " + d.dark);
+        cell.style.borderTop = "3px solid " + d.color;
+        cell.style.borderBottom = "3px solid " + d.color;
+        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
+        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

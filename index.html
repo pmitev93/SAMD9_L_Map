@@ -158,6 +158,15 @@ td.white{
   --walkerA-color: #E6A23C;  /* Walker A residue letters (light orange)        */
   --walkerA2-color: #FF8C1A; /* G747/G743 (brighter orange, stands out)        */
   --walkerB-color: #B388EB;  /* Walker B residue letters (light purple)        */
+  /* Domain outline colors (one flat color each, top/bottom/left/right all the
+     same — edit any of these directly, save, refresh, no rebuild needed): */
+  --domain-sam:     #F0B92E; /* SAM */
+  --domain-alba:    #3B82D6; /* AlbA */
+  --domain-sir2:    #FF9E3D; /* SIR2 */
+  --domain-ploop:   #E8483D; /* P-loop NTPase */
+  --domain-tpr:     #2ECC55; /* TPR */
+  --domain-obfold:  #A855D9; /* OB-fold */
+  --domain-helical: #17B8CE; /* Helical */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }
@@ -243,213 +252,213 @@ tr.top-align td {
 }
 
 .outlined-row-all-yellow td:nth-child(n+12):nth-child(-n+52) {
-    border-top: 3px solid #FCE18A;
-    border-bottom: 3px solid #D9A62E;
+    border-top: 3px solid var(--domain-sam);
+    border-bottom: 3px solid var(--domain-sam);
 }
 
 .outlined-row-all-yellow td:nth-child(12) {
-    border-left: 3px solid #FCE18A;
-    border-right: 0px solid #D9A62E;
+    border-left: 3px solid var(--domain-sam);
+    border-right: 0px solid var(--domain-sam);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-yellow2 td:nth-child(n+3):nth-child(-n+38) {
-    border-top: 3px solid #FCE18A;
-    border-bottom: 3px solid #D9A62E;
+    border-top: 3px solid var(--domain-sam);
+    border-bottom: 3px solid var(--domain-sam);
 }
 
 .outlined-row-all-yellow2 td:nth-child(38) {
-    border-left: 0px solid #FCE18A;
-    border-right: 3px solid #D9A62E;
+    border-left: 0px solid var(--domain-sam);
+    border-right: 3px solid var(--domain-sam);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-yellow3 td:nth-child(n+3):nth-child(-n+39) {
-    border-top: 3px solid #FCE18A;
-    border-bottom: 3px solid #D9A62E;
+    border-top: 3px solid var(--domain-sam);
+    border-bottom: 3px solid var(--domain-sam);
 }
 
 .outlined-row-all-yellow3 td:nth-child(39) {
-    border-left: 0px solid #FCE18A;
-    border-right: 3px solid #D9A62E;
+    border-left: 0px solid var(--domain-sam);
+    border-right: 3px solid var(--domain-sam);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue td:nth-child(n+3):nth-child(-n+52) {
-    border-top: 3px solid #8FC1F2;
-    border-bottom: 3px solid #2F6FB8;
+    border-top: 3px solid var(--domain-alba);
+    border-bottom: 3px solid var(--domain-alba);
 }
 
 .outlined-row-all-blue2 td:nth-child(n+9):nth-child(-n+52) {
-    border-top: 3px solid #8FC1F2;
-    border-bottom: 3px solid #2F6FB8;
+    border-top: 3px solid var(--domain-alba);
+    border-bottom: 3px solid var(--domain-alba);
 }
 
 .outlined-row-all-blue2 td:nth-child(9) {
-    border-left: 3px solid #8FC1F2;
-    border-right: 0px solid #2F6FB8;
+    border-left: 3px solid var(--domain-alba);
+    border-right: 0px solid var(--domain-alba);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue3 td:nth-child(n+11):nth-child(-n+52) {
-    border-top: 3px solid #8FC1F2;
-    border-bottom: 3px solid #2F6FB8;
+    border-top: 3px solid var(--domain-alba);
+    border-bottom: 3px solid var(--domain-alba);
 }
 
 .outlined-row-all-blue3 td:nth-child(11) {
-    border-left: 3px solid #8FC1F2;
-    border-right: 0px solid #2F6FB8;
+    border-left: 3px solid var(--domain-alba);
+    border-right: 0px solid var(--domain-alba);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue4 td:nth-child(n+3):nth-child(-n+44) {
-    border-top: 3px solid #8FC1F2;
-    border-bottom: 3px solid #2F6FB8;
+    border-top: 3px solid var(--domain-alba);
+    border-bottom: 3px solid var(--domain-alba);
 }
 
 .outlined-row-all-blue4 td:nth-child(44) {
-    border-left: 0px solid #8FC1F2;
-    border-right: 3px solid #2F6FB8;
+    border-left: 0px solid var(--domain-alba);
+    border-right: 3px solid var(--domain-alba);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue4 td:nth-child(n+49):nth-child(-n+52) {
-    border-top: 3px solid #FFC680;
-    border-bottom: 3px solid #DB7F2E;
+    border-top: 3px solid var(--domain-sir2);
+    border-bottom: 3px solid var(--domain-sir2);
 }
 
 .outlined-row-all-blue4 td:nth-child(49) {
-    border-left: 3px solid #FFC680;
-    border-right: 0px solid #2F6FB8;
+    border-left: 3px solid var(--domain-sir2);
+    border-right: 0px solid var(--domain-alba);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue5 td:nth-child(n+3):nth-child(-n+43) {
-    border-top: 3px solid #8FC1F2;
-    border-bottom: 3px solid #2F6FB8;
+    border-top: 3px solid var(--domain-alba);
+    border-bottom: 3px solid var(--domain-alba);
 }
 
 .outlined-row-all-blue5 td:nth-child(43) {
-    border-left: 0px solid #8FC1F2;
-    border-right: 3px solid #2F6FB8;
+    border-left: 0px solid var(--domain-alba);
+    border-right: 3px solid var(--domain-alba);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue5 td:nth-child(n+49):nth-child(-n+52) {
-    border-top: 3px solid #FFC680;
-    border-bottom: 3px solid #DB7F2E;
+    border-top: 3px solid var(--domain-sir2);
+    border-bottom: 3px solid var(--domain-sir2);
 }
 
 .outlined-row-all-blue5 td:nth-child(49) {
-    border-left: 3px solid #FFC680;
-    border-right: 0px solid #2F6FB8;
+    border-left: 3px solid var(--domain-sir2);
+    border-right: 0px solid var(--domain-alba);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-orange td:nth-child(n+3):nth-child(-n+52) {
-    border-top: 3px solid #FFC680;
-    border-bottom: 3px solid #DB7F2E;
+    border-top: 3px solid var(--domain-sir2);
+    border-bottom: 3px solid var(--domain-sir2);
 }
 
 .outlined-row-all-orange2 td:nth-child(n+3):nth-child(-n+31) {
-    border-top: 3px solid #FFC680;
-    border-bottom: 3px solid #DB7F2E;
+    border-top: 3px solid var(--domain-sir2);
+    border-bottom: 3px solid var(--domain-sir2);
 }
 
 .outlined-row-all-orange2 td:nth-child(31) {
-    border-left: 0px solid #FFC680;
-    border-right: 3px solid #DB7F2E;
+    border-left: 0px solid var(--domain-sir2);
+    border-right: 3px solid var(--domain-sir2);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-red td:nth-child(n+3):nth-child(-n+52) {
-    border-top: 3px solid #F0958D;
-    border-bottom: 3px solid #C6483F;
+    border-top: 3px solid var(--domain-ploop);
+    border-bottom: 3px solid var(--domain-ploop);
 }
 
 .outlined-row-all-red2 td:nth-child(n+18):nth-child(-n+52) {
-    border-top: 3px solid #F0958D;
-    border-bottom: 3px solid #C6483F;
+    border-top: 3px solid var(--domain-ploop);
+    border-bottom: 3px solid var(--domain-ploop);
 }
 
 .outlined-row-all-red2 td:nth-child(18) {
-    border-left: 3px solid #F0958D;
-    border-right: 0px solid #C6483F;
+    border-left: 3px solid var(--domain-ploop);
+    border-right: 0px solid var(--domain-ploop);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-red3 td:nth-child(n+3):nth-child(-n+23) {
-    border-top: 3px solid #F0958D;
-    border-bottom: 3px solid #C6483F;
+    border-top: 3px solid var(--domain-ploop);
+    border-bottom: 3px solid var(--domain-ploop);
 }
 
 .outlined-row-all-red3 td:nth-child(23) {
-    border-left: 0px solid #F0958D;
-    border-right: 3px solid #C6483F;
+    border-left: 0px solid var(--domain-ploop);
+    border-right: 3px solid var(--domain-ploop);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-red3 td:nth-child(n+33):nth-child(-n+52) {
-    border-top: 3px solid #86E894;
-    border-bottom: 3px solid #2E9E44;
+    border-top: 3px solid var(--domain-tpr);
+    border-bottom: 3px solid var(--domain-tpr);
 }
 
 .outlined-row-all-red3 td:nth-child(33) {
-    border-left: 3px solid #86E894;
-    border-right: 0px solid #2E9E44;
+    border-left: 3px solid var(--domain-tpr);
+    border-right: 0px solid var(--domain-tpr);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-green td:nth-child(n+3):nth-child(-n+52) {
-    border-top: 3px solid #86E894;
-    border-bottom: 3px solid #2E9E44;
+    border-top: 3px solid var(--domain-tpr);
+    border-bottom: 3px solid var(--domain-tpr);
 }
 
 .outlined-row-all-green2 td:nth-child(n+3):nth-child(-n+47) {
-    border-top: 3px solid #86E894;
-    border-bottom: 3px solid #2E9E44;
+    border-top: 3px solid var(--domain-tpr);
+    border-bottom: 3px solid var(--domain-tpr);
 }
 
 .outlined-row-all-green2 td:nth-child(47) {
-    border-left: 0px solid #86E894;
-    border-right: 3px solid #2E9E44;
+    border-left: 0px solid var(--domain-tpr);
+    border-right: 3px solid var(--domain-tpr);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-purple td:nth-child(n+26):nth-child(-n+52) {
-    border-top: 3px solid #CBA3F5;
-    border-bottom: 3px solid #8A56C4;
+    border-top: 3px solid var(--domain-obfold);
+    border-bottom: 3px solid var(--domain-obfold);
 }
 
 .outlined-row-all-purple td:nth-child(26) {
-    border-left: 3px solid #CBA3F5;
-    border-right: 0px solid #8A56C4;
+    border-left: 3px solid var(--domain-obfold);
+    border-right: 0px solid var(--domain-obfold);
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-purple2 td:nth-child(n+3):nth-child(-n+44) {
-    border-top: 3px solid #CBA3F5;
-    border-bottom: 3px solid #8A56C4;
+    border-top: 3px solid var(--domain-obfold);
+    border-bottom: 3px solid var(--domain-obfold);
 }
 
 .outlined-row-all-purple2 td:nth-child(44) {
-    border-left: 0px solid #CBA3F5;
-    border-right: 3px solid #8A56C4;
+    border-left: 0px solid var(--domain-obfold);
+    border-right: 3px solid var(--domain-obfold);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 }
@@ -12844,10 +12853,13 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
     // gets outlined, not skipped), with a left cap ONLY on the very first
     // residue and a right cap ONLY on the very last — matching the original
     // domains' convention, where a row the domain merely passes through gets
-    // no side caps at all. light/dark = a subtle top-to-bottom gradient feel.
+    // no side caps at all. One flat color per domain (see --domain-helical in
+    // the HTML head's EASY TUNING KNOBS — edit it directly to retune).
+    var domainHelical = getComputedStyle(document.documentElement)
+      .getPropertyValue("--domain-helical").trim() || "#17B8CE";
     var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 1193, end: 1497, light: "#67E8F4", dark: "#0891B2" }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, light: "#67E8F4", dark: "#0891B2" }  // Helical
+      { protein: "SAMD9L", start: 1193, end: 1497, color: domainHelical }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, color: domainHelical }  // Helical
     ];
     DOMAIN_OUTLINES.forEach(function (d) {
       var startCell = maps[d.protein] && maps[d.protein][d.start];
@@ -12856,10 +12868,10 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
       var idxStart = cellIndex.get(startCell), idxEnd = cellIndex.get(endCell);
       var cells = allCells[d.protein].slice(idxStart, idxEnd + 1);
       cells.forEach(function (cell, i) {
-        cell.style.borderTop = "3px solid " + d.light;
-        cell.style.borderBottom = "3px solid " + d.dark;
-        cell.style.borderLeft = (i === 0 ? "3px solid " + d.light : "0px solid " + d.dark);
-        cell.style.borderRight = (i === cells.length - 1 ? "3px solid " + d.dark : "0px solid " + d.dark);
+        cell.style.borderTop = "3px solid " + d.color;
+        cell.style.borderBottom = "3px solid " + d.color;
+        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
+        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

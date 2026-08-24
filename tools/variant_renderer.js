@@ -105,18 +105,25 @@
       seqRows.push({ protein: t, row: row, side: side, container: div });
     });
 
-    // 4. residue -> cell map (cumulative per protein, document order)
+    // 4. residue -> cell map (cumulative per protein, document order). Also
+    // track EVERY sequence cell (letters AND alignment-gap "-" dashes) per
+    // protein, in document order, with an index — lets domain outlines below
+    // span a residue range without leaving a gap-dash cell unstyled.
     var maps = { SAMD9: {}, SAMD9L: {} };
+    var allCells = { SAMD9: [], SAMD9L: [] };
+    var cellIndex = new Map();
     var cellRow = new Map();
     var counters = { SAMD9: 0, SAMD9L: 0 };
     seqRows.forEach(function (sr) {
       var cells = sr.row.children;
       for (var i = 1; i < cells.length; i++) {
         var txt = (cells[i].textContent || "").trim();
+        cellRow.set(cells[i], sr);
+        cellIndex.set(cells[i], allCells[sr.protein].length);
+        allCells[sr.protein].push(cells[i]);
         if (/^[A-Z]$/.test(txt)) {
           counters[sr.protein]++;
           maps[sr.protein][counters[sr.protein]] = cells[i];
-          cellRow.set(cells[i], sr);
           cells[i].dataset.pos = txt + counters[sr.protein];   // e.g. "K133"
           cells[i].dataset.side = sr.side;                     // top / bottom
         }
@@ -127,25 +134,27 @@
     // (SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold) still use the original
     // hand-coded .outlined-row-all-* classes on specific <tr>s — untouched by
     // this. New domains just get an entry here: top+bottom border on every
-    // residue cell in [start,end] (reusing the residue->cell map above), with
-    // a left cap ONLY on the very first residue and a right cap ONLY on the
-    // very last — matching the original domains' convention, where a row that
-    // the domain merely passes through gets no side caps at all.
+    // cell from the start residue to the end residue INCLUSIVE (using
+    // allCells so an alignment-gap "-" cell sandwiched inside the range still
+    // gets outlined, not skipped), with a left cap ONLY on the very first
+    // residue and a right cap ONLY on the very last — matching the original
+    // domains' convention, where a row the domain merely passes through gets
+    // no side caps at all. light/dark = a subtle top-to-bottom gradient feel.
     var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 1193, end: 1497, color: "#0E8C8C" }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, color: "#0E8C8C" }  // Helical
+      { protein: "SAMD9L", start: 1193, end: 1497, light: "#67E8F4", dark: "#0891B2" }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, light: "#67E8F4", dark: "#0891B2" }  // Helical
     ];
     DOMAIN_OUTLINES.forEach(function (d) {
-      var cells = [];
-      for (var r = d.start; r <= d.end; r++) {
-        var cell = maps[d.protein] && maps[d.protein][r];
-        if (cell) cells.push(cell);
-      }
+      var startCell = maps[d.protein] && maps[d.protein][d.start];
+      var endCell   = maps[d.protein] && maps[d.protein][d.end];
+      if (!startCell || !endCell) return;
+      var idxStart = cellIndex.get(startCell), idxEnd = cellIndex.get(endCell);
+      var cells = allCells[d.protein].slice(idxStart, idxEnd + 1);
       cells.forEach(function (cell, i) {
-        cell.style.borderTop = "3px solid " + d.color;
-        cell.style.borderBottom = "3px solid " + d.color;
-        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
-        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
+        cell.style.borderTop = "3px solid " + d.light;
+        cell.style.borderBottom = "3px solid " + d.dark;
+        cell.style.borderLeft = (i === 0 ? "3px solid " + d.light : "0px solid " + d.dark);
+        cell.style.borderRight = (i === cells.length - 1 ? "3px solid " + d.dark : "0px solid " + d.dark);
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

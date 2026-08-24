@@ -1,0 +1,58 @@
+name: Deploy to GitHub Pages
+
+# Stamps the "Last updated" date fresh on every push, so it never needs a
+# manual edit. The stamping only touches the DEPLOYED copy of index.html
+# (built here, in the runner) — nothing is committed back to the repo, so
+# there's no risk of a commit loop and the source file stays untouched.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp "Last updated" date (deployed copy only)
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, datetime
+          d = datetime.date.today()
+          today = f"{d.day} {d.strftime('%B %Y')}"   # e.g. "4 June 2026" (no leading zero)
+          p = pathlib.Path("index.html")
+          h = p.read_text(encoding="utf-8")
+          h2 = re.sub(r'(<span class="lu-date">).*?(</span>)', r'\g<1>' + today + r'\g<2>', h, count=1)
+          if h2 == h:
+              raise SystemExit("lu-date span not found in index.html — markup changed?")
+          p.write_text(h2, encoding="utf-8")
+          print("Stamped date:", today)
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -90,14 +90,6 @@ window.VARIANTS =
 },
 {
 "protein": "SAMD9",
-"residue": 33,
-"label": "R33K",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9",
 "residue": 39,
 "label": "Q39X",
 "effect": "gnomAD",
@@ -269,14 +261,6 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 134,
-"label": "G134A",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9",
-"residue": 134,
 "label": "G134VfsX5",
 "effect": "gnomAD",
 "origin": "single",
@@ -297,14 +281,6 @@ window.VARIANTS =
 "effect": "gnomAD",
 "origin": "single",
 "category": "gnomAD"
-},
-{
-"protein": "SAMD9",
-"residue": 150,
-"label": "T150S",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
 },
 {
 "protein": "SAMD9",
@@ -429,14 +405,6 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 221,
-"label": "R221Q",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9",
-"residue": 221,
 "label": "R221X",
 "effect": "gnomAD",
 "origin": "mt1",
@@ -489,14 +457,6 @@ window.VARIANTS =
 "effect": "gnomAD",
 "origin": "mt1",
 "category": "gnomAD"
-},
-{
-"protein": "SAMD9",
-"residue": 244,
-"label": "H244R",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
 },
 {
 "protein": "SAMD9",
@@ -2993,23 +2953,6 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1529,
-"label": "R1529H",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9",
-"residue": 1529,
-"label": "R1529H",
-"effect": "Somatic",
-"origin": "Klco",
-"category": "Other",
-"group": "SAMD9-R1529"
-},
-{
-"protein": "SAMD9",
-"residue": 1529,
 "label": "R1529C",
 "effect": "Somatic",
 "origin": "Klco",
@@ -3242,14 +3185,6 @@ window.VARIANTS =
 },
 {
 "protein": "SAMD9L",
-"residue": 72,
-"label": "Y72C",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9L",
 "residue": 75,
 "label": "L75X",
 "effect": "gnomAD",
@@ -3314,14 +3249,6 @@ window.VARIANTS =
 },
 {
 "protein": "SAMD9L",
-"residue": 169,
-"label": "D169H",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9L",
 "residue": 170,
 "label": "Q170X",
 "effect": "gnomAD",
@@ -3379,7 +3306,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 233,
-"label": "R986C, T233N (in trans)",
+"label": "T233N",
 "effect": "GoF",
 "origin": "Klco",
 "category": "GoF"
@@ -3992,14 +3919,6 @@ window.VARIANTS =
 },
 {
 "protein": "SAMD9L",
-"residue": 635,
-"label": "R1281S / L635F",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9L",
 "residue": 637,
 "label": "A637PfsX9",
 "effect": "gnomAD",
@@ -4109,14 +4028,6 @@ window.VARIANTS =
 "effect": "gnomAD",
 "origin": "mt1",
 "category": "gnomAD"
-},
-{
-"protein": "SAMD9L",
-"residue": 690,
-"label": "G690D",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
 },
 {
 "protein": "SAMD9L",
@@ -4388,14 +4299,6 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 830,
 "label": "E830X",
-"effect": "GoF",
-"origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9L",
-"residue": 830,
-"label": "E830X",
 "effect": "gnomAD",
 "origin": "mt1",
 "category": "gnomAD"
@@ -4438,9 +4341,9 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 843,
 "label": "R843W",
-"effect": "Somatic",
+"effect": "LoF",
 "origin": "Klco",
-"category": "Other"
+"category": "LoF"
 },
 {
 "protein": "SAMD9L",
@@ -4596,14 +4499,6 @@ window.VARIANTS =
 "label": "H880Q",
 "effect": "GoF",
 "origin": "Klco",
-"category": "GoF"
-},
-{
-"protein": "SAMD9L",
-"residue": 880,
-"label": "H880Q",
-"effect": "GoF",
-"origin": "Allenspach",
 "category": "GoF"
 },
 {
@@ -4834,7 +4729,7 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 986,
-"label": "R986C, T233N (in trans)",
+"label": "R986C",
 "effect": "GoF",
 "origin": "Klco",
 "category": "GoF",
@@ -5916,9 +5811,19 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 1524,
 "label": "R1524H",
-"effect": "Somatic",
+"effect": "LoF",
 "origin": "Klco",
-"category": "Other"
+"category": "Other",
+"group": "SAMD9L-R1516"
+},
+{
+"protein": "SAMD9L",
+"residue": 1524,
+"label": "R1524QfsX9",
+"effect": "LoF",
+"origin": "Klco",
+"category": "Other",
+"group": "SAMD9L-R1524"
 },
 {
 "protein": "SAMD9L",
@@ -6007,5 +5912,69 @@ window.VARIANTS =
 "effect": "gnomAD",
 "origin": "single",
 "category": "gnomAD"
+},
+{
+"protein": "SAMD9L",
+"residue": 807,
+"label": "E807K",
+"effect": "GoF",
+"origin": "Mitev",
+"category": "GoF"
+},
+{
+"protein": "SAMD9L",
+"residue": 1176,
+"label": "E1176K",
+"effect": "GoF",
+"origin": "Mitev",
+"category": "GoF"
+},
+{
+"protein": "SAMD9L",
+"residue": 1105,
+"label": "W1105R",
+"effect": "NoF",
+"origin": "Mitev",
+"category": "Other"
+},
+{
+"protein": "SAMD9L",
+"residue": 679,
+"label": "F679L",
+"effect": "GoF",
+"origin": "Mitev",
+"category": "GoF"
+},
+{
+"protein": "SAMD9",
+"residue": 1553,
+"label": "I1553T",
+"effect": "NoF",
+"origin": "Mitev",
+"category": "Other"
+},
+{
+"protein": "SAMD9",
+"residue": 937,
+"label": "Q937K",
+"effect": "GoF",
+"origin": "Mitev",
+"category": "GoF"
+},
+{
+"protein": "SAMD9",
+"residue": 195,
+"label": "H195R",
+"effect": "NoF",
+"origin": "Mitev",
+"category": "Other"
+},
+{
+"protein": "SAMD9",
+"residue": 184,
+"label": "E184A",
+"effect": "LoF",
+"origin": "Zhang",
+"category": "LoF"
 }
 ];

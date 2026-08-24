@@ -104,12 +104,6 @@ window.VARIANT_DETAILS = {
     "phenotype": "GoF",
     "method": "EdU assay"
   },
-  "SAMD9L:C883X": {
-    "paper": "Mitev",
-    "gnomad": "Not present",
-    "phenotype": "GoF",
-    "method": "EdU assay"
-  },
   "SAMD9L:W1105R": {
     "paper": "Mitev",
     "gnomad": "Not present",
@@ -157,5 +151,11 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "NoF",
     "method": "EdU assay"
+  },
+  "SAMD9:E184A": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
   }
 };

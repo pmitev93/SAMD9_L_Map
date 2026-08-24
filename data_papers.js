@@ -20,5 +20,10 @@ window.PAPERS = {
     "title": "Truncating variants reveal functional divergence of the SAMD9 and SAMD9L paralogues",
     "pmid": "pending",
     "url": "pending"
+  },
+  "Zhang": {
+    "title": "Human SAMD9 is a poxvirus-activatable anticodon nuclease inhibiting codon-specific protein synthesis",
+    "pmid": "37285440",
+    "url": "https://www.science.org/doi/10.1126/sciadv.adh8502"
   }
 };

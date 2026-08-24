@@ -123,6 +123,32 @@
       }
     });
 
+    // 4b. domain-boundary outlines (data-driven, additive). Older domains
+    // (SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold) still use the original
+    // hand-coded .outlined-row-all-* classes on specific <tr>s — untouched by
+    // this. New domains just get an entry here: a box drawn around every
+    // residue cell in [start,end], reusing the residue->cell map above, with
+    // the left/right caps only at the true start/end of each physical row.
+    var DOMAIN_OUTLINES = [
+      { protein: "SAMD9L", start: 1193, end: 1497, color: "#3BE4E4" }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, color: "#3BE4E4" }  // Helical
+    ];
+    DOMAIN_OUTLINES.forEach(function (d) {
+      var cells = [];
+      for (var r = d.start; r <= d.end; r++) {
+        var cell = maps[d.protein] && maps[d.protein][r];
+        if (cell) cells.push(cell);
+      }
+      cells.forEach(function (cell, i) {
+        var prevSameRow = i > 0 && cellRow.get(cells[i - 1]) === cellRow.get(cell);
+        var nextSameRow = i < cells.length - 1 && cellRow.get(cells[i + 1]) === cellRow.get(cell);
+        cell.style.borderTop = "3px solid " + d.color;
+        cell.style.borderBottom = "3px solid " + d.color;
+        cell.style.borderLeft = (prevSameRow ? "0px" : "3px") + " solid " + d.color;
+        cell.style.borderRight = (nextSameRow ? "0px" : "3px") + " solid " + d.color;
+      });
+    });
+
     // 5. group variants by block
     var groups = new Map(), missing = 0;
     DATA.forEach(function (v) {

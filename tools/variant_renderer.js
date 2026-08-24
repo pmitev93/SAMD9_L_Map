@@ -126,12 +126,14 @@
     // 4b. domain-boundary outlines (data-driven, additive). Older domains
     // (SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold) still use the original
     // hand-coded .outlined-row-all-* classes on specific <tr>s — untouched by
-    // this. New domains just get an entry here: a box drawn around every
-    // residue cell in [start,end], reusing the residue->cell map above, with
-    // the left/right caps only at the true start/end of each physical row.
+    // this. New domains just get an entry here: top+bottom border on every
+    // residue cell in [start,end] (reusing the residue->cell map above), with
+    // a left cap ONLY on the very first residue and a right cap ONLY on the
+    // very last — matching the original domains' convention, where a row that
+    // the domain merely passes through gets no side caps at all.
     var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 1193, end: 1497, color: "#3BE4E4" }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, color: "#3BE4E4" }  // Helical
+      { protein: "SAMD9L", start: 1193, end: 1497, color: "#0E8C8C" }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, color: "#0E8C8C" }  // Helical
     ];
     DOMAIN_OUTLINES.forEach(function (d) {
       var cells = [];
@@ -140,12 +142,10 @@
         if (cell) cells.push(cell);
       }
       cells.forEach(function (cell, i) {
-        var prevSameRow = i > 0 && cellRow.get(cells[i - 1]) === cellRow.get(cell);
-        var nextSameRow = i < cells.length - 1 && cellRow.get(cells[i + 1]) === cellRow.get(cell);
         cell.style.borderTop = "3px solid " + d.color;
         cell.style.borderBottom = "3px solid " + d.color;
-        cell.style.borderLeft = (prevSameRow ? "0px" : "3px") + " solid " + d.color;
-        cell.style.borderRight = (nextSameRow ? "0px" : "3px") + " solid " + d.color;
+        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
+        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
       });
     });
 

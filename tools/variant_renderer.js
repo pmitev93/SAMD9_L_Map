@@ -130,22 +130,53 @@
       }
     });
 
-    // 4b. domain-boundary outlines (data-driven, additive). Older domains
-    // (SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold) still use the original
-    // hand-coded .outlined-row-all-* classes on specific <tr>s — untouched by
-    // this. New domains just get an entry here: top+bottom border on every
-    // cell from the start residue to the end residue INCLUSIVE (using
-    // allCells so an alignment-gap "-" cell sandwiched inside the range still
-    // gets outlined, not skipped), with a left cap ONLY on the very first
-    // residue and a right cap ONLY on the very last — matching the original
-    // domains' convention, where a row the domain merely passes through gets
-    // no side caps at all. One flat color per domain (see --domain-helical in
-    // the HTML head's EASY TUNING KNOBS — edit it directly to retune).
-    var domainHelical = getComputedStyle(document.documentElement)
-      .getPropertyValue("--domain-helical").trim() || "#17B8CE";
+    // 4b. domain-boundary outlines (data-driven). All 7 domains render through
+    // this one path — the older SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold used to
+    // be hand-coded per-row .outlined-row-all-* CSS classes (still present in
+    // the stylesheet, now inert/superseded — inline styles here always win).
+    // Migrating them here is what makes a TRUE horizontal gradient possible:
+    // each cell's color is computed from its own fractional position across
+    // the whole domain and applied identically to top AND bottom, so the two
+    // lines can never mismatch. Boundaries below were extracted directly from
+    // the live, previously-correct page (not re-derived/guessed), residue by
+    // residue, so they match the original domains exactly.
+    function hexToRgb(hex) {
+      hex = hex.replace("#", "");
+      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+    }
+    function lerpColor(hexA, hexB, t) {
+      var a = hexToRgb(hexA), b = hexToRgb(hexB);
+      var rgb = a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); });
+      return "rgb(" + rgb.join(",") + ")";
+    }
+    function knob(name, fallback) {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+    var PAL = {
+      sam:     [knob("--domain-sam-light", "#FFF176"),     knob("--domain-sam-dark", "#C9A600")],
+      alba:    [knob("--domain-alba-light", "#6FA8F5"),    knob("--domain-alba-dark", "#0D3C8C")],
+      sir2:    [knob("--domain-sir2-light", "#FFC670"),    knob("--domain-sir2-dark", "#B36A00")],
+      ploop:   [knob("--domain-ploop-light", "#FF7F73"),   knob("--domain-ploop-dark", "#B31B0E")],
+      tpr:     [knob("--domain-tpr-light", "#7FE881"),     knob("--domain-tpr-dark", "#0F8A2E")],
+      obfold:  [knob("--domain-obfold-light", "#C97FE0"),  knob("--domain-obfold-dark", "#6B1F8C")],
+      helical: [knob("--domain-helical-light", "#7DE0F0"), knob("--domain-helical-dark", "#007A94")]
+    };
     var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 1193, end: 1497, color: domainHelical }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, color: domainHelical }  // Helical
+      { protein: "SAMD9L", start: 10,   end: 86,   pal: PAL.sam },     // SAM
+      { protein: "SAMD9",  start: 10,   end: 86,   pal: PAL.sam },
+      { protein: "SAMD9L", start: 157,  end: 389,  pal: PAL.alba },    // AlbA
+      { protein: "SAMD9",  start: 157,  end: 384,  pal: PAL.alba },
+      { protein: "SAMD9L", start: 394,  end: 625,  pal: PAL.sir2 },    // SIR2
+      { protein: "SAMD9",  start: 390,  end: 622,  pal: PAL.sir2 },
+      { protein: "SAMD9L", start: 712,  end: 1017, pal: PAL.ploop },   // P-loop NTPase
+      { protein: "SAMD9",  start: 708,  end: 1013, pal: PAL.ploop },
+      { protein: "SAMD9L", start: 1027, end: 1187, pal: PAL.tpr },     // TPR
+      { protein: "SAMD9",  start: 1023, end: 1187, pal: PAL.tpr },
+      { protein: "SAMD9L", start: 1193, end: 1497, pal: PAL.helical }, // Helical
+      { protein: "SAMD9",  start: 1193, end: 1502, pal: PAL.helical },
+      { protein: "SAMD9L", start: 1511, end: 1579, pal: PAL.obfold },  // OB-fold
+      { protein: "SAMD9",  start: 1516, end: 1584, pal: PAL.obfold }
     ];
     DOMAIN_OUTLINES.forEach(function (d) {
       var startCell = maps[d.protein] && maps[d.protein][d.start];
@@ -153,11 +184,14 @@
       if (!startCell || !endCell) return;
       var idxStart = cellIndex.get(startCell), idxEnd = cellIndex.get(endCell);
       var cells = allCells[d.protein].slice(idxStart, idxEnd + 1);
+      var light = d.pal[0], dark = d.pal[1];
       cells.forEach(function (cell, i) {
-        cell.style.borderTop = "3px solid " + d.color;
-        cell.style.borderBottom = "3px solid " + d.color;
-        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
-        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
+        var t = cells.length > 1 ? i / (cells.length - 1) : 0;
+        var color = lerpColor(light, dark, t);   // same color for top+bottom -> lines always match
+        cell.style.borderTop = "3px solid " + color;
+        cell.style.borderBottom = "3px solid " + color;
+        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + color;
+        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + color;
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

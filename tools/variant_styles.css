@@ -138,7 +138,9 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
   transform:translateX(-50%); font-family:var(--ui-font);
   font-size:12px; font-weight:600; color:#000; white-space:nowrap;
 }
-body.hide-cat-GoF    [data-category="GoF"],
-body.hide-cat-LoF    [data-category="LoF"],
-body.hide-cat-gnomAD [data-category="gnomAD"],
-body.hide-cat-Other  [data-category="Other"] { display:none !important; }
+body.hide-cat-GoF     [data-category="GoF"],
+body.hide-cat-LoF     [data-category="LoF"],
+body.hide-cat-gnomAD  [data-category="gnomAD"],
+body.hide-cat-Somatic [data-category="Somatic"],
+body.hide-cat-NoF     [data-category="NoF"],
+body.hide-cat-Other   [data-category="Other"] { display:none !important; }

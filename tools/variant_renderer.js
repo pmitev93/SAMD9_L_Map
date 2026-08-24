@@ -7,11 +7,21 @@
 
   // ---- Toggle/legend text: edit the "legend" strings below to rename a category.
   var CFG = {
-    GoF:    { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
-    LoF:    { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
-    gnomAD: { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
-    Other:  { color: "#000000", label: true,  on: false, legend: "Other (somatic / NoF)" }
+    GoF:     { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
+    LoF:     { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
+    gnomAD:  { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
+    Somatic: { color: "#000000", label: true,  on: false, legend: "Somatic" },
+    NoF:     { color: "#8ECAE6", label: true,  on: false, legend: "NoF (no functional effect)" },
+    Other:   { color: "#888888", label: true,  on: false, legend: "Other" }
   };
+  // category is DERIVED from `effect` (not stored) — one source of truth. The
+  // leading token before a "," or "/" decides the bucket; anything unrecognized
+  // (e.g. "SIRT2") falls into the Other catch-all so it still renders.
+  function deriveCategory(effect) {
+    var first = (effect || "").split(/[,/]/)[0].trim();
+    if (CFG[first]) return first;
+    return "Other";
+  }
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
   // TICK = the (fixed) line length for a lane-0 variant; +LANE_H per stack level.
   var TICK = 26, LANE_H = 15, LABEL_H = 15, PAD = 5;
@@ -47,6 +57,7 @@
 
   function init() {
     DATA    = window.VARIANTS || [];
+    DATA.forEach(function (v) { v.category = deriveCategory(v.effect); });
     OV      = window.VARIANT_OVERRIDES || {};
     PAPERS  = window.PAPERS || {};
     DETAILS = window.VARIANT_DETAILS || {};
@@ -152,20 +163,25 @@
       var lanes = [], maxLane = -1;
       clusters.forEach(function (c) {
         var rep = c[0];
-        var showLabel = c.some(function (m) { return (CFG[m.category] || CFG.Other).label; });
-        c.forEach(function (m, i) {
-          m._text = m.label + (i < c.length - 1 ? ", " : "");
+        // Only members whose OWN category shows a label (e.g. not gnomAD) take
+        // part in the visible line's text/width. An unlabeled member (e.g. a
+        // gnomAD co-mutation compounded with a labeled one) still gets its own
+        // tick drawn — see drawCluster — it just contributes no text/width here,
+        // so it can never push a sibling's label off-center or hide it via the
+        // category toggle (each tick is tagged with its OWN member's category).
+        var labeled = c.filter(function (m) { return (CFG[m.category] || CFG.Other).label; });
+        labeled.forEach(function (m, i) {
+          m._text = m.label + (i < labeled.length - 1 ? ", " : "");
           m._w = estW(m._text);
         });
-        var totalW = c.reduce(function (s, m) { return s + m._w; }, 0);
-        if (showLabel) {
-          var leftEdge = rep._x - totalW / 2, l = 0;
+        var totalW = labeled.reduce(function (s, m) { return s + m._w; }, 0);
+        var l = -1;
+        if (labeled.length) {
+          var leftEdge = rep._x - totalW / 2; l = 0;
           while (l < lanes.length && lanes[l] > leftEdge - 3) l++;
           lanes[l] = rep._x + totalW / 2;
-          c.forEach(function (m) { m._lane = l; });
-        } else {
-          c.forEach(function (m) { m._lane = -1; });
         }
+        c.forEach(function (m) { m._lane = (labeled.indexOf(m) >= 0) ? l : -1; });
       });
       // apply manual overrides: dx = horizontal label nudge; lane = stack level;
       // dlen = extra line length in px (label moves out with the line).
@@ -201,35 +217,43 @@
     if (missing) console.warn("variant renderer: " + missing + " unmapped variants");
   }
 
-  // Draws one cluster: a single tick (at the shared/representative residue)
-  // plus one `.vlabel` per member, laid out side-by-side on the same line so
-  // grouped variants (e.g. "R1281K, R1281S, R1281del") read as one line while
-  // each label stays its own independently clickable/colored element. A plain
-  // (ungrouped) variant is just a 1-member cluster — identical to the old draw().
+  // Draws one cluster: one tick PER MEMBER (grouped members share a residue,
+  // so same-category ticks simply coincide — looks like one line — while a
+  // mixed-category group, e.g. a gnomAD co-mutation alongside a labeled one,
+  // shows each color independently and each tick is only ever hidden by ITS
+  // OWN category's toggle, never a sibling's). Plus one `.vlabel` per LABELED
+  // member, laid out side-by-side on the same line so grouped variants (e.g.
+  // "R1281K, R1281S, R1281del") read as one line while each label stays its
+  // own independently clickable/colored element. A plain (ungrouped) variant
+  // is just a 1-member cluster — identical to the old draw().
   function drawCluster(sr, c) {
     var top = (sr.side === "top");
     var gap = sr._gap || 0;
     var W = whiteGap();              // white space before the AA box
-    var rep = c[0];
-    var len = TICK + (rep._lane >= 0 ? rep._lane * LANE_H : 0) + (rep._dlen || 0);
     var base = gap - W;              // line bottom sits W above the actual letter box
 
-    var tick = document.createElement("div");
-    tick.className = "vtick";
-    tick.style.left = (rep._x - 1) + "px";
-    tick.style.height = len + "px";
-    tick.style.background = rep._color;
-    tick.style.color = rep._color;   // for the hover glow (currentColor)
-    tick.style[top ? "bottom" : "top"] = (-base) + "px";
-    setData(tick, rep);
-    sr.container.appendChild(tick);
+    c.forEach(function (m) {
+      var len = TICK + (m._lane >= 0 ? m._lane * LANE_H : 0) + (m._dlen || 0);
+      var tick = document.createElement("div");
+      tick.className = "vtick";
+      tick.style.left = (m._x - 1) + "px";
+      tick.style.height = len + "px";
+      tick.style.background = m._color;
+      tick.style.color = m._color;   // for the hover glow (currentColor)
+      tick.style[top ? "bottom" : "top"] = (-base) + "px";
+      setData(tick, m);
+      sr.container.appendChild(tick);
+    });
 
-    if (rep._lane < 0) return;
+    var labeled = c.filter(function (m) { return m._lane >= 0; });
+    if (!labeled.length) return;
 
-    var totalW = c.reduce(function (s, m) { return s + m._w; }, 0);
+    var rep = labeled[0];
+    var len = TICK + rep._lane * LANE_H + (rep._dlen || 0);
+    var totalW = labeled.reduce(function (s, m) { return s + m._w; }, 0);
     var leftEdge = rep._x - totalW / 2 + (rep._dx || 0);
     var running = 0;
-    c.forEach(function (m) {
+    labeled.forEach(function (m) {
       var cx = leftEdge + running + m._w / 2 + (m === rep ? 0 : (m._dx || 0));
       running += m._w;
       var lab = document.createElement("div");

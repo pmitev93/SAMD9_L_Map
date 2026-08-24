@@ -6,9 +6,16 @@ residue; the row's ID column is the residue number and the Mutation cell lists t
 variant(s) at that residue. Distinct variants are separated by ';' and align with
 ';'-separated Effect/Origin; alternative notations within one variant use ','.
 
-Output: variants.json — a flat list of
-  {protein, residue, label, effect, origin, category}
-plus a small stats summary printed to stdout (and any parse warnings).
+Output: data_variants.js — a flat list of
+  {protein, residue, label, effect, origin}
+(category is NOT stored — the renderer derives it from `effect` at load time,
+see deriveCategory() in tools/variant_renderer.js) plus a small stats summary
+printed to stdout (and any parse warnings).
+
+WARNING: this OVERWRITES data_variants.js from the Excel master. If you have
+since hand-added variants directly to data_variants.js that aren't in the
+Excel (e.g. your own unpublished findings), running this WILL DISCARD them.
+Add those to the Excel master first, or re-add them to the output afterward.
 
 Run from the project folder:  python3 tools/build_variants.py
 """
@@ -27,13 +34,12 @@ COLS = {
 }
 FIRST_DATA_ROW = 5
 
+# Mirrors deriveCategory() in tools/variant_renderer.js — kept here ONLY for the
+# stdout stats summary below; it is not written into data_variants.js.
+KNOWN_CATEGORIES = {"GoF", "LoF", "gnomAD", "Somatic", "NoF"}
 def category(effect: str) -> str:
-    # use the leading token (some cells join two effects with ',' or '/')
     first = re.split(r"[,/]", (effect or "").strip())[0].strip()
-    if first == "GoF": return "GoF"
-    if first == "LoF": return "LoF"
-    if first == "gnomAD": return "gnomAD"
-    return "Other"   # Somatic, NoF, blank, ...
+    return first if first in KNOWN_CATEGORIES else "Other"
 
 def load_sheet1():
     z = ET.fromstring((zipfile.ZipFile(XLSX)).read("xl/sharedStrings.xml"))
@@ -90,8 +96,7 @@ def main():
                                 f"#mut!=#effect -> {mut!r} / {cells.get(cmap['effect'])!r}")
             for label, eff, ori in entries:
                 variants.append({"protein": protein, "residue": residue,
-                                 "label": label, "effect": eff, "origin": ori,
-                                 "category": category(eff)})
+                                 "label": label, "effect": eff, "origin": ori})
     variants.sort(key=lambda v: (v["protein"], v["residue"], v["label"]))
     OUT.write_text("window.VARIANTS =\n" +
                    json.dumps(variants, ensure_ascii=False, indent=0) + ";\n",
@@ -100,7 +105,7 @@ def main():
     # ---- stats ----
     from collections import Counter
     by_prot = Counter(v["protein"] for v in variants)
-    by_cat = Counter(v["category"] for v in variants)
+    by_cat = Counter(category(v["effect"]) for v in variants)
     by_eff = Counter(v["effect"] for v in variants)
     print(f"Wrote {OUT.name}: {len(variants)} variants")
     print("  by protein:", dict(by_prot))

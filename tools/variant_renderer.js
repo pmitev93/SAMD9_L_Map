@@ -445,6 +445,26 @@
     document.body.appendChild(box);
   }
 
+  // "Last updated" — fetched live from GitHub's own commit history, purely
+  // client-side. No CI, no deploy step, nothing that can conflict with GitHub
+  // Pages' own deployment — if the fetch fails (offline, rate-limited, repo
+  // renamed) the static fallback date already in the HTML is left as-is.
+  function updateLastUpdatedDate() {
+    var el = document.querySelector("#last-updated .lu-date");
+    if (!el) return;
+    fetch("https://api.github.com/repos/pmitev93/SAMD9_L_Map/commits/main")
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) {
+        var iso = d.commit && d.commit.committer && d.commit.committer.date;
+        if (!iso) return;
+        var dt = new Date(iso);
+        var months = ["January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"];
+        el.textContent = dt.getUTCDate() + " " + months[dt.getUTCMonth()] + " " + dt.getUTCFullYear();
+      })
+      .catch(function () { /* keep the static fallback already in the HTML */ });
+  }
+
   var t;
   function schedule() { clearTimeout(t); t = setTimeout(run, 120); }
 
@@ -452,6 +472,7 @@
   // always shows your changes (browsers otherwise cache <script src>). On a
   // double-clicked file:// page we skip the query (not needed, and keeps it simple).
   function boot() {
+    updateLastUpdatedDate();
     var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_details.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;

@@ -312,6 +312,13 @@ window.VARIANTS =
 },
 {
 "protein": "SAMD9",
+"residue": 196,
+"label": "E196A",
+"effect": "LoF",
+"origin": "Zhang"
+},
+{
+"protein": "SAMD9",
 "residue": 198,
 "label": "K198E",
 "effect": "LoF",
@@ -328,6 +335,13 @@ window.VARIANTS =
 "protein": "SAMD9",
 "residue": 214,
 "label": "K214E",
+"effect": "LoF",
+"origin": "Zhang"
+},
+{
+"protein": "SAMD9",
+"residue": 218,
+"label": "D218A",
 "effect": "LoF",
 "origin": "Zhang"
 },
@@ -393,6 +407,13 @@ window.VARIANTS =
 "label": "D241TfsX26",
 "effect": "gnomAD",
 "origin": "mt1"
+},
+{
+"protein": "SAMD9",
+"residue": 241,
+"label": "D241A",
+"effect": "LoF",
+"origin": "Zhang"
 },
 {
 "protein": "SAMD9",
@@ -2898,7 +2919,7 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 233,
 "label": "T233N",
-"effect": "GoF",
+"effect": "LoF",
 "origin": "Klco"
 },
 {

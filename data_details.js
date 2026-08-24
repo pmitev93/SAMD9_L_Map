@@ -170,6 +170,12 @@ window.VARIANT_DETAILS = {
     "phenotype": "GoF",
     "method": "Flow Cytometry"
   },
+  "SAMD9L:F886X": {
+    "paper": "Alsp",
+    "gnomad": "Not present",
+    "phenotype": "GoF",
+    "method": "Flow Cytometry"
+  },
   "SAMD9L:E898X": {
     "paper": "Alsp",
     "gnomad": "Not present",
@@ -253,5 +259,47 @@ window.VARIANT_DETAILS = {
     "gnomad": "Allele frequency: 1.24e-6",
     "phenotype": "GoF",
     "method": "EdU Assay"
+  },
+  "SAMD9L:E186A": {
+    "paper": "Mitev",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:K198E": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9:K214E": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9:R221E": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9:E196A": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9:D218A": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
+  },
+  "SAMD9:D241A": {
+    "paper": "Zhang",
+    "gnomad": "Not present",
+    "phenotype": "LoF",
+    "method": "Northern blot"
   }
 };

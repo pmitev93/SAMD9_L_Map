@@ -146,6 +146,16 @@
         cell.style.borderBottom = "3px solid " + d.color;
         cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + d.color;
         cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + d.color;
+        // soft "pill" caps at the true start/end, matching the rounded-corner
+        // language used elsewhere on the page (toggle box, variant labels)
+        if (i === 0) {
+          cell.style.borderTopLeftRadius = "6px";
+          cell.style.borderBottomLeftRadius = "6px";
+        }
+        if (i === cells.length - 1) {
+          cell.style.borderTopRightRadius = "6px";
+          cell.style.borderBottomRightRadius = "6px";
+        }
       });
     });
 

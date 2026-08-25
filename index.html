@@ -163,12 +163,12 @@ td.white{
      equal just so both are self-explanatory if you inspect this block.
      Edit directly, save, refresh: */
   --domain-sam-light:     #FFFF00; --domain-sam-dark:     #FFFF00; /* SAM (yellow) */
-  --domain-alba-light:    #2B5FE0; --domain-alba-dark:    #2B5FE0; /* AlbA (bold blue — clearly readable, less harsh than pure #0000FF) */
+  --domain-alba-light:    #1414F2; --domain-alba-dark:    #1414F2; /* AlbA (original blue, softened just a touch) */
   --domain-sir2-light:    #FFA500; --domain-sir2-dark:    #FFA500; /* SIR2 (orange) */
   --domain-ploop-light:   #FF0000; --domain-ploop-dark:   #FF0000; /* P-loop NTPase (red) */
   --domain-tpr-light:     #16D715; --domain-tpr-dark:     #16D715; /* TPR (green) */
   --domain-obfold-light:  #800080; --domain-obfold-dark:  #800080; /* OB-fold (purple) */
-  --domain-helical-light: #0EA5D6; --domain-helical-dark: #0EA5D6; /* Helical (blue-leaning cyan — ConSurf's teals lean green, this leans blue so it doesn't blend in) */
+  --domain-helical-light: #1FBCC7; --domain-helical-dark: #1FBCC7; /* Helical (previous cyan, softened just a touch) */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }
@@ -12802,10 +12802,19 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
       var cells = sr.row.children;
       for (var i = 1; i < cells.length; i++) {
         var txt = (cells[i].textContent || "").trim();
+        var isLetter = /^[A-Z]$/.test(txt), isGap = txt === "-";
         cellRow.set(cells[i], sr);
-        cellIndex.set(cells[i], allCells[sr.protein].length);
-        allCells[sr.protein].push(cells[i]);
-        if (/^[A-Z]$/.test(txt)) {
+        // allCells only holds genuine sequence positions (a real residue
+        // letter, or an alignment-gap dash). Some rows have a truly blank
+        // leading spacer cell (empty text, class="Score11") between the
+        // protein-name label and the first residue — including that here
+        // would let a domain outline spill onto it and color a cell that
+        // isn't part of the sequence at all.
+        if (isLetter || isGap) {
+          cellIndex.set(cells[i], allCells[sr.protein].length);
+          allCells[sr.protein].push(cells[i]);
+        }
+        if (isLetter) {
           counters[sr.protein]++;
           maps[sr.protein][counters[sr.protein]] = cells[i];
           cells[i].dataset.pos = txt + counters[sr.protein];   // e.g. "K133"

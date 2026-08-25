@@ -118,10 +118,19 @@
       var cells = sr.row.children;
       for (var i = 1; i < cells.length; i++) {
         var txt = (cells[i].textContent || "").trim();
+        var isLetter = /^[A-Z]$/.test(txt), isGap = txt === "-";
         cellRow.set(cells[i], sr);
-        cellIndex.set(cells[i], allCells[sr.protein].length);
-        allCells[sr.protein].push(cells[i]);
-        if (/^[A-Z]$/.test(txt)) {
+        // allCells only holds genuine sequence positions (a real residue
+        // letter, or an alignment-gap dash). Some rows have a truly blank
+        // leading spacer cell (empty text, class="Score11") between the
+        // protein-name label and the first residue — including that here
+        // would let a domain outline spill onto it and color a cell that
+        // isn't part of the sequence at all.
+        if (isLetter || isGap) {
+          cellIndex.set(cells[i], allCells[sr.protein].length);
+          allCells[sr.protein].push(cells[i]);
+        }
+        if (isLetter) {
           counters[sr.protein]++;
           maps[sr.protein][counters[sr.protein]] = cells[i];
           cells[i].dataset.pos = txt + counters[sr.protein];   // e.g. "K133"

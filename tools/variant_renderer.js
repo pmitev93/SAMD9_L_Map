@@ -11,7 +11,7 @@
     LoF:     { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
     gnomAD:  { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
     Somatic: { color: "#000000", label: true,  on: false, legend: "Somatic" },
-    NoF:     { color: "#8ECAE6", label: true,  on: false, legend: "NoF (no functional effect)" },
+    NoF:     { color: "#8ECAE6", label: true,  on: false, legend: "NoF (no gain-of-function effect)" },
     Other:   { color: "#888888", label: true,  on: false, legend: "Other" }
   };
   // category is DERIVED from `effect` (not stored) — one source of truth. The
@@ -142,25 +142,50 @@
     // residue, so they match the original domains exactly.
     function hexToRgb(hex) {
       hex = hex.replace("#", "");
+      if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
       return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+    }
+    // Named CSS colors (yellow/blue/orange/red/purple) don't parse via hexToRgb
+    // directly — resolve anything through the browser first.
+    function toHex(cssColor) {
+      var probe = document.createElement("div");
+      probe.style.color = cssColor;
+      document.body.appendChild(probe);
+      var rgb = getComputedStyle(probe).color.match(/\d+/g).map(Number);
+      document.body.removeChild(probe);
+      return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
     }
     function lerpColor(hexA, hexB, t) {
       var a = hexToRgb(hexA), b = hexToRgb(hexB);
       var rgb = a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); });
       return "rgb(" + rgb.join(",") + ")";
     }
+    // Blend a color toward white by `amount` (0-1) to get its "light" partner.
+    function lighten(hex, amount) {
+      var rgb = hexToRgb(hex).map(function (v) { return Math.round(v + (255 - v) * amount); });
+      return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+    }
     function knob(name, fallback) {
       var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       return v || fallback;
     }
+    // Oscillating wave, not a straight sweep: color alternates base -> light ->
+    // base -> light... every WAVELENGTH residues, all the way across the domain
+    // (continues smoothly across row-wraps since position is domain-relative).
+    var WAVELENGTH = 14; // residues per full dark->light->dark cycle — tune here
+    function waveColor(baseHex, lightHex, i) {
+      var phase = (i % WAVELENGTH) / WAVELENGTH;
+      var osc = (1 - Math.cos(2 * Math.PI * phase)) / 2;   // 0..1..0 smoothly
+      return lerpColor(baseHex, lightHex, osc);
+    }
     var PAL = {
-      sam:     [knob("--domain-sam-light", "#FFF176"),     knob("--domain-sam-dark", "#C9A600")],
-      alba:    [knob("--domain-alba-light", "#6FA8F5"),    knob("--domain-alba-dark", "#0D3C8C")],
-      sir2:    [knob("--domain-sir2-light", "#FFC670"),    knob("--domain-sir2-dark", "#B36A00")],
-      ploop:   [knob("--domain-ploop-light", "#FF7F73"),   knob("--domain-ploop-dark", "#B31B0E")],
-      tpr:     [knob("--domain-tpr-light", "#7FE881"),     knob("--domain-tpr-dark", "#0F8A2E")],
-      obfold:  [knob("--domain-obfold-light", "#C97FE0"),  knob("--domain-obfold-dark", "#6B1F8C")],
-      helical: [knob("--domain-helical-light", "#7DE0F0"), knob("--domain-helical-dark", "#007A94")]
+      sam:     toHex(knob("--domain-sam-dark", "yellow")),
+      alba:    toHex(knob("--domain-alba-dark", "blue")),
+      sir2:    toHex(knob("--domain-sir2-dark", "orange")),
+      ploop:   toHex(knob("--domain-ploop-dark", "red")),
+      tpr:     toHex(knob("--domain-tpr-dark", "#16D715")),
+      obfold:  toHex(knob("--domain-obfold-dark", "purple")),
+      helical: toHex(knob("--domain-helical-dark", "cyan"))
     };
     var DOMAIN_OUTLINES = [
       { protein: "SAMD9L", start: 10,   end: 86,   pal: PAL.sam },     // SAM
@@ -178,20 +203,35 @@
       { protein: "SAMD9L", start: 1511, end: 1579, pal: PAL.obfold },  // OB-fold
       { protein: "SAMD9",  start: 1516, end: 1584, pal: PAL.obfold }
     ];
+    var DOMAIN_BORDER_W = 2; // px — thinner than the original 3px
     DOMAIN_OUTLINES.forEach(function (d) {
       var startCell = maps[d.protein] && maps[d.protein][d.start];
       var endCell   = maps[d.protein] && maps[d.protein][d.end];
       if (!startCell || !endCell) return;
       var idxStart = cellIndex.get(startCell), idxEnd = cellIndex.get(endCell);
       var cells = allCells[d.protein].slice(idxStart, idxEnd + 1);
-      var light = d.pal[0], dark = d.pal[1];
+      var base = d.pal, light = lighten(d.pal, 0.55);
       cells.forEach(function (cell, i) {
-        var t = cells.length > 1 ? i / (cells.length - 1) : 0;
-        var color = lerpColor(light, dark, t);   // same color for top+bottom -> lines always match
-        cell.style.borderTop = "3px solid " + color;
-        cell.style.borderBottom = "3px solid " + color;
-        cell.style.borderLeft = (i === 0 ? "3px" : "0px") + " solid " + color;
-        cell.style.borderRight = (i === cells.length - 1 ? "3px" : "0px") + " solid " + color;
+        var color = waveColor(base, light, i);   // same color for top+bottom -> lines always match
+        cell.style.borderTop = DOMAIN_BORDER_W + "px solid " + color;
+        cell.style.borderBottom = DOMAIN_BORDER_W + "px solid " + color;
+        cell.style.borderLeft = (i === 0 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
+        cell.style.borderRight = (i === cells.length - 1 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
+        // super-thin black keyline tracing JUST the colored outline itself —
+        // NOT a plain CSS `outline` (that draws on all 4 sides of every cell
+        // uniformly, so interior cells with no left/right color border would
+        // still get black lines between every residue, reading as an internal
+        // grid rather than a clean outer trace). box-shadow with 1px offset
+        // and no blur/spread reveals only a 1px sliver just past the current
+        // edge, so it can be applied with the exact same per-side condition
+        // as the colored border above — top/bottom always, left/right only at
+        // the true start/end.
+        var kl = [];
+        kl.push("0 -1px 0 0 #000");   // top
+        kl.push("0 1px 0 0 #000");    // bottom
+        if (i === 0) kl.push("-1px 0 0 0 #000");
+        if (i === cells.length - 1) kl.push("1px 0 0 0 #000");
+        cell.style.boxShadow = kl.join(", ");
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {
@@ -225,7 +265,11 @@
       });
       list.sort(function (a, b) { return a._x - b._x || a.residue - b.residue; });
 
-      list.forEach(function (v) { v._color = (CFG[v.category] || CFG.Other).color; });
+      list.forEach(function (v) {
+        v._color = (CFG[v.category] || CFG.Other).color;
+        var o = ovFor(v);
+        if (o && o.color) v._color = o.color;   // per-variant color override
+      });
 
       // Cluster same-residue variants sharing an explicit `group` id into one
       // visual unit: one tick, labels placed side-by-side on the same line

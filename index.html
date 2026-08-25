@@ -163,12 +163,12 @@ td.white{
      equal just so both are self-explanatory if you inspect this block.
      Edit directly, save, refresh: */
   --domain-sam-light:     #FFFF00; --domain-sam-dark:     #FFFF00; /* SAM (yellow) */
-  --domain-alba-light:    #4C7FE0; --domain-alba-dark:    #4C7FE0; /* AlbA (softer royal blue — original #0000FF was too harsh) */
+  --domain-alba-light:    #2B5FE0; --domain-alba-dark:    #2B5FE0; /* AlbA (bold blue — clearly readable, less harsh than pure #0000FF) */
   --domain-sir2-light:    #FFA500; --domain-sir2-dark:    #FFA500; /* SIR2 (orange) */
   --domain-ploop-light:   #FF0000; --domain-ploop-dark:   #FF0000; /* P-loop NTPase (red) */
   --domain-tpr-light:     #16D715; --domain-tpr-dark:     #16D715; /* TPR (green) */
   --domain-obfold-light:  #800080; --domain-obfold-dark:  #800080; /* OB-fold (purple) */
-  --domain-helical-light: #14B8C4; --domain-helical-dark: #14B8C4; /* Helical (calmer cyan, kept well clear of the ConSurf Score1/2 teals) */
+  --domain-helical-light: #0EA5D6; --domain-helical-dark: #0EA5D6; /* Helical (blue-leaning cyan — ConSurf's teals lean green, this leans blue so it doesn't blend in) */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }
@@ -261,8 +261,6 @@ tr.top-align td {
 .outlined-row-all-yellow td:nth-child(12) {
     border-left: 3px solid var(--domain-sam);
     border-right: 0px solid var(--domain-sam);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-yellow2 td:nth-child(n+3):nth-child(-n+38) {
@@ -273,8 +271,6 @@ tr.top-align td {
 .outlined-row-all-yellow2 td:nth-child(38) {
     border-left: 0px solid var(--domain-sam);
     border-right: 3px solid var(--domain-sam);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-yellow3 td:nth-child(n+3):nth-child(-n+39) {
@@ -285,8 +281,6 @@ tr.top-align td {
 .outlined-row-all-yellow3 td:nth-child(39) {
     border-left: 0px solid var(--domain-sam);
     border-right: 3px solid var(--domain-sam);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue td:nth-child(n+3):nth-child(-n+52) {
@@ -302,8 +296,6 @@ tr.top-align td {
 .outlined-row-all-blue2 td:nth-child(9) {
     border-left: 3px solid var(--domain-alba);
     border-right: 0px solid var(--domain-alba);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue3 td:nth-child(n+11):nth-child(-n+52) {
@@ -314,8 +306,6 @@ tr.top-align td {
 .outlined-row-all-blue3 td:nth-child(11) {
     border-left: 3px solid var(--domain-alba);
     border-right: 0px solid var(--domain-alba);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue4 td:nth-child(n+3):nth-child(-n+44) {
@@ -326,8 +316,6 @@ tr.top-align td {
 .outlined-row-all-blue4 td:nth-child(44) {
     border-left: 0px solid var(--domain-alba);
     border-right: 3px solid var(--domain-alba);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue4 td:nth-child(n+49):nth-child(-n+52) {
@@ -338,8 +326,6 @@ tr.top-align td {
 .outlined-row-all-blue4 td:nth-child(49) {
     border-left: 3px solid var(--domain-sir2);
     border-right: 0px solid var(--domain-alba);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-blue5 td:nth-child(n+3):nth-child(-n+43) {
@@ -350,8 +336,6 @@ tr.top-align td {
 .outlined-row-all-blue5 td:nth-child(43) {
     border-left: 0px solid var(--domain-alba);
     border-right: 3px solid var(--domain-alba);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-blue5 td:nth-child(n+49):nth-child(-n+52) {
@@ -362,8 +346,6 @@ tr.top-align td {
 .outlined-row-all-blue5 td:nth-child(49) {
     border-left: 3px solid var(--domain-sir2);
     border-right: 0px solid var(--domain-alba);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-orange td:nth-child(n+3):nth-child(-n+52) {
@@ -379,8 +361,6 @@ tr.top-align td {
 .outlined-row-all-orange2 td:nth-child(31) {
     border-left: 0px solid var(--domain-sir2);
     border-right: 3px solid var(--domain-sir2);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-red td:nth-child(n+3):nth-child(-n+52) {
@@ -396,8 +376,6 @@ tr.top-align td {
 .outlined-row-all-red2 td:nth-child(18) {
     border-left: 3px solid var(--domain-ploop);
     border-right: 0px solid var(--domain-ploop);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-red3 td:nth-child(n+3):nth-child(-n+23) {
@@ -408,8 +386,6 @@ tr.top-align td {
 .outlined-row-all-red3 td:nth-child(23) {
     border-left: 0px solid var(--domain-ploop);
     border-right: 3px solid var(--domain-ploop);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-red3 td:nth-child(n+33):nth-child(-n+52) {
@@ -420,8 +396,6 @@ tr.top-align td {
 .outlined-row-all-red3 td:nth-child(33) {
     border-left: 3px solid var(--domain-tpr);
     border-right: 0px solid var(--domain-tpr);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-green td:nth-child(n+3):nth-child(-n+52) {
@@ -437,8 +411,6 @@ tr.top-align td {
 .outlined-row-all-green2 td:nth-child(47) {
     border-left: 0px solid var(--domain-tpr);
     border-right: 3px solid var(--domain-tpr);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 .outlined-row-all-purple td:nth-child(n+26):nth-child(-n+52) {
@@ -449,8 +421,6 @@ tr.top-align td {
 .outlined-row-all-purple td:nth-child(26) {
     border-left: 3px solid var(--domain-obfold);
     border-right: 0px solid var(--domain-obfold);
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
 }
 
 .outlined-row-all-purple2 td:nth-child(n+3):nth-child(-n+44) {
@@ -461,8 +431,6 @@ tr.top-align td {
 .outlined-row-all-purple2 td:nth-child(44) {
     border-left: 0px solid var(--domain-obfold);
     border-right: 3px solid var(--domain-obfold);
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
 }
 
 
@@ -12938,16 +12906,9 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
         // paints over the shadow's peeking sliver, so it was invisible for
         // most of the domain and looked broken at the caps. Not worth the
         // fragility; removed.)
-        // soft "pill" caps at the true start/end, matching the rounded-corner
-        // language used elsewhere on the page (toggle box, variant labels)
-        if (i === 0) {
-          cell.style.borderTopLeftRadius = "6px";
-          cell.style.borderBottomLeftRadius = "6px";
-        }
-        if (i === cells.length - 1) {
-          cell.style.borderTopRightRadius = "6px";
-          cell.style.borderBottomRightRadius = "6px";
-        }
+        // (also tried rounded "pill" caps at the true start/end — dropped:
+        // read as trimmed/oval rather than a clean square box. Plain square
+        // corners, matching the original domains.)
       });
     });
 

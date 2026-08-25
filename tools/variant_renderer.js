@@ -222,16 +222,9 @@
         // paints over the shadow's peeking sliver, so it was invisible for
         // most of the domain and looked broken at the caps. Not worth the
         // fragility; removed.)
-        // soft "pill" caps at the true start/end, matching the rounded-corner
-        // language used elsewhere on the page (toggle box, variant labels)
-        if (i === 0) {
-          cell.style.borderTopLeftRadius = "6px";
-          cell.style.borderBottomLeftRadius = "6px";
-        }
-        if (i === cells.length - 1) {
-          cell.style.borderTopRightRadius = "6px";
-          cell.style.borderBottomRightRadius = "6px";
-        }
+        // (also tried rounded "pill" caps at the true start/end — dropped:
+        // read as trimmed/oval rather than a clean square box. Plain square
+        // corners, matching the original domains.)
       });
     });
 

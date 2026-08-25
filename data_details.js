@@ -301,5 +301,71 @@ window.VARIANT_DETAILS = {
     "gnomad": "Not present",
     "phenotype": "LoF",
     "method": "Northern blot"
+  },
+  "SAMD9:R33K": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:G134A": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:T150S": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:R221Q": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:H244R": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:R1529H": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:Y72C": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:D169H": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:L635F": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:A637T": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:G690D": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
   }
 };

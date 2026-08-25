@@ -5228,7 +5228,7 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 679,
 "label": "F679L",
-"effect": "GoF",
+"effect": "NoF",
 "origin": "Mitev"
 },
 {

@@ -158,15 +158,17 @@ td.white{
   --walkerA-color: #E6A23C;  /* Walker A residue letters (light orange)        */
   --walkerA2-color: #FF8C1A; /* G747/G743 (brighter orange, stands out)        */
   --walkerB-color: #B388EB;  /* Walker B residue letters (light purple)        */
-  /* Domain outline colors — flat, original colors (light=dark on purpose, so
-     there is no gradient at all). Edit directly, save, refresh: */
+  /* Domain outline colors — the JS only reads -dark (it derives a lighter
+     shade from it automatically for the oscillating wave); -light is kept
+     equal just so both are self-explanatory if you inspect this block.
+     Edit directly, save, refresh: */
   --domain-sam-light:     #FFFF00; --domain-sam-dark:     #FFFF00; /* SAM (yellow) */
-  --domain-alba-light:    #0000FF; --domain-alba-dark:    #0000FF; /* AlbA (blue) */
+  --domain-alba-light:    #4C7FE0; --domain-alba-dark:    #4C7FE0; /* AlbA (softer royal blue — original #0000FF was too harsh) */
   --domain-sir2-light:    #FFA500; --domain-sir2-dark:    #FFA500; /* SIR2 (orange) */
   --domain-ploop-light:   #FF0000; --domain-ploop-dark:   #FF0000; /* P-loop NTPase (red) */
   --domain-tpr-light:     #16D715; --domain-tpr-dark:     #16D715; /* TPR (green) */
   --domain-obfold-light:  #800080; --domain-obfold-dark:  #800080; /* OB-fold (purple) */
-  --domain-helical-light: #00FFFF; --domain-helical-dark: #00FFFF; /* Helical (cyan) */
+  --domain-helical-light: #14B8C4; --domain-helical-dark: #14B8C4; /* Helical (calmer cyan, kept well clear of the ConSurf Score1/2 teals) */
   /* ================================================================ */
 }
 .domain-svg{ height:var(--domain-height); width:auto; display:block; }
@@ -12931,21 +12933,11 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
         cell.style.borderBottom = DOMAIN_BORDER_W + "px solid " + color;
         cell.style.borderLeft = (i === 0 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
         cell.style.borderRight = (i === cells.length - 1 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
-        // super-thin black keyline tracing JUST the colored outline itself —
-        // NOT a plain CSS `outline` (that draws on all 4 sides of every cell
-        // uniformly, so interior cells with no left/right color border would
-        // still get black lines between every residue, reading as an internal
-        // grid rather than a clean outer trace). box-shadow with 1px offset
-        // and no blur/spread reveals only a 1px sliver just past the current
-        // edge, so it can be applied with the exact same per-side condition
-        // as the colored border above — top/bottom always, left/right only at
-        // the true start/end.
-        var kl = [];
-        kl.push("0 -1px 0 0 #000");   // top
-        kl.push("0 1px 0 0 #000");    // bottom
-        if (i === 0) kl.push("-1px 0 0 0 #000");
-        if (i === cells.length - 1) kl.push("1px 0 0 0 #000");
-        cell.style.boxShadow = kl.join(", ");
+        // (tried a black keyline outside the colored border via box-shadow —
+        // dropped it: table row paint order means the row above/below often
+        // paints over the shadow's peeking sliver, so it was invisible for
+        // most of the domain and looked broken at the caps. Not worth the
+        // fragility; removed.)
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

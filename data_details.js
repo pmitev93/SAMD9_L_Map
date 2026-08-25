@@ -367,5 +367,17 @@ window.VARIANT_DETAILS = {
     "gnomad": "",
     "phenotype": "NoF",
     "method": "EdU assay"
+  },
+  "SAMD9L:H468Y": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "LoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:H464Y": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "LoF",
+    "method": "EdU assay"
   }
 };

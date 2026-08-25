@@ -217,21 +217,11 @@
         cell.style.borderBottom = DOMAIN_BORDER_W + "px solid " + color;
         cell.style.borderLeft = (i === 0 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
         cell.style.borderRight = (i === cells.length - 1 ? DOMAIN_BORDER_W + "px" : "0px") + " solid " + color;
-        // super-thin black keyline tracing JUST the colored outline itself —
-        // NOT a plain CSS `outline` (that draws on all 4 sides of every cell
-        // uniformly, so interior cells with no left/right color border would
-        // still get black lines between every residue, reading as an internal
-        // grid rather than a clean outer trace). box-shadow with 1px offset
-        // and no blur/spread reveals only a 1px sliver just past the current
-        // edge, so it can be applied with the exact same per-side condition
-        // as the colored border above — top/bottom always, left/right only at
-        // the true start/end.
-        var kl = [];
-        kl.push("0 -1px 0 0 #000");   // top
-        kl.push("0 1px 0 0 #000");    // bottom
-        if (i === 0) kl.push("-1px 0 0 0 #000");
-        if (i === cells.length - 1) kl.push("1px 0 0 0 #000");
-        cell.style.boxShadow = kl.join(", ");
+        // (tried a black keyline outside the colored border via box-shadow —
+        // dropped it: table row paint order means the row above/below often
+        // paints over the shadow's peeking sliver, so it was invisible for
+        // most of the domain and looked broken at the caps. Not worth the
+        // fragility; removed.)
         // soft "pill" caps at the true start/end, matching the rounded-corner
         // language used elsewhere on the page (toggle box, variant labels)
         if (i === 0) {

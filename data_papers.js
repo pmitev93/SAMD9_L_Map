@@ -26,6 +26,11 @@ window.PAPERS = {
     "pmid": "37285440",
     "url": "https://www.science.org/doi/10.1126/sciadv.adh8502"
   },
+    "Peng": {
+    "title": "Structure and function of an effector domain in antiviral factors and tumor suppressors SAMD9 and SAMD9L",
+    "pmid": "35046037",
+    "url": "https://www.pnas.org/doi/10.1073/pnas.2116550119?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed"
+  },
   "Alsp": {
     "title": "Germline SAMD9L truncation variants trigger global translational repression",
     "pmid": "33724365",

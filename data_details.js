@@ -267,22 +267,22 @@ window.VARIANT_DETAILS = {
     "method": "EdU Assay"
   },
   "SAMD9:K198E": {
-    "paper": "Zhang",
-    "gnomad": "Not present",
+    "paper": "Peng",
+    "gnomad": "",
     "phenotype": "LoF",
-    "method": "Northern blot"
+    "method": "Viral infection/flow cytometry"
   },
   "SAMD9:K214E": {
-    "paper": "Zhang",
+    "paper": "Peng",
     "gnomad": "Not present",
     "phenotype": "LoF",
-    "method": "Northern blot"
+    "method": "Viral infection/flow cytometry"
   },
-  "SAMD9:R221E": {
+  "SAMD9:Peng": {
     "paper": "Zhang",
     "gnomad": "Not present",
     "phenotype": "LoF",
-    "method": "Northern blot"
+    "method": "Viral infection/flow cytometry"
   },
   "SAMD9:E196A": {
     "paper": "Zhang",
@@ -379,5 +379,71 @@ window.VARIANT_DETAILS = {
     "gnomad": "",
     "phenotype": "LoF",
     "method": "EdU assay"
+  },
+  "SAMD9L:R463Q": {
+    "paper": "UP",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "EdU assay"
+  },
+  "SAMD9L:K878X": {
+    "paper": "Mitev",
+    "gnomad": "",
+    "phenotype": "NoF",
+    "method": "EdU assay"
+  },
+  "SAMD9:K257E": {
+    "paper": "Peng",
+    "gnomad": "",
+    "phenotype": "LoF",
+    "method": "Viral infection/flow cytometry"
+  },
+  "SAMD9L:R223E": {
+    "paper": "Peng",
+    "gnomad": "",
+    "phenotype": "LoF",
+    "method": "Viral infection/flow cytometry"
+  },
+  "SAMD9:R459Q": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+  "SAMD9:R459Q": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+  "SAMD9:R982C": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+    "SAMD9:R982H": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+  "SAMD9:I983S": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+  "SAMD9:R1293Q": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
+  },
+  "SAMD9:K1569N": {
+    "paper": "Buon",
+    "gnomad": "",
+    "phenotype": "GoF",
+    "method": "Cell counting"
   }
 };

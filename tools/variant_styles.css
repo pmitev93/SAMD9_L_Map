@@ -137,14 +137,16 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 .vtbl-scroll { overflow-x:auto; border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06); }
 table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
 table.vtbl thead th {
-  position:sticky; top:0; background:#f7f8fa; text-align:left; font-weight:700;
+  position:sticky; top:0; background:#f7f8fa; text-align:center; font-weight:700;
   padding:9px 12px; border-bottom:1px solid #e2e2e2; cursor:pointer; user-select:none;
   color:#333; white-space:nowrap;
 }
 table.vtbl thead th:hover { background:#eef0f4; }
-table.vtbl tbody td { padding:7px 12px; border-bottom:1px solid #f0f0f0; color:#222; white-space:nowrap; }
+/* Source is prose (paper titles), everything else is a short discrete value —
+   left-align just that last column, center the rest. */
+table.vtbl thead th:last-child { text-align:left; }
+table.vtbl tbody td { padding:7px 12px; border-bottom:1px solid #f0f0f0; color:#222; white-space:nowrap; text-align:center; }
 table.vtbl tbody tr:hover { background:#fafbfd; }
-.vtbl-num { text-align:right; font-variant-numeric:tabular-nums; }
 .vtbl-mono { font-weight:600; }
 .vtbl-cat {
   display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600;
@@ -152,7 +154,7 @@ table.vtbl tbody tr:hover { background:#fafbfd; }
   background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
   color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
 }
-.vtbl-source { white-space:normal; max-width:320px; }
+.vtbl-source { white-space:normal; max-width:320px; text-align:left; }
 .vtbl-source a { color:#0b48c2; text-decoration:none; }
 .vtbl-source a:hover { text-decoration:underline; }
 .vtbl-pmid { font-size:11px; color:#888; margin-top:2px; }

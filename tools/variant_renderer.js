@@ -749,16 +749,14 @@
   // ---- Table view: every variant as a sortable, filterable list ----
   var TABLE_COLUMNS = [
     { key: "protein",   label: "Protein" },
-    { key: "residue",   label: "Position" },
     { key: "variant",   label: "Variant" },
     { key: "category",  label: "Category" },
     { key: "method",    label: "Method" },
-    { key: "gnomad",    label: "gnomAD" },
+    { key: "gnomad",    label: "gnomAD frequency" },
     { key: "source",    label: "Source" }
   ];
   var SORT_VAL = {
     protein:   function (r) { return r.protein; },
-    residue:   function (r) { return r.residue; },
     variant:   function (r) { return r.label.toLowerCase(); },
     category:  function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
     method:    function (r) { return (r.method || "").toLowerCase(); },
@@ -836,7 +834,6 @@
       }
       return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
-        '<td class="vtbl-num">' + r.residue + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
         '<td><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         "<td>" + esc(r.method || "—") + "</td>" +

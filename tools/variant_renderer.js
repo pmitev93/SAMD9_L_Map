@@ -7,12 +7,17 @@
 
   // ---- Toggle/legend text: edit the "legend" strings below to rename a category.
   var CFG = {
-    GoF:     { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
-    LoF:     { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
-    gnomAD:  { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
-    Somatic: { color: "#000000", label: true,  on: false, legend: "Somatic" },
-    NoF:     { color: "#8ECAE6", label: true,  on: false, legend: "NoF (no gain-of-function effect)" },
-    Other:   { color: "#888888", label: true,  on: false, legend: "Other" }
+    GoF:       { color: "#FF0000", label: true,  on: true,  legend: "Gain-of-function" },
+    LoF:       { color: "#1f56bc", label: true,  on: true,  legend: "Loss-of-function" },
+    gnomAD:    { color: "#73d73c", label: false, on: false, legend: "gnomAD (truncating)" },
+    Somatic:   { color: "#000000", label: true,  on: false, legend: "Somatic" },
+    NoF:       { color: "#8ECAE6", label: true,  on: false, legend: "NoF (no gain-of-function effect)" },
+    Other:     { color: "#888888", label: true,  on: false, legend: "Other" },
+    // Missense variants seen in gnomAD's live data at a residue we haven't
+    // otherwise annotated (see injectGnomadMissenseVariants below) — labeled
+    // like GoF/LoF (unlike the tick-only truncating gnomAD category above),
+    // in a darker green so the two stay visually distinct.
+    gnomADmis: { color: "#1B6B32", label: true,  on: false, legend: "gnomAD missense (unannotated)" }
   };
   // category is DERIVED from `effect` (not stored) — one source of truth. The
   // leading token before a "," or "/" decides the bucket; anything unrecognized
@@ -43,7 +48,8 @@
     { protein: "SAMD9",  symbol: "SAMD9",  transcript: "ENST00000379958" },  // MANE Select
     { protein: "SAMD9L", symbol: "SAMD9L", transcript: "ENST00000318238" }   // MANE Select
   ];
-  var GNOMAD_LIVE = { ready: false, failed: false, byLabel: { SAMD9: {}, SAMD9L: {} } };
+  var GNOMAD_LIVE = { ready: false, failed: false, byLabel: { SAMD9: {}, SAMD9L: {} },
+                       missense: { SAMD9: [], SAMD9L: [] } };
   var AA3TO1 = {
     Ala: "A", Arg: "R", Asn: "N", Asp: "D", Cys: "C", Gln: "Q", Glu: "E", Gly: "G",
     His: "H", Ile: "I", Leu: "L", Lys: "K", Met: "M", Phe: "F", Pro: "P", Ser: "S",
@@ -86,6 +92,16 @@
       body: JSON.stringify({ query: query, variables: { sym: symbol } })
     }).then(function (r) { return r.json(); });
   }
+  // A label counts as strict missense (not stop-gain, frameshift, or
+  // deletion, OR synonymous) when it's Ref+Pos+Alt, Alt is a real amino acid
+  // (not the "X" this project uses for a stop — hgvspToLabel funnels
+  // stop-gain through this same Ref+Pos+Alt shape, Ter -> "X"), and Alt
+  // actually differs from Ref (Ref===Alt is a synonymous/silent change —
+  // same codon position mutated, same amino acid — not a missense variant).
+  function isMissenseLabel(label) {
+    var m = label.match(/^([A-Z])(\d+)([A-Z])$/);
+    return !!m && m[3] !== "X" && m[1] !== m[3];
+  }
   function loadGnomadLive() {
     Promise.all(GNOMAD_GENES.map(function (g) {
       return fetchGnomadGene(g.symbol).then(function (json) {
@@ -97,13 +113,43 @@
           var freq = v.exome || v.genome;
           if (!freq) return;
           GNOMAD_LIVE.byLabel[g.protein][label] = { ac: freq.ac, an: freq.an, af: freq.af };
+          if (freq.ac > 0 && isMissenseLabel(label)) {
+            var residue = +label.match(/^[A-Z](\d+)/)[1];
+            GNOMAD_LIVE.missense[g.protein].push({ label: label, residue: residue });
+          }
         });
       });
     })).then(function () {
       GNOMAD_LIVE.ready = true;
+      injectGnomadMissenseVariants();
     }).catch(function () {
       GNOMAD_LIVE.failed = true;
     });
+  }
+  // Adds a tick+label (like GoF/LoF) for any gnomAD missense variant at a
+  // residue we have NOT already annotated with something else (any existing
+  // curated variant at that residue — any category — wins; we never add a
+  // duplicate or second opinion at an already-annotated position). Re-runs
+  // the renderer once so the new entries actually appear, and adds the
+  // category's checkbox to the already-built toggle box.
+  var gnomadMissenseInjected = false;
+  function injectGnomadMissenseVariants() {
+    if (gnomadMissenseInjected) return;   // guard: loadGnomadLive only ever resolves once
+    gnomadMissenseInjected = true;
+    ["SAMD9", "SAMD9L"].forEach(function (protein) {
+      var annotatedResidues = {};
+      DATA.forEach(function (v) { if (v.protein === protein) annotatedResidues[v.residue] = true; });
+      GNOMAD_LIVE.missense[protein].forEach(function (m) {
+        if (annotatedResidues[m.residue]) return;   // already annotated -> leave as-is
+        DATA.push({
+          protein: protein, residue: m.residue, label: m.label,
+          effect: "gnomADmis", category: "gnomADmis", origin: "gnomAD (live)"
+        });
+        annotatedResidues[m.residue] = true;   // gnomAD can list >1 missense per residue; keep only the first
+      });
+    });
+    addToggleFor("gnomADmis");
+    run();
   }
   // Formats the gnomAD popup row. Live data wins whenever we have it (a real
   // match, or a confirmed absence from the full canonical-transcript variant
@@ -636,6 +682,22 @@
       document.body.classList.toggle("hide-cat-" + cb.getAttribute("data-cat"), !cb.checked);
     });
     document.body.appendChild(box);
+  }
+  // Adds ONE checkbox to the already-built toggle box, for a category that
+  // only becomes known after the initial render (gnomADmis — discovered
+  // once the live gnomAD fetch resolves). The box's existing "change"
+  // listener is delegated (checks e.target), so this new row is covered by
+  // it automatically — no separate listener needed, and any checkbox state
+  // the user has already set on OTHER categories is left untouched.
+  function addToggleFor(cat) {
+    var box = document.getElementById("variant-toggles");
+    if (!box || box.querySelector('input[data-cat="' + cat + '"]')) return;
+    var on = CFG[cat].on !== false;
+    if (!on) document.body.classList.add("hide-cat-" + cat);
+    var label = document.createElement("label");
+    label.innerHTML = '<input type="checkbox" ' + (on ? "checked" : "") + ' data-cat="' + cat + '">' +
+                       '<span class="vt-name" style="--vt-c:' + CFG[cat].color + '">' + CFG[cat].legend + '</span>';
+    box.appendChild(label);
   }
 
   // "Last updated" — fetched live from GitHub's own commit history, purely

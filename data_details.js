@@ -218,7 +218,7 @@ window.VARIANT_DETAILS = {
     "phenotype": "GoF",
     "method": "Flow Cytometry"
   },
-  "SAMD9L:K878SfsX13": {
+  "SAMD9L:K878SfsX12": {
     "paper": "Rsl",
     "gnomad": "Not present",
     "phenotype": "GoF",
@@ -445,5 +445,11 @@ window.VARIANT_DETAILS = {
     "gnomad": "",
     "phenotype": "GoF",
     "method": "Cell counting"
+  },
+  "SAMD9:E830X": {
+    "paper": "Mitev",
+    "gnomad": "Allele frequency: 6.21e-6",
+    "phenotype": "LoF",
+    "method": "EdU Assay"
   }
 };

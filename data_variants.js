@@ -1563,7 +1563,7 @@ window.VARIANTS =
 "protein": "SAMD9",
 "residue": 882,
 "label": "F882X",
-"effect": "NoF",
+"effect": "LoF",
 "origin": "Bryceson"
 },
 {
@@ -3788,8 +3788,8 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 830,
 "label": "E830X",
-"effect": "gnomAD",
-"origin": "mt1"
+"effect": "LoF",
+"origin": "NM"
 },
 {
 "protein": "SAMD9L",
@@ -3932,15 +3932,7 @@ window.VARIANTS =
 "protein": "SAMD9L",
 "residue": 878,
 "label": "K878SfsX12",
-"effect": "NoF",
-"origin": "Klco",
-"group": "SAMD9L-R878"
-},
-{
-"protein": "SAMD9L",
-"residue": 878,
-"label": "K878SfsX13",
-"effect": "NoF",
+"effect": "GoF",
 "origin": "Klco",
 "group": "SAMD9L-R878"
 },

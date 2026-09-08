@@ -10,7 +10,10 @@ patient/population variants.
 
 - **Switch between Map and Table** with the buttons in the top-left. Map is the
   aligned-sequence figure; Table is every variant as a sortable list — click a
-  column header to sort by it (click again to reverse).
+  column header to sort by it (click again to reverse). Table also has its own
+  **search box** (matches anything in the row: protein, variant, category,
+  method, gnomAD, source) and a **protein filter** (All / SAMD9 / SAMD9L,
+  All by default) — both independent of the category toggles below.
 - **Toggle variant categories** with the box in the top-right (GoF / LoF / gnomAD
   / Somatic / NoF / Other / gnomAD missense). All gnomAD categories are off by
   default. These toggles filter **both** views — Table rows carry the same

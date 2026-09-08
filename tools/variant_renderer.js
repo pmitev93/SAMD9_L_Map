@@ -687,7 +687,7 @@
       // data-category attribute + hide-cat-* CSS rules); just the visible
       // count needs an explicit refresh since it's plain text, not CSS.
       var tv = document.getElementById("table-view");
-      if (tv && tv.__catCounts) updateTableCount(tv.__catCounts);
+      if (tv && tv.__wired) updateTableCount();
     });
     document.body.appendChild(box);
   }
@@ -734,7 +734,12 @@
     var bar = document.getElementById("bottom-legend-bar");
     if (mapTable) mapTable.style.display = isTable ? "none" : "";
     if (strip) strip.style.display = isTable ? "none" : "";
-    if (bar) bar.style.display = isTable ? "none" : "";
+    // bar's own static HTML sets "display: flex" inline (it lays out its three
+    // legend-blocks side by side) — restoring "" here would drop back to a
+    // <div>'s default block display instead, stacking the conservation scale
+    // above the other legend blocks instead of beside them. Must name "flex"
+    // explicitly, not just clear the property.
+    if (bar) bar.style.display = isTable ? "none" : "flex";
     if (tv) tv.style.display = isTable ? "block" : "none";
     document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
       b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
@@ -747,7 +752,6 @@
     { key: "residue",   label: "Position" },
     { key: "variant",   label: "Variant" },
     { key: "category",  label: "Category" },
-    { key: "phenotype", label: "Phenotype / effect" },
     { key: "method",    label: "Method" },
     { key: "gnomad",    label: "gnomAD" },
     { key: "source",    label: "Source" }
@@ -757,12 +761,16 @@
     residue:   function (r) { return r.residue; },
     variant:   function (r) { return r.label.toLowerCase(); },
     category:  function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
-    phenotype: function (r) { return (r.phenotype || "").toLowerCase(); },
     method:    function (r) { return (r.method || "").toLowerCase(); },
     gnomad:    function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
     source:    function (r) { return (r.sourceTitle || "").toLowerCase(); }
   };
   var tableSort = { key: "protein", dir: 1 };
+  // Search text + protein pick are table-view-only state, independent of the
+  // shared category toggles — a plain substring match against each row's own
+  // rendered text (already covers protein/variant/category/method/gnomAD/
+  // source in one go, no separate search index to keep in sync).
+  var tableFilter = { search: "", protein: "all" };
 
   // Same present/absent/loading logic as gnomadRowFor (the popup), but split
   // into a display string + a numeric allele frequency so the gnomAD column
@@ -797,7 +805,6 @@
       var gc = gnomadCellFor(v.protein, v.label, d && d.gnomad);
       return {
         protein: v.protein, residue: v.residue, label: v.label, category: v.category,
-        phenotype: (d && (d.phenotype || d.effect)) || v.effect || "",
         method: d && d.method,
         gnomadAF: gc.af, gnomadText: gc.text,
         sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
@@ -811,9 +818,6 @@
       if (!cmp) cmp = (a.protein < b.protein ? -1 : a.protein > b.protein ? 1 : 0) || (a.residue - b.residue);
       return cmp * tableSort.dir;
     });
-
-    var catCounts = {};
-    rows.forEach(function (r) { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
 
     var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
       var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
@@ -830,43 +834,88 @@
           : esc(r.sourceTitle);
         if (r.pmid && r.pmid !== "pending") src += '<div class="vtbl-pmid">PMID: ' + esc(r.pmid) + "</div>";
       }
-      return '<tr data-category="' + esc(r.category) + '">' +
+      return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-num">' + r.residue + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
         '<td><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
-        "<td>" + esc(r.phenotype || "—") + "</td>" +
         "<td>" + esc(r.method || "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
         '<td class="vtbl-source">' + src + "</td>" +
         "</tr>";
     }).join("");
 
+    var proteins = ["all", "SAMD9", "SAMD9L"];
+    var proteinHtml = proteins.map(function (p) {
+      var active = tableFilter.protein === p ? " vs-active" : "";
+      return '<button type="button" class="vs-btn vtbl-pbtn' + active + '" data-protein="' + p + '">' +
+             (p === "all" ? "All" : p) + "</button>";
+    }).join("");
+
     host.innerHTML =
-      '<div class="vtbl-head"><span id="vtbl-count"></span></div>' +
+      '<div class="vtbl-head">' +
+        '<div class="vtbl-controls">' +
+          '<input type="search" id="vtbl-search" placeholder="Search variants…" value="' + esc(tableFilter.search) + '">' +
+          '<div class="vtbl-protein-filter">' + proteinHtml + "</div>" +
+        "</div>" +
+        '<span id="vtbl-count"></span>' +
+      "</div>" +
       '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
-    host.__catCounts = catCounts;
-    updateTableCount(catCounts);
+    applyTableFilters();   // re-apply protein/search filters to the freshly-built rows
 
     if (!host.__wired) {
       host.__wired = true;
       host.addEventListener("click", function (e) {
         var th = e.target.closest && e.target.closest("th[data-sort]");
-        if (!th) return;
-        var key = th.getAttribute("data-sort");
-        if (tableSort.key === key) tableSort.dir *= -1; else { tableSort.key = key; tableSort.dir = 1; }
-        buildTableView();
+        if (th) {
+          var key = th.getAttribute("data-sort");
+          if (tableSort.key === key) tableSort.dir *= -1; else { tableSort.key = key; tableSort.dir = 1; }
+          buildTableView();
+          return;
+        }
+        var pbtn = e.target.closest && e.target.closest(".vtbl-pbtn");
+        if (pbtn) {
+          tableFilter.protein = pbtn.getAttribute("data-protein");
+          host.querySelectorAll(".vtbl-pbtn").forEach(function (b) {
+            b.classList.toggle("vs-active", b === pbtn);
+          });
+          applyTableFilters();
+        }
+      });
+      var searchTimer;
+      host.addEventListener("input", function (e) {
+        if (e.target.id !== "vtbl-search") return;
+        var val = e.target.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+          tableFilter.search = val.trim().toLowerCase();
+          applyTableFilters();
+        }, 150);
       });
     }
   }
-  function updateTableCount(catCounts) {
+  // Applies the protein pick + search text on top of whatever the category
+  // toggles already did via CSS (their !important rule always wins, so we
+  // never fight it — a category-hidden row just stays hidden regardless of
+  // what we set here). Cheap enough to run on every keystroke: substring
+  // match against the row's own rendered text, no separate search index.
+  function applyTableFilters() {
+    var host = document.getElementById("table-view");
+    if (!host) return;
+    var rows = host.querySelectorAll("tbody tr");
+    rows.forEach(function (tr) {
+      var proteinOk = tableFilter.protein === "all" || tr.getAttribute("data-protein") === tableFilter.protein;
+      var searchOk = !tableFilter.search || tr.textContent.toLowerCase().indexOf(tableFilter.search) !== -1;
+      tr.style.display = (proteinOk && searchOk) ? "" : "none";
+    });
+    updateTableCount();
+  }
+  function updateTableCount() {
     var el = document.getElementById("vtbl-count");
     if (!el) return;
-    var total = 0, shown = 0;
-    Object.keys(catCounts).forEach(function (cat) {
-      total += catCounts[cat];
-      if (!document.body.classList.contains("hide-cat-" + cat)) shown += catCounts[cat];
-    });
+    var rows = document.querySelectorAll("#table-view tbody tr");
+    var total = rows.length, shown = 0;
+    rows.forEach(function (tr) { if (getComputedStyle(tr).display !== "none") shown++; });
     el.textContent = shown.toLocaleString() + " of " + total.toLocaleString() + " variants shown";
   }
 

@@ -122,7 +122,18 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 
 /* ---- table view (every variant, sortable + filtered by the same toggles) ---- */
 #table-view { width:min(1400px, 96vw); margin:70px auto 90px; font-family:var(--ui-font); }
-.vtbl-head { display:flex; justify-content:flex-end; padding:0 4px 8px; font-size:13px; color:#666; }
+.vtbl-head {
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+  gap:10px; padding:0 4px 10px; font-size:13px; color:#666;
+}
+.vtbl-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+#vtbl-search {
+  font-family:inherit; font-size:.95em; padding:.5em .9em; width:220px;
+  border:1px solid rgba(120,140,175,.35); border-radius:9px; background:#fff; color:#222;
+}
+#vtbl-search:focus { outline:2px solid rgba(120,140,175,.4); outline-offset:1px; }
+.vtbl-protein-filter { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
+.vtbl-protein-filter .vs-btn { padding:.4em .85em; font-size:.9em; }
 .vtbl-scroll { overflow-x:auto; border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06); }
 table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
 table.vtbl thead th {

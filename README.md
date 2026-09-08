@@ -12,7 +12,8 @@ patient/population variants.
   / Other). gnomAD is off by default.
 - **Hover an amino-acid box** to see its exact position (e.g. `K133`).
 - **Click a variant** to open a card with the source paper (linked), PMID,
-  gnomAD status, phenotype, and method of functional assessment.
+  gnomAD status, phenotype, and method of functional assessment. gnomAD
+  status is **live** — see below.
 
 ## Files
 
@@ -47,11 +48,31 @@ Add an entry to `data_variants.js`:
 ```
 2. Link the variant to it in `data_details.js`:
 ```js
-"SAMD9L:K123R": { "paper": "smith_2020", "gnomad": "Not present",
-                  "phenotype": "GoF", "method": "EdU assay" },
+"SAMD9L:K123R": { "phenotype": "GoF", "method": "EdU assay", "paper": "smith_2020" },
 ```
-Any field you omit is simply not shown. Variants without an entry show
-*"In progress"*.
+Any field you omit is simply not shown. Variants without an entry (or without
+a paper) show *"In progress"* — **except gnomAD status**, see below.
+
+### gnomAD status — live, no manual entry needed
+The page fetches gnomAD's variant data itself (2 requests on load, one per
+gene, via gnomAD's public GraphQL API) and matches it to each variant by
+protein position, so the popup's **gnomAD** row is always current — no field
+to fill in. This covers missense (`R986C`), stop-gain (`W1507X`), frameshift
+(`D1580VfsX2`), and single-residue deletion (`R1281del`) labels. Compound /
+in-trans labels (e.g. `"R986C, T233N (in trans)"`) aren't a single
+gnomAD-queryable variant, so they're skipped rather than guessed at.
+
+You can still set a manual `"gnomad"` field in `data_details.js` — it's kept
+as a fallback shown only while the live fetch is in flight, if it fails, or
+for labels live data can't speak to (compound ones). No need to add it
+otherwise.
+
+If gnomAD ever ships a new default release, `tools/variant_renderer.js` has
+two constants (`GNOMAD_DATASET`, `GNOMAD_VERSION_LABEL`) that need a manual
+bump — check the version shown in the page title at
+[gnomad.broadinstitute.org](https://gnomad.broadinstitute.org). The allele
+frequencies themselves update automatically regardless; only that label
+needs occasional attention.
 
 ### Nudge a label (overlap / crowding)
 In `data_overrides.js`, keyed by label:

@@ -50,5 +50,10 @@ window.PAPERS = {
     "title": "Unpublished data, Bryceson lab",
     "pmid": "pending",
     "url": "pending"
+  },
+  "Buon": {
+    "title": "Somatic mutations and progressive monosomy modify SAMD9-related phenotypes in humans",
+    "pmid": "28346228",
+    "url": "https://www.jci.org/articles/view/91913"
   }
 };

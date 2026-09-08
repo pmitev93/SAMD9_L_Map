@@ -8,9 +8,13 @@ patient/population variants.
 
 ## Using the figure
 
+- **Switch between Map and Table** with the buttons in the top-left. Map is the
+  aligned-sequence figure; Table is every variant as a sortable list — click a
+  column header to sort by it (click again to reverse).
 - **Toggle variant categories** with the box in the top-right (GoF / LoF / gnomAD
   / Somatic / NoF / Other / gnomAD missense). All gnomAD categories are off by
-  default.
+  default. These toggles filter **both** views — Table rows carry the same
+  category as Map ticks, so hiding a category hides it everywhere.
 - **Hover an amino-acid box** to see its exact position (e.g. `K133`).
 - **Click a variant** to open a card with the source paper (linked), PMID,
   gnomAD status, phenotype, and method of functional assessment. gnomAD

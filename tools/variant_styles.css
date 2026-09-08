@@ -105,6 +105,47 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   -webkit-text-fill-color:transparent;
 }
 
+/* ---- Map / Table view switcher (top-left, mirrors #variant-toggles) ---- */
+#view-switcher {
+  position:fixed; top:12px; left:14px; z-index:60;
+  background:#ffffff; border:1px solid rgba(120,140,175,.35); border-radius:14px;
+  padding:.35em; font-family:var(--ui-font); display:flex; gap:.25em;
+  box-shadow:0 0 0 4px rgba(120,140,175,.10), 0 6px 20px rgba(60,70,90,.10);
+}
+.vs-btn {
+  border:0; background:none; cursor:pointer; font-family:inherit; font-weight:600;
+  font-size:.95em; color:#888; padding:.5em 1em; border-radius:9px;
+  transition:background .12s ease, color .12s ease;
+}
+.vs-btn:hover { background:rgba(90,90,95,.08); }
+.vs-btn.vs-active { background:#2b2f36; color:#fff; }
+
+/* ---- table view (every variant, sortable + filtered by the same toggles) ---- */
+#table-view { width:min(1400px, 96vw); margin:70px auto 90px; font-family:var(--ui-font); }
+.vtbl-head { display:flex; justify-content:flex-end; padding:0 4px 8px; font-size:13px; color:#666; }
+.vtbl-scroll { overflow-x:auto; border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06); }
+table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
+table.vtbl thead th {
+  position:sticky; top:0; background:#f7f8fa; text-align:left; font-weight:700;
+  padding:9px 12px; border-bottom:1px solid #e2e2e2; cursor:pointer; user-select:none;
+  color:#333; white-space:nowrap;
+}
+table.vtbl thead th:hover { background:#eef0f4; }
+table.vtbl tbody td { padding:7px 12px; border-bottom:1px solid #f0f0f0; color:#222; white-space:nowrap; }
+table.vtbl tbody tr:hover { background:#fafbfd; }
+.vtbl-num { text-align:right; font-variant-numeric:tabular-nums; }
+.vtbl-mono { font-weight:600; }
+.vtbl-cat {
+  display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600;
+  white-space:nowrap;
+  background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
+  color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
+}
+.vtbl-source { white-space:normal; max-width:320px; }
+.vtbl-source a { color:#0b48c2; text-decoration:none; }
+.vtbl-source a:hover { text-decoration:underline; }
+.vtbl-pmid { font-size:11px; color:#888; margin-top:2px; }
+
 /* ---- domain-marker legend (replaces Mutations_Legend.svg) ---- */
 .mut-legend { font-family:var(--ui-font); font-size:13px; }
 .mut-row { display:flex; align-items:center; gap:7px; padding:1.5px 0; }

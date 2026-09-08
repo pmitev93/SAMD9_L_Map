@@ -150,6 +150,7 @@
     });
     addToggleFor("gnomADmis");
     run();
+    buildTableView();
   }
   // Formats the gnomAD popup row. Live data wins whenever we have it (a real
   // match, or a confirmed absence from the full canonical-transcript variant
@@ -214,11 +215,13 @@
     PAPERS  = window.PAPERS || {};
     DETAILS = window.VARIANT_DETAILS || {};
     run();
+    buildViewSwitcher();
+    buildTableView();
     setupPopup();
   }
 
   function run() {
-    var table = document.querySelector("table");
+    var table = document.getElementById("samd9-table");
     if (!table) return;
 
     // 1. drop legacy markers + any previous render (idempotent on resize)
@@ -680,6 +683,11 @@
       var cb = e.target;
       if (cb.tagName !== "INPUT") return;
       document.body.classList.toggle("hide-cat-" + cb.getAttribute("data-cat"), !cb.checked);
+      // same category toggles also gate table-view rows (they share the
+      // data-category attribute + hide-cat-* CSS rules); just the visible
+      // count needs an explicit refresh since it's plain text, not CSS.
+      var tv = document.getElementById("table-view");
+      if (tv && tv.__catCounts) updateTableCount(tv.__catCounts);
     });
     document.body.appendChild(box);
   }
@@ -698,6 +706,168 @@
     label.innerHTML = '<input type="checkbox" ' + (on ? "checked" : "") + ' data-cat="' + cat + '">' +
                        '<span class="vt-name" style="--vt-c:' + CFG[cat].color + '">' + CFG[cat].legend + '</span>';
     box.appendChild(label);
+  }
+
+  // ---- Map / Table view switcher (top-left, mirrors the toggle box) ----
+  // "Table" swaps the big aligned-sequence map for a sortable/filterable list
+  // of every variant. The category toggles (top-right) are NOT duplicated —
+  // table rows carry the same data-category attribute as ticks/labels, so the
+  // existing body.hide-cat-* CSS rules already show/hide them for free.
+  function buildViewSwitcher() {
+    if (document.getElementById("view-switcher")) return;
+    var box = document.createElement("div");
+    box.id = "view-switcher";
+    box.innerHTML =
+      '<button type="button" class="vs-btn vs-active" data-view="map">Map</button>' +
+      '<button type="button" class="vs-btn" data-view="table">Table</button>';
+    box.addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest("button[data-view]");
+      if (btn) setView(btn.getAttribute("data-view"));
+    });
+    document.body.appendChild(box);
+  }
+  function setView(view) {
+    var isTable = view === "table";
+    var mapTable = document.getElementById("samd9-table");
+    var tv = document.getElementById("table-view");
+    var strip = document.getElementById("bottom-legend-strip");
+    var bar = document.getElementById("bottom-legend-bar");
+    if (mapTable) mapTable.style.display = isTable ? "none" : "";
+    if (strip) strip.style.display = isTable ? "none" : "";
+    if (bar) bar.style.display = isTable ? "none" : "";
+    if (tv) tv.style.display = isTable ? "block" : "none";
+    document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
+      b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
+    });
+  }
+
+  // ---- Table view: every variant as a sortable, filterable list ----
+  var TABLE_COLUMNS = [
+    { key: "protein",   label: "Protein" },
+    { key: "residue",   label: "Position" },
+    { key: "variant",   label: "Variant" },
+    { key: "category",  label: "Category" },
+    { key: "phenotype", label: "Phenotype / effect" },
+    { key: "method",    label: "Method" },
+    { key: "gnomad",    label: "gnomAD" },
+    { key: "source",    label: "Source" }
+  ];
+  var SORT_VAL = {
+    protein:   function (r) { return r.protein; },
+    residue:   function (r) { return r.residue; },
+    variant:   function (r) { return r.label.toLowerCase(); },
+    category:  function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
+    phenotype: function (r) { return (r.phenotype || "").toLowerCase(); },
+    method:    function (r) { return (r.method || "").toLowerCase(); },
+    gnomad:    function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
+    source:    function (r) { return (r.sourceTitle || "").toLowerCase(); }
+  };
+  var tableSort = { key: "protein", dir: 1 };
+
+  // Same present/absent/loading logic as gnomadRowFor (the popup), but split
+  // into a display string + a numeric allele frequency so the gnomAD column
+  // can be sorted, not just read.
+  function gnomadCellFor(protein, label, staticGnomad) {
+    if (GNOMAD_LIVE.ready && isSimpleLabel(label)) {
+      var hit = GNOMAD_LIVE.byLabel[protein] && GNOMAD_LIVE.byLabel[protein][label];
+      if (hit && hit.ac > 0) return { text: hit.af.toExponential(2), af: hit.af };
+      return { text: "Not present", af: 0 };
+    }
+    if (staticGnomad != null) {
+      var g = (typeof staticGnomad === "object")
+        ? (staticGnomad.present ? "Yes" + (staticGnomad.maf ? " (MAF " + staticGnomad.maf + ")" : "") : "No")
+        : staticGnomad;
+      return { text: g, af: null };
+    }
+    if (GNOMAD_LIVE.failed) return { text: "—", af: null };
+    return { text: isSimpleLabel(label) ? "Loading…" : "—", af: null };
+  }
+
+  // Rebuilds the whole table from the current DATA snapshot. Called after
+  // init (DATA loaded) and after gnomAD-missense injection (DATA grew) — NOT
+  // on every resize/run(), since rebuilding thousands of rows on resize would
+  // be wasteful and gains nothing (the table has no geometry to recompute).
+  function buildTableView() {
+    var host = document.getElementById("table-view");
+    if (!host) return;
+
+    var rows = DATA.map(function (v) {
+      var d = DETAILS[v.protein + ":" + v.label] || DETAILS[v.label];
+      var paper = (d && d.paper && PAPERS[d.paper]) || null;
+      var gc = gnomadCellFor(v.protein, v.label, d && d.gnomad);
+      return {
+        protein: v.protein, residue: v.residue, label: v.label, category: v.category,
+        phenotype: (d && (d.phenotype || d.effect)) || v.effect || "",
+        method: d && d.method,
+        gnomadAF: gc.af, gnomadText: gc.text,
+        sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
+      };
+    });
+
+    var valFn = SORT_VAL[tableSort.key] || SORT_VAL.protein;
+    rows.sort(function (a, b) {
+      var fa = valFn(a), fb = valFn(b);
+      var cmp = fa < fb ? -1 : fa > fb ? 1 : 0;
+      if (!cmp) cmp = (a.protein < b.protein ? -1 : a.protein > b.protein ? 1 : 0) || (a.residue - b.residue);
+      return cmp * tableSort.dir;
+    });
+
+    var catCounts = {};
+    rows.forEach(function (r) { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
+
+    var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
+      var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
+      return '<th data-sort="' + c.key + '">' + esc(c.label) + arrow + "</th>";
+    }).join("") + "</tr>";
+
+    var bodyHtml = rows.map(function (r) {
+      var color = (CFG[r.category] || CFG.Other).color;
+      var legend = (CFG[r.category] || CFG.Other).legend;
+      var src = "—";
+      if (r.sourceTitle) {
+        src = (r.sourceUrl && r.sourceUrl !== "pending")
+          ? '<a href="' + esc(r.sourceUrl) + '" target="_blank" rel="noopener" title="' + esc(r.sourceTitle) + '">' + esc(r.sourceTitle) + "</a>"
+          : esc(r.sourceTitle);
+        if (r.pmid && r.pmid !== "pending") src += '<div class="vtbl-pmid">PMID: ' + esc(r.pmid) + "</div>";
+      }
+      return '<tr data-category="' + esc(r.category) + '">' +
+        "<td>" + esc(r.protein) + "</td>" +
+        '<td class="vtbl-num">' + r.residue + "</td>" +
+        '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
+        '<td><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
+        "<td>" + esc(r.phenotype || "—") + "</td>" +
+        "<td>" + esc(r.method || "—") + "</td>" +
+        "<td>" + esc(r.gnomadText) + "</td>" +
+        '<td class="vtbl-source">' + src + "</td>" +
+        "</tr>";
+    }).join("");
+
+    host.innerHTML =
+      '<div class="vtbl-head"><span id="vtbl-count"></span></div>' +
+      '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
+    host.__catCounts = catCounts;
+    updateTableCount(catCounts);
+
+    if (!host.__wired) {
+      host.__wired = true;
+      host.addEventListener("click", function (e) {
+        var th = e.target.closest && e.target.closest("th[data-sort]");
+        if (!th) return;
+        var key = th.getAttribute("data-sort");
+        if (tableSort.key === key) tableSort.dir *= -1; else { tableSort.key = key; tableSort.dir = 1; }
+        buildTableView();
+      });
+    }
+  }
+  function updateTableCount(catCounts) {
+    var el = document.getElementById("vtbl-count");
+    if (!el) return;
+    var total = 0, shown = 0;
+    Object.keys(catCounts).forEach(function (cat) {
+      total += catCounts[cat];
+      if (!document.body.classList.contains("hide-cat-" + cat)) shown += catCounts[cat];
+    });
+    el.textContent = shown.toLocaleString() + " of " + total.toLocaleString() + " variants shown";
   }
 
   // "Last updated" — fetched live from GitHub's own commit history, purely

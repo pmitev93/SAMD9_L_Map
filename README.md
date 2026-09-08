@@ -9,7 +9,8 @@ patient/population variants.
 ## Using the figure
 
 - **Toggle variant categories** with the box in the top-right (GoF / LoF / gnomAD
-  / Other). gnomAD is off by default.
+  / Somatic / NoF / Other / gnomAD missense). All gnomAD categories are off by
+  default.
 - **Hover an amino-acid box** to see its exact position (e.g. `K133`).
 - **Click a variant** to open a card with the source paper (linked), PMID,
   gnomAD status, phenotype, and method of functional assessment. gnomAD
@@ -66,6 +67,18 @@ You can still set a manual `"gnomad"` field in `data_details.js` — it's kept
 as a fallback shown only while the live fetch is in flight, if it fails, or
 for labels live data can't speak to (compound ones). No need to add it
 otherwise.
+
+### gnomAD missense — auto-annotated, not just status-checked
+Beyond checking gnomAD status on variants you've curated, the page also scans
+gnomAD's live data for **missense** variants at residues with **no curated
+annotation at all** (no GoF/LoF/Somatic/NoF/Other entry there) and adds them
+as their own category — dark green, tick + label (e.g. `R986C`) just like
+GoF/LoF — under the **gnomAD missense (unannotated)** toggle, off by default.
+A residue that already has any curated variant is left as-is; gnomAD is never
+used to second-guess an existing annotation. Truncating gnomAD variants
+(stop-gain, frameshift, deletion) stay in the separate, tick-only **gnomAD**
+category as before. This needs no manual upkeep — it's recomputed from the
+same live fetch described above every time the page loads.
 
 If gnomAD ever ships a new default release, `tools/variant_renderer.js` has
 two constants (`GNOMAD_DATASET`, `GNOMAD_VERSION_LABEL`) that need a manual

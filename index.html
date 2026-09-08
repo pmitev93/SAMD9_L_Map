@@ -12706,6 +12706,112 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
     if (CFG[first]) return first;
     return "Other";
   }
+
+  // ---- Live gnomAD data — fetched from gnomAD's own public API on every page
+  // load, so no one has to manually look up and re-enter allele frequencies.
+  // Queries the WHOLE gene once per protein (not one request per variant),
+  // filtered to the canonical/MANE-Select transcript, and matches each
+  // variant's protein-level HGVS (e.g. "p.Arg986Cys") back to our own label
+  // format ("R986C") so it can be looked up directly by data-mutation.
+  //
+  // GNOMAD_DATASET / GNOMAD_VERSION_LABEL: gnomAD's API has no queryable
+  // "current version" field, so the display label is a plain string here —
+  // if gnomAD ships a new default release, bump GNOMAD_DATASET (e.g. to
+  // "gnomad_r5") and GNOMAD_VERSION_LABEL to match (check the version shown
+  // in the page title at gnomad.broadinstitute.org). The allele-frequency
+  // numbers themselves stay live/automatic regardless; only this label needs
+  // an occasional manual nudge.
+  var GNOMAD_DATASET = "gnomad_r4";
+  var GNOMAD_VERSION_LABEL = "gnomAD v4.1.1";
+  var GNOMAD_GENES = [
+    { protein: "SAMD9",  symbol: "SAMD9",  transcript: "ENST00000379958" },  // MANE Select
+    { protein: "SAMD9L", symbol: "SAMD9L", transcript: "ENST00000318238" }   // MANE Select
+  ];
+  var GNOMAD_LIVE = { ready: false, failed: false, byLabel: { SAMD9: {}, SAMD9L: {} } };
+  var AA3TO1 = {
+    Ala: "A", Arg: "R", Asn: "N", Asp: "D", Cys: "C", Gln: "Q", Glu: "E", Gly: "G",
+    His: "H", Ile: "I", Leu: "L", Lys: "K", Met: "M", Phe: "F", Pro: "P", Ser: "S",
+    Thr: "T", Trp: "W", Tyr: "Y", Val: "V", Ter: "X"
+  };
+  // Converts gnomAD's protein HGVS into our own label convention, covering the
+  // shapes that actually occur in this dataset: missense, stop-gain,
+  // frameshift, single-residue deletion. Anything else (splice, extension,
+  // multi-residue indels...) returns null and is simply not matched.
+  function hgvspToLabel(hgvsp) {
+    if (!hgvsp) return null;
+    var m;
+    if ((m = hgvsp.match(/^p\.([A-Za-z]{3})(\d+)([A-Za-z]{3})fsTer(\d+)$/))) {
+      var ref1 = AA3TO1[m[1]], alt1 = AA3TO1[m[3]];
+      return (ref1 && alt1) ? ref1 + m[2] + alt1 + "fsX" + m[4] : null;
+    }
+    if ((m = hgvsp.match(/^p\.([A-Za-z]{3})(\d+)del$/))) {
+      var ref2 = AA3TO1[m[1]];
+      return ref2 ? ref2 + m[2] + "del" : null;
+    }
+    if ((m = hgvsp.match(/^p\.([A-Za-z]{3})(\d+)([A-Za-z]{3})$/))) {
+      var ref3 = AA3TO1[m[1]], alt3 = AA3TO1[m[3]];
+      return (ref3 && alt3) ? ref3 + m[2] + alt3 : null;
+    }
+    return null;
+  }
+  // A variant label counts as "askable" of gnomAD only if it's a single,
+  // simple protein change in one of the shapes above — compound/in-trans
+  // labels (e.g. "R986C, T233N (in trans)") aren't a single gnomAD variant,
+  // so we never claim to know whether gnomAD "has" them.
+  function isSimpleLabel(label) {
+    return /^[A-Z]\d+([A-Z]|del|fsX\d+|[A-Z]fsX\d+)$/.test(label);
+  }
+  function fetchGnomadGene(symbol) {
+    var query = "query($sym:String!){ gene(gene_symbol:$sym, reference_genome: GRCh38) { " +
+                "variants(dataset: " + GNOMAD_DATASET + ") { hgvsp transcript_id exome{ac an af} genome{ac an af} } } }";
+    return fetch("https://gnomad.broadinstitute.org/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: query, variables: { sym: symbol } })
+    }).then(function (r) { return r.json(); });
+  }
+  function loadGnomadLive() {
+    Promise.all(GNOMAD_GENES.map(function (g) {
+      return fetchGnomadGene(g.symbol).then(function (json) {
+        var variants = (json.data && json.data.gene && json.data.gene.variants) || [];
+        variants.forEach(function (v) {
+          if (v.transcript_id !== g.transcript) return;
+          var label = hgvspToLabel(v.hgvsp);
+          if (!label) return;
+          var freq = v.exome || v.genome;
+          if (!freq) return;
+          GNOMAD_LIVE.byLabel[g.protein][label] = { ac: freq.ac, an: freq.an, af: freq.af };
+        });
+      });
+    })).then(function () {
+      GNOMAD_LIVE.ready = true;
+    }).catch(function () {
+      GNOMAD_LIVE.failed = true;
+    });
+  }
+  // Formats the gnomAD popup row. Live data wins whenever we have it (a real
+  // match, or a confirmed absence from the full canonical-transcript variant
+  // list); falls back to the manually-curated data_details.js text only when
+  // live data can't speak to this specific label (still loading, fetch
+  // failed, or the label is a compound variant gnomAD can't be asked about).
+  function gnomadRowFor(protein, label, staticGnomad) {
+    if (GNOMAD_LIVE.ready && isSimpleLabel(label)) {
+      var hit = GNOMAD_LIVE.byLabel[protein] && GNOMAD_LIVE.byLabel[protein][label];
+      if (hit && hit.ac > 0) {
+        return "Present — allele frequency " + hit.af.toExponential(2) +
+               " (" + hit.ac + "/" + hit.an + ") — " + GNOMAD_VERSION_LABEL;
+      }
+      return "Not present — " + GNOMAD_VERSION_LABEL;
+    }
+    if (staticGnomad != null) {
+      var g = (typeof staticGnomad === "object")
+        ? (staticGnomad.present ? "Yes" + (staticGnomad.maf ? " (MAF " + staticGnomad.maf + ")" : "") : "No")
+        : staticGnomad;
+      return g;
+    }
+    if (GNOMAD_LIVE.failed) return null;
+    return isSimpleLabel(label) ? "Loading live gnomAD data…" : null;
+  }
   // Geometry. LANE_H/LABEL_H track the label size so bigger labels still fit.
   // TICK = the (fixed) line length for a lane-0 variant; +LANE_H per stack level.
   var TICK = 26, LANE_H = 15, LABEL_H = 15, PAD = 5;
@@ -13121,6 +13227,7 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
     h += '<div class="vpop-head"><span class="vpop-chip" style="background:' + color +
          '"></span>' + esc(mut) + '<span class="vpop-prot">' + esc(protein) + '</span></div>';
 
+    var anyRow = false;
     if (d) {
       var paper = (d.paper && PAPERS[d.paper]) || {};
       var url = paper.url || (paper.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + paper.pmid + "/" : null);
@@ -13128,27 +13235,31 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
         h += '<div class="vpop-row"><b>Source:</b> ' +
              '<a class="vpop-title" ' + (url ? 'href="' + esc(url) + '" target="_blank" rel="noopener"' : "") +
              ' title="' + esc(paper.title) + '">' + esc(paper.title) + "</a></div>";
+        anyRow = true;
       }
       if (paper.pmid) {
         h += '<div class="vpop-row vpop-dim"><b>PMID:</b> ' +
              '<a href="https://pubmed.ncbi.nlm.nih.gov/' + esc(paper.pmid) + '/" target="_blank" rel="noopener">' +
              esc(paper.pmid) + "</a></div>";
+        anyRow = true;
       }
-      if (d.gnomad != null) {
-        // gnomad is free text now (e.g. "Not present", "Present (MAF 0.0003)").
-        // Still accept the old {present, maf} object for backward compatibility.
-        var g = (typeof d.gnomad === "object")
-          ? (d.gnomad.present ? "Yes" + (d.gnomad.maf ? " (MAF " + esc(d.gnomad.maf) + ")" : "") : "No")
-          : esc(d.gnomad);
-        h += '<div class="vpop-row"><b>gnomAD:</b> ' + g + "</div>";
-      }
-      var pheno = d.phenotype || d.effect;
-      if (pheno) h += '<div class="vpop-row"><b>Phenotype:</b> ' + esc(pheno) + "</div>";
-      if (d.method) h += '<div class="vpop-row"><b>Method of functional assessment:</b> ' +
-                         esc(d.method) + "</div>";
-    } else {
-      h += '<div class="vpop-row vpop-dim"><i>In progress</i></div>';
     }
+    // gnomAD: independent of `d` — live data (or its "loading"/absence state)
+    // shows for ANY variant, not just ones with a manually-curated entry.
+    var gnomadText = gnomadRowFor(protein, mut, d && d.gnomad);
+    if (gnomadText != null) {
+      h += '<div class="vpop-row"><b>gnomAD:</b> ' + esc(gnomadText) + "</div>";
+      anyRow = true;
+    }
+    if (d) {
+      var pheno = d.phenotype || d.effect;
+      if (pheno) { h += '<div class="vpop-row"><b>Phenotype:</b> ' + esc(pheno) + "</div>"; anyRow = true; }
+      if (d.method) {
+        h += '<div class="vpop-row"><b>Method of functional assessment:</b> ' + esc(d.method) + "</div>";
+        anyRow = true;
+      }
+    }
+    if (!anyRow) h += '<div class="vpop-row vpop-dim"><i>In progress</i></div>';
     pop.innerHTML = h;
     pop.style.display = "block";
     pop.querySelector(".vpop-close").onclick = function () { hide(pop); };
@@ -13239,6 +13350,7 @@ body.hide-cat-Other   [data-category="Other"] { display:none !important; }
   // double-clicked file:// page we skip the query (not needed, and keeps it simple).
   function boot() {
     updateLastUpdatedDate();
+    loadGnomadLive();   // fires in the background; popups just check GNOMAD_LIVE whenever opened
     var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_details.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;

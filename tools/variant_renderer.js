@@ -840,15 +840,22 @@
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----
+  // `width` becomes a <colgroup><col> hint (buildTableView, below), pinning
+  // every column to a fixed size so a long value (e.g. "SIR2–P-loop NTPase
+  // linker") can never overflow into its neighbor the way table-layout:auto
+  // let it — auto was dividing leftover space EQUALLY across columns
+  // regardless of content, so Domain and Conservation ended up the same
+  // width despite needing very different amounts of room. The last column
+  // (Source) has no width — it absorbs whatever's left.
   var TABLE_COLUMNS = [
-    { key: "protein",      label: "Protein" },
-    { key: "variant",      label: "Variant" },
-    { key: "conservation", label: "Conservation" },
-    { key: "domain",       label: "Domain" },
-    { key: "category",     label: "Category" },
-    { key: "method",       label: "Method" },
-    { key: "gnomad",       label: "gnomAD<br>frequency" },
-    { key: "hom",          label: "gnomAD<br>homozygotes" },
+    { key: "protein",      label: "Protein",             width: 74 },
+    { key: "variant",      label: "Variant",             width: 100 },
+    { key: "conservation", label: "Conservation",        width: 64 },
+    { key: "domain",       label: "Domain",              width: 210 },
+    { key: "category",     label: "Category",           width: 170 },
+    { key: "method",       label: "Method",              width: 170 },
+    { key: "gnomad",       label: "gnomAD<br>frequency", width: 92 },
+    { key: "hom",          label: "gnomAD<br>homozygotes", width: 92 },
     { key: "source",       label: "Source" }
   ];
   var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
@@ -942,6 +949,10 @@
     });
     lastRows = rows;
 
+    var colgroupHtml = "<colgroup>" + TABLE_COLUMNS.map(function (c) {
+      return c.width ? '<col style="width:' + c.width + 'px">' : "<col>";
+    }).join("") + "</colgroup>";
+
     var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
       var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
       // c.label is a hardcoded constant (never variant data), so the "<br>"
@@ -1013,7 +1024,7 @@
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
-      '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
+      '<div class="vtbl-scroll"><table class="vtbl">' + colgroupHtml + "<thead>" + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
     applyTableFilters();   // re-apply protein/domain(s)/conservation(s)/search to the freshly-built rows
 
     if (!host.__wired) {

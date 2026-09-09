@@ -12717,7 +12717,16 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   overflow:auto; max-height:70vh;
   border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06);
 }
-table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
+/* table-layout:fixed + the <colgroup> widths buildTableView() emits (from
+   each TABLE_COLUMNS entry's `width`) is what actually pins every column —
+   auto layout was dividing leftover space EQUALLY across columns regardless
+   of content, so a long value (e.g. "SIR2–P-loop NTPase linker") ended up
+   in a column no wider than Conservation's tiny 1-9 badge and bled into the
+   next cell over. Fixed layout can't do that: each column is exactly its
+   <col>'s width, full stop — a too-long value wraps inside its own cell
+   instead (see the white-space:normal overrides below), never overflows out
+   of it. */
+table.vtbl { border-collapse:collapse; width:100%; table-layout:fixed; font-size:13px; }
 table.vtbl thead th {
   position:sticky; top:0; z-index:5; background:#f7f8fa; text-align:center; font-weight:700;
   padding:9px 12px; border-bottom:1px solid #e2e2e2; cursor:pointer; user-select:none;
@@ -12728,6 +12737,15 @@ table.vtbl thead th:hover { background:#eef0f4; }
    left-align just that last column, center the rest. */
 table.vtbl thead th:last-child { text-align:left; }
 table.vtbl tbody td { padding:7px 12px; border-bottom:1px solid #f0f0f0; color:#222; white-space:nowrap; text-align:center; }
+/* Safety net, not just today's fix: Domain/Category/Method are the columns
+   most likely to eventually carry a value longer than its fixed <col> width
+   ever anticipated (a new domain name, a long category legend, a verbose
+   method string) — letting THOSE wrap onto a second line, rather than
+   forcing nowrap everywhere, means that future case grows the row's height
+   instead of overflowing into a neighboring cell. */
+table.vtbl tbody td:nth-child(4), table.vtbl tbody td:nth-child(5), table.vtbl tbody td:nth-child(6) {
+  white-space:normal;
+}
 table.vtbl tbody tr:hover { background:#fafbfd; }
 .vtbl-mono { font-weight:600; }
 /* Category: the "Category" header stays centered with the rest, but a pill
@@ -12761,7 +12779,9 @@ table.vtbl tbody td.vtbl-left { text-align:left; }
    (same specificity, one class each) — true here since the embedded
    variant-layer <style> block sits later in the document than it. */
 .vtbl-cons { width:20px; height:20px; font-size:11px; border-radius:4px; margin:0 auto; }
-.vtbl-source { white-space:normal; max-width:320px; text-align:left; }
+/* table.vtbl tbody td's own white-space:nowrap outranks a bare .vtbl-source
+   by specificity (same trap .vtbl-left hit above) — match or beat it. */
+table.vtbl tbody td.vtbl-source { white-space:normal; text-align:left; }
 .vtbl-source a { color:#0b48c2; text-decoration:none; }
 .vtbl-source a:hover { text-decoration:underline; }
 .vtbl-pmid { font-size:11px; color:#888; margin-top:2px; }
@@ -13651,15 +13671,22 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----
+  // `width` becomes a <colgroup><col> hint (buildTableView, below), pinning
+  // every column to a fixed size so a long value (e.g. "SIR2–P-loop NTPase
+  // linker") can never overflow into its neighbor the way table-layout:auto
+  // let it — auto was dividing leftover space EQUALLY across columns
+  // regardless of content, so Domain and Conservation ended up the same
+  // width despite needing very different amounts of room. The last column
+  // (Source) has no width — it absorbs whatever's left.
   var TABLE_COLUMNS = [
-    { key: "protein",      label: "Protein" },
-    { key: "variant",      label: "Variant" },
-    { key: "conservation", label: "Conservation" },
-    { key: "domain",       label: "Domain" },
-    { key: "category",     label: "Category" },
-    { key: "method",       label: "Method" },
-    { key: "gnomad",       label: "gnomAD<br>frequency" },
-    { key: "hom",          label: "gnomAD<br>homozygotes" },
+    { key: "protein",      label: "Protein",             width: 74 },
+    { key: "variant",      label: "Variant",             width: 100 },
+    { key: "conservation", label: "Conservation",        width: 64 },
+    { key: "domain",       label: "Domain",              width: 210 },
+    { key: "category",     label: "Category",           width: 170 },
+    { key: "method",       label: "Method",              width: 170 },
+    { key: "gnomad",       label: "gnomAD<br>frequency", width: 92 },
+    { key: "hom",          label: "gnomAD<br>homozygotes", width: 92 },
     { key: "source",       label: "Source" }
   ];
   var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
@@ -13753,6 +13780,10 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     });
     lastRows = rows;
 
+    var colgroupHtml = "<colgroup>" + TABLE_COLUMNS.map(function (c) {
+      return c.width ? '<col style="width:' + c.width + 'px">' : "<col>";
+    }).join("") + "</colgroup>";
+
     var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
       var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
       // c.label is a hardcoded constant (never variant data), so the "<br>"
@@ -13824,7 +13855,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
-      '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
+      '<div class="vtbl-scroll"><table class="vtbl">' + colgroupHtml + "<thead>" + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
     applyTableFilters();   // re-apply protein/domain(s)/conservation(s)/search to the freshly-built rows
 
     if (!host.__wired) {

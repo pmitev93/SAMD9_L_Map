@@ -121,7 +121,7 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 .vs-btn.vs-active { background:#2b2f36; color:#fff; }
 
 /* ---- table view (every variant, sortable + filtered by the same toggles) ---- */
-#table-view { width:min(1400px, 96vw); margin:70px auto 90px; font-family:var(--ui-font); }
+#table-view { width:min(1680px, 98vw); margin:70px auto 90px; font-family:var(--ui-font); }
 .vtbl-head {
   display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
   gap:10px; padding:0 4px 10px; font-size:13px; color:#666;

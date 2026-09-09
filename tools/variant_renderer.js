@@ -313,6 +313,20 @@
     return order;
   })();
 
+  // ConSurf conservation score (1-9) per residue — read straight off each
+  // sequence cell's own "ScoreN" CSS class (run() sets RESIDUE_CELLS once,
+  // below; the residue->cell mapping is static so one capture covers every
+  // later Table build). Alignment-gap dashes carry "Score0", which is not a
+  // real conservation score — no residue label ever lands on a gap cell, so
+  // that value is never actually returned here.
+  var RESIDUE_CELLS = null;
+  function conservationFor(protein, residue) {
+    var cell = RESIDUE_CELLS && RESIDUE_CELLS[protein] && RESIDUE_CELLS[protein][residue];
+    if (!cell) return null;
+    var m = cell.className.match(/Score(\d+)/);
+    return m ? +m[1] : null;
+  }
+
   // ---- data: read from the data_*.js globals (loaded via <script src>, which
   //      works even on a double-clicked file). Edit a data_*.js + refresh = live.
   var DATA = [], OV = {}, PAPERS = {}, DETAILS = {};
@@ -415,6 +429,11 @@
         }
       }
     });
+    // Residue -> cell never changes between runs (the underlying sequence
+    // markup is static; only the variant overlay changes) — cache once for
+    // the Table's Conservation column/filter/export (conservationFor(),
+    // below) so it doesn't need its own copy of this scan.
+    RESIDUE_CELLS = maps;
 
     // 4b. domain-boundary outlines (data-driven). All 7 domains render through
     // this one path — the older SAM/AlbA/SIR2/P-loop NTPase/TPR/OB-fold used to
@@ -822,32 +841,37 @@
 
   // ---- Table view: every variant as a sortable, filterable list ----
   var TABLE_COLUMNS = [
-    { key: "protein",   label: "Protein" },
-    { key: "variant",   label: "Variant" },
-    { key: "domain",    label: "Domain" },
-    { key: "category",  label: "Category" },
-    { key: "method",    label: "Method" },
-    { key: "gnomad",    label: "gnomAD frequency" },
-    { key: "hom",       label: "gnomAD homozygotes" },
-    { key: "source",    label: "Source" }
+    { key: "protein",      label: "Protein" },
+    { key: "variant",      label: "Variant" },
+    { key: "domain",       label: "Domain" },
+    { key: "conservation", label: "Conservation" },
+    { key: "category",     label: "Category" },
+    { key: "method",       label: "Method" },
+    { key: "gnomad",       label: "gnomAD frequency" },
+    { key: "hom",          label: "gnomAD homozygotes" },
+    { key: "source",       label: "Source" }
   ];
-  var EXPORT_HEADERS = ["Protein", "Variant", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
+  var EXPORT_HEADERS = ["Protein", "Variant", "Domain", "Conservation", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
   var SORT_VAL = {
-    protein:   function (r) { return r.protein; },
-    variant:   function (r) { return r.label.toLowerCase(); },
-    domain:    function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
-    category:  function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
-    method:    function (r) { return (r.method || "").toLowerCase(); },
-    gnomad:    function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
-    hom:       function (r) { return r.gnomadHom == null ? -1 : r.gnomadHom; },
-    source:    function (r) { return (r.sourceTitle || "").toLowerCase(); }
+    protein:      function (r) { return r.protein; },
+    variant:      function (r) { return r.label.toLowerCase(); },
+    domain:       function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
+    conservation: function (r) { return r.conservation == null ? -1 : r.conservation; },
+    category:     function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
+    method:       function (r) { return (r.method || "").toLowerCase(); },
+    gnomad:       function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
+    hom:          function (r) { return r.gnomadHom == null ? -1 : r.gnomadHom; },
+    source:       function (r) { return (r.sourceTitle || "").toLowerCase(); }
   };
   var tableSort = { key: "protein", dir: 1 };
-  // Search text + protein/domain pick are table-view-only state, independent
-  // of the shared category toggles — search is a plain substring match
-  // against each row's own rendered text (already covers protein/variant/
-  // domain/category/method/gnomAD/source in one go, no separate index).
-  var tableFilter = { search: "", protein: "all", domain: "all" };
+  // Search text + protein/domain(s)/conservation pick are table-view-only
+  // state, independent of the shared category toggles — search is a plain
+  // substring match against each row's own rendered text (already covers
+  // protein/variant/domain/category/method/gnomAD/source in one go, no
+  // separate index). `domains` is a Set of ALLOWED domain/linker/terminus
+  // names — multi-select, so it starts holding every name (nothing filtered
+  // out) rather than an "all" sentinel.
+  var tableFilter = { search: "", protein: "all", domains: new Set(DOMAIN_FILTER_ORDER), conservation: "all" };
 
   // Same present/absent/loading logic as gnomadRowFor (the popup), but split
   // into a display string + numeric allele frequency + homozygote count so
@@ -855,7 +879,12 @@
   function gnomadCellFor(protein, label, staticGnomad) {
     if (GNOMAD_LIVE.ready && isSimpleLabel(label)) {
       var hit = GNOMAD_LIVE.byLabel[protein] && GNOMAD_LIVE.byLabel[protein][label];
-      if (hit && hit.ac > 0) return { text: hit.af.toExponential(2), af: hit.af, hom: hit.hom };
+      // gnomAD's API returns homozygote_count as null for some present
+      // variants (not computed/redacted, seemingly independent of how rare
+      // the variant is) — treat that as 0, not "unknown": every variant we
+      // can confirm is PRESENT should show a real number here, so "—" means
+      // only "not present / status unknown", never "present but who knows".
+      if (hit && hit.ac > 0) return { text: hit.af.toExponential(2), af: hit.af, hom: hit.hom == null ? 0 : hit.hom };
       return { text: "Not present", af: 0, hom: null };
     }
     if (staticGnomad != null) {
@@ -887,6 +916,7 @@
       return {
         protein: v.protein, residue: v.residue, label: v.label, category: v.category,
         domain: dom.name, domainKey: dom.key,
+        conservation: conservationFor(v.protein, v.residue),
         method: d && d.method,
         gnomadAF: gc.af, gnomadText: gc.text, gnomadHom: gc.hom,
         sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
@@ -910,7 +940,11 @@
     var dcolors = domainColors();
     var bodyHtml = rows.map(function (r) {
       var color = (CFG[r.category] || CFG.Other).color;
-      var legend = (CFG[r.category] || CFG.Other).legend;
+      // The toggle box keeps "(unannotated)" — useful context there, next to
+      // GoF/LoF/Somatic/etc in a legend the reader sees once. Repeated down
+      // a table column hundreds of times it's just noise, so the Category
+      // badge drops it; nothing else about the category changes.
+      var legend = (CFG[r.category] || CFG.Other).legend.replace(" (unannotated)", "");
       var src = "—";
       if (r.sourceTitle) {
         src = (r.sourceUrl && r.sourceUrl !== "pending")
@@ -921,11 +955,16 @@
       var homCell = r.gnomadHom != null
         ? '<span class="' + (r.gnomadHom > 0 ? "vtbl-hom-pos" : "") + '">' + r.gnomadHom + "</span>"
         : "—";
-      return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '" data-domain="' + esc(r.domain) + '">' +
+      var consCell = r.conservation != null
+        ? '<span class="cs-box vtbl-cons Score' + r.conservation + '">' + r.conservation + "</span>"
+        : "—";
+      return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '" data-domain="' + esc(r.domain) +
+        '" data-conservation="' + (r.conservation == null ? "" : r.conservation) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
         '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
-        '<td><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
+        "<td>" + consCell + "</td>" +
+        '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         "<td>" + esc(r.method || "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
         "<td>" + homCell + "</td>" +
@@ -939,24 +978,40 @@
       return '<button type="button" class="vs-btn vtbl-pbtn' + active + '" data-protein="' + p + '">' +
              (p === "all" ? "All" : p) + "</button>";
     }).join("");
-    var domainOptHtml = '<option value="all">All domains</option>' + DOMAIN_FILTER_ORDER.map(function (name) {
-      var sel = tableFilter.domain === name ? " selected" : "";
-      return '<option value="' + esc(name) + '"' + sel + ">" + esc(name) + "</option>";
+    var domainCbHtml = DOMAIN_FILTER_ORDER.map(function (name) {
+      var checked = tableFilter.domains.has(name) ? " checked" : "";
+      return '<label><input type="checkbox" class="vtbl-domain-cb" value="' + esc(name) + '"' + checked + '><span>' + esc(name) + "</span></label>";
     }).join("");
+    var consOptHtml = '<option value="all">All conservation</option>' +
+      [9, 8, 7, 6, 5, 4, 3, 2, 1].map(function (n) {
+        var sel = tableFilter.conservation === String(n) ? " selected" : "";
+        var extra = n === 9 ? " (most conserved)" : n === 1 ? " (most variable)" : "";
+        return '<option value="' + n + '"' + sel + ">" + n + extra + "</option>";
+      }).join("");
 
     host.innerHTML =
       '<div class="vtbl-head">' +
         '<div class="vtbl-controls">' +
           '<input type="search" id="vtbl-search" placeholder="Search variants…" value="' + esc(tableFilter.search) + '">' +
           '<div class="vtbl-protein-filter">' + proteinHtml + "</div>" +
-          '<select id="vtbl-domain" title="Filter by domain">' + domainOptHtml + "</select>" +
+          '<div class="vtbl-domain-wrap">' +
+            '<button type="button" class="vtbl-export" id="vtbl-domain-btn">' + esc(domainButtonLabel()) + "</button>" +
+            '<div id="vtbl-domain-panel" class="vtbl-domain-panel" hidden>' +
+              '<div class="vtbl-domain-actions">' +
+                '<button type="button" data-daction="all">Select all</button>' +
+                '<button type="button" data-daction="none">Clear</button>' +
+              "</div>" +
+              domainCbHtml +
+            "</div>" +
+          "</div>" +
+          '<select id="vtbl-conservation" title="Filter by conservation score">' + consOptHtml + "</select>" +
           '<button type="button" class="vtbl-export" id="vtbl-export-csv">Export CSV</button>' +
           '<button type="button" class="vtbl-export" id="vtbl-export-xlsx">Export Excel</button>' +
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
       '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
-    applyTableFilters();   // re-apply protein/domain/search filters to the freshly-built rows
+    applyTableFilters();   // re-apply protein/domain(s)/conservation/search to the freshly-built rows
 
     if (!host.__wired) {
       host.__wired = true;
@@ -977,13 +1032,42 @@
           applyTableFilters();
           return;
         }
+        if (e.target.id === "vtbl-domain-btn") {
+          document.getElementById("vtbl-domain-panel").toggleAttribute("hidden");
+          return;
+        }
+        var daction = e.target.closest && e.target.closest("[data-daction]");
+        if (daction) {
+          var toAll = daction.getAttribute("data-daction") === "all";
+          tableFilter.domains = new Set(toAll ? DOMAIN_FILTER_ORDER : []);
+          host.querySelectorAll(".vtbl-domain-cb").forEach(function (cb) { cb.checked = toAll; });
+          document.getElementById("vtbl-domain-btn").textContent = domainButtonLabel();
+          applyTableFilters();
+          return;
+        }
         if (e.target.id === "vtbl-export-csv") { exportCSV(); return; }
         if (e.target.id === "vtbl-export-xlsx") { exportExcel(); return; }
+        // Clicking anywhere else while the domain panel is open closes it —
+        // but not a click ON the panel/checkboxes/button themselves (each of
+        // those is handled above, or is a checkbox toggle via the "change"
+        // listener below, and none of those paths should also close it).
+        var panel = document.getElementById("vtbl-domain-panel");
+        if (panel && !panel.hasAttribute("hidden") && !e.target.closest("#vtbl-domain-wrap")) {
+          panel.setAttribute("hidden", "");
+        }
       });
       host.addEventListener("change", function (e) {
-        if (e.target.id !== "vtbl-domain") return;
-        tableFilter.domain = e.target.value;
-        applyTableFilters();
+        if (e.target.classList && e.target.classList.contains("vtbl-domain-cb")) {
+          if (e.target.checked) tableFilter.domains.add(e.target.value);
+          else tableFilter.domains.delete(e.target.value);
+          document.getElementById("vtbl-domain-btn").textContent = domainButtonLabel();
+          applyTableFilters();
+          return;
+        }
+        if (e.target.id === "vtbl-conservation") {
+          tableFilter.conservation = e.target.value;
+          applyTableFilters();
+        }
       });
       var searchTimer;
       host.addEventListener("input", function (e) {
@@ -997,20 +1081,28 @@
       });
     }
   }
-  // Applies the protein/domain pick + search text on top of whatever the
-  // category toggles already did via CSS (their !important rule always wins,
-  // so we never fight it — a category-hidden row just stays hidden regardless
-  // of what we set here). Cheap enough to run on every keystroke: substring
-  // match against the row's own rendered text, no separate search index.
+  function domainButtonLabel() {
+    var n = tableFilter.domains.size, total = DOMAIN_FILTER_ORDER.length;
+    if (n === total) return "Domain: All ▾";
+    if (n === 0) return "Domain: None ▾";
+    return "Domain: " + n + " selected ▾";
+  }
+  // Applies the protein/domain(s)/conservation pick + search text on top of
+  // whatever the category toggles already did via CSS (their !important rule
+  // always wins, so we never fight it — a category-hidden row just stays
+  // hidden regardless of what we set here). Cheap enough to run on every
+  // keystroke: substring match against the row's own rendered text, no
+  // separate search index.
   function applyTableFilters() {
     var host = document.getElementById("table-view");
     if (!host) return;
     var rows = host.querySelectorAll("tbody tr");
     rows.forEach(function (tr) {
       var proteinOk = tableFilter.protein === "all" || tr.getAttribute("data-protein") === tableFilter.protein;
-      var domainOk = tableFilter.domain === "all" || tr.getAttribute("data-domain") === tableFilter.domain;
+      var domainOk = tableFilter.domains.has(tr.getAttribute("data-domain"));
+      var consOk = tableFilter.conservation === "all" || tr.getAttribute("data-conservation") === tableFilter.conservation;
       var searchOk = !tableFilter.search || tr.textContent.toLowerCase().indexOf(tableFilter.search) !== -1;
-      tr.style.display = (proteinOk && domainOk && searchOk) ? "" : "none";
+      tr.style.display = (proteinOk && domainOk && consOk && searchOk) ? "" : "none";
     });
     updateTableCount();
   }
@@ -1028,7 +1120,8 @@
   // current sort order, since that's "what you're looking at" in the table.
   function exportRowValues(r) {
     return [
-      r.protein, r.label, r.domain, (CFG[r.category] || CFG.Other).legend,
+      r.protein, r.label, r.domain, r.conservation != null ? r.conservation : "",
+      (CFG[r.category] || CFG.Other).legend.replace(" (unannotated)", ""),
       r.method || "", r.gnomadText, r.gnomadHom != null ? r.gnomadHom : "",
       r.sourceTitle || "", r.pmid || ""
     ];
@@ -1088,10 +1181,11 @@
       return "<Row>" +
         cell(v[0]) + cell(v[1]) +
         cell(v[2], "dom_" + r.domainKey) +
-        cell(v[3], "cat_" + r.category) +
-        cell(v[4]) + cell(v[5]) +
-        cell(v[6], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
-        cell(v[7]) + cell(v[8]) +
+        cell(v[3], null, r.conservation != null ? "Number" : "String") +
+        cell(v[4], "cat_" + r.category) +
+        cell(v[5]) + cell(v[6]) +
+        cell(v[7], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
+        cell(v[8]) + cell(v[9]) +
         "</Row>";
     }).join("");
     return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>' +

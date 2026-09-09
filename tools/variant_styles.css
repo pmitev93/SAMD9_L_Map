@@ -134,9 +134,31 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 #vtbl-search:focus { outline:2px solid rgba(120,140,175,.4); outline-offset:1px; }
 .vtbl-protein-filter { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
 .vtbl-protein-filter .vs-btn { padding:.4em .85em; font-size:.9em; }
-#vtbl-domain {
+#vtbl-conservation {
   font-family:inherit; font-size:.9em; padding:.5em .7em;
   border:1px solid rgba(120,140,175,.35); border-radius:9px; background:#fff; color:#222;
+}
+/* Domain multi-select: a button that opens a checkbox panel, since a plain
+   <select> can't hold more than one chosen value at a time. */
+.vtbl-domain-wrap { position:relative; }
+.vtbl-domain-panel {
+  position:absolute; top:calc(100% + 6px); left:0; z-index:20; width:240px;
+  max-height:280px; overflow-y:auto;
+  background:#fff; border:1px solid rgba(120,140,175,.35); border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12); padding:.5em;
+}
+.vtbl-domain-panel label {
+  display:flex; align-items:center; gap:.6em; padding:.3em .4em; border-radius:7px;
+  font-size:.9em; cursor:pointer; white-space:nowrap;
+}
+.vtbl-domain-panel label:hover { background:rgba(90,90,95,.08); }
+.vtbl-domain-actions {
+  display:flex; gap:.4em; padding:0 .4em .5em; margin-bottom:.4em;
+  border-bottom:1px solid #eee;
+}
+.vtbl-domain-actions button {
+  font-family:inherit; font-size:.82em; font-weight:600; cursor:pointer;
+  padding:.3em .6em; border-radius:7px; border:1px solid rgba(120,140,175,.3); background:#fafbfd;
 }
 .vtbl-export {
   font-family:inherit; font-size:.9em; font-weight:600; cursor:pointer;
@@ -172,24 +194,31 @@ table.vtbl thead th:last-child { text-align:left; }
 table.vtbl tbody td { padding:7px 12px; border-bottom:1px solid #f0f0f0; color:#222; white-space:nowrap; text-align:center; }
 table.vtbl tbody tr:hover { background:#fafbfd; }
 .vtbl-mono { font-weight:600; }
+/* Category: the "Category" header stays centered with the rest, but a pill
+   badge reads better left-hung than centered floating in open cell space.
+   (table.vtbl tbody td's own text-align:center outranks a bare .vtbl-left by
+   specificity — this selector has to match or beat it, not just add a class.) */
+table.vtbl tbody td.vtbl-left { text-align:left; }
 .vtbl-cat {
   display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600;
   white-space:nowrap;
   background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
   color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
 }
-/* Domain badge — same recipe as .vtbl-cat (a tinted pill keyed to one color
-   variable) but a distinct shape (square-ish corners) so Domain and Category
-   read as two different kinds of tag, not duplicates of each other. Reuses
-   the Map's own --domain-*-dark colors (via --dm-c), so a variant's domain
-   pill in the table always matches the outline color around it on the Map. */
-.vtbl-dom {
-  display:inline-block; padding:2px 8px; border-radius:5px; font-size:12px; font-weight:600;
-  white-space:nowrap;
-  background:color-mix(in srgb, var(--dm-c,#9AA0A6) 18%, white);
-  color:color-mix(in srgb, var(--dm-c,#9AA0A6) 65%, black);
-}
+/* Domain — plain colored text (no pill), so it reads as a different kind of
+   tag than Category's badge rather than a duplicate of it. Reuses the Map's
+   own --domain-*-dark colors (via --dm-c) directly, un-mixed — a variant's
+   domain color in the table always matches its outline color on the Map. */
+.vtbl-dom { font-weight:600; color:var(--dm-c,#9AA0A6); white-space:nowrap; }
 .vtbl-hom-pos { color:#1E9E5B; font-weight:700; }
+/* Conservation swatch: reuses the page's own .cs-box.ScoreN classes (the
+   ConSurf 1-9 palette already shown in the bottom legend) so a variant's
+   conservation color in the table always matches the legend — sized down
+   from the legend's 22px boxes to fit a table cell. Source order matters:
+   this must load AFTER the base .cs-box rule for the smaller size to win
+   (same specificity, one class each) — true here since the embedded
+   variant-layer <style> block sits later in the document than it. */
+.vtbl-cons { width:20px; height:20px; font-size:11px; border-radius:4px; margin:0 auto; }
 .vtbl-source { white-space:normal; max-width:320px; text-align:left; }
 .vtbl-source a { color:#0b48c2; text-decoration:none; }
 .vtbl-source a:hover { text-decoration:underline; }

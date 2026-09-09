@@ -850,10 +850,10 @@
   var TABLE_COLUMNS = [
     { key: "protein",      label: "Protein",             width: 95 },
     { key: "variant",      label: "Variant",             width: 130 },
-    { key: "conservation", label: "Conservation",        width: 80 },
+    { key: "conservation", label: 'Conservation<br><span class="vtbl-th-sub">score</span>', width: 100 },
     { key: "domain",       label: "Domain",              width: 260 },
     { key: "category",     label: "Category",           width: 210 },
-    { key: "method",       label: "Method",              width: 210 },
+    { key: "method",       label: "Method",              width: 150 },
     { key: "gnomad",       label: 'gnomAD<br><span class="vtbl-th-sub">frequency</span>',   width: 120 },
     { key: "hom",          label: 'gnomAD<br><span class="vtbl-th-sub">homozygotes</span>', width: 130 },
     { key: "source",       label: "Source" }
@@ -996,7 +996,7 @@
         "<td>" + consCell + "</td>" +
         '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
         '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
-        "<td>" + esc(r.method || "—") + "</td>" +
+        "<td>" + (r.method ? esc(r.method).replace(/\//g, "/<wbr>") : "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
         "<td>" + homCell + "</td>" +
         '<td class="vtbl-source">' + src + "</td>" +

@@ -97,27 +97,21 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 }
 #variant-toggles label:hover { background:rgba(90,90,95,.08); }
 #variant-toggles input { width:1.05em; height:1.05em; accent-color:#888; }
-/* Docked in the Table view's control row (dockCategoryToggles()) — same
-   element, same #variant-toggles rules above still apply (label/input/hover),
-   just repositioned as a dropdown instead of a fixed corner card. ID+class
-   beats the plain #variant-toggles rule above on the properties that clash
-   (position/top/right/etc.) since ID+class is the more specific selector. */
-#variant-toggles.vt-docked {
-  position:absolute; top:calc(100% + 6px); left:0; right:auto; bottom:auto; z-index:20;
-  width:240px; max-height:280px; overflow-y:auto;
-  padding:.5em; border-radius:10px; font-size:13px;
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
+/* Docked in the Table view's own row (dockCategoryToggles(), under the
+   search/protein/domain/conservation controls) — same element, same
+   #variant-toggles rules above still apply (label/input/hover), just laid
+   out as a plain inline row instead of a fixed corner card. ID+class beats
+   the plain #variant-toggles rule above on the properties that clash
+   (position/width/padding/etc.) since ID+class is the more specific
+   selector. Always fully visible here — no dropdown, no hidden state. */
+#variant-toggles.vt-inline {
+  position:static; display:flex; flex-wrap:wrap; align-items:center;
+  gap:4px 18px; width:auto; max-height:none; overflow:visible;
+  padding:0; margin:0; border:0; border-radius:0; box-shadow:none;
+  font-size:13px;
 }
-#variant-toggles.vt-docked .vt-title { display:none; }
-/* Map<->Table switch (popIn(), variant_renderer.js) — a plain fade + UNIFORM
-   scale-up where the button/box already naturally is, not a cross-position
-   morph. Uniform scale (same X/Y) doesn't stretch the checkbox rows or their
-   text the way a non-uniform one would; it just eases in. */
-@keyframes vt-pop { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
-.vt-pop { animation:vt-pop .18s ease-out; }
-/* Map -> Table departure (setView()) — plain opacity, no transform, so it
-   can't reintroduce the forced-reflow jank a transform-based exit would. */
-#variant-toggles.vt-fade-out { transition:opacity .16s ease; opacity:0; pointer-events:none; }
+#variant-toggles.vt-inline .vt-title { display:none; }
+#variant-toggles.vt-inline label { margin:0; padding:.2em .1em; }
 /* gradient text: category hue -> a slightly darker version of it */
 #variant-toggles .vt-name {
   font-weight:500; font-size:1.05em; letter-spacing:.005em;
@@ -148,6 +142,11 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   gap:10px; padding:0 4px 10px; font-size:13px; color:#666;
 }
 .vtbl-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+/* Second row, under the search/protein/domain/conservation controls — the
+   category checkboxes (#variant-toggles.vt-inline, docked here by
+   dockCategoryToggles()), always visible, one extra row, no button/panel
+   to discover or click into first. */
+.vtbl-cat-row { padding:10px 4px 12px; border-top:1px solid #eee; margin-top:2px; }
 #vtbl-search {
   font-family:inherit; font-size:.95em; padding:.5em .9em; width:220px;
   border:1px solid rgba(120,140,175,.35); border-radius:9px; background:#fff; color:#222;

@@ -764,13 +764,10 @@
 
   // toggleBox is the ONE actual toggle-list element — never duplicated.
   // On Map it's a fixed top-right box; on Table it's re-parented into a
-  // dropdown docked among the other filter controls (see
+  // permanently-visible row under the other filter controls (see
   // dockCategoryToggles/setView below). Same checkboxes, same listener,
   // wherever it currently lives.
   var toggleBox = null;
-  // Set true the first time Table is ever shown (dockCategoryToggles) — one
-  // page-load, not persisted, so a fresh visit always gets the introduction.
-  var categoryPanelIntroduced = false;
   function buildToggles() {
     if (document.getElementById("variant-toggles")) return;
     var box = document.createElement("div");
@@ -794,68 +791,25 @@
       // count needs an explicit refresh since it's plain text, not CSS.
       var tv = document.getElementById("table-view");
       if (tv && tv.__wired) updateTableCount();
-      var btn = document.getElementById("vt-cat-btn");
-      if (btn) btn.textContent = categoryButtonLabel();
     });
     document.body.appendChild(box);
     toggleBox = box;
   }
-  function categoryButtonLabel() {
-    if (!toggleBox) return "Categories ▾";
-    var boxes = toggleBox.querySelectorAll('input[type="checkbox"]');
-    var total = boxes.length, checked = 0;
-    boxes.forEach(function (cb) { if (cb.checked) checked++; });
-    if (checked === total) return "Categories: All ▾";
-    if (checked === 0) return "Categories: None ▾";
-    return "Categories: " + checked + " selected ▾";
-  }
   // Re-parents the ONE toggleBox between its two homes. Table view builds a
-  // fresh .vtbl-controls on every rebuild (sort clicks, gnomAD injection), so
+  // fresh #vtbl-cat-row on every rebuild (sort clicks, gnomAD injection), so
   // this has to be callable repeatedly, not just once on the first switch.
+  // Always fully visible in both homes — no button/dropdown, no hidden state.
   function dockCategoryToggles(view) {
     if (!toggleBox) return;
-    var oldWrap = document.getElementById("vt-cat-wrap");
     if (view === "table") {
       var host = document.getElementById("table-view");
-      var controls = host && host.querySelector(".vtbl-controls");
-      if (!controls) return;
-      var wrap = document.createElement("div");
-      wrap.id = "vt-cat-wrap";
-      wrap.className = "vtbl-domain-wrap";
-      wrap.setAttribute("data-mtarget", "category");
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.id = "vt-cat-btn";
-      btn.className = "vtbl-export vtbl-mbtn";
-      btn.setAttribute("data-mtarget", "category");
-      // This one replaces a box that was always fully open on the Map view
-      // (a whole "SHOW VARIANTS" card, impossible to miss) — collapsed into
-      // a button like this, a first-time visitor might not realize it's the
-      // same filter, not just another export-style button. The label already
-      // shows a live count as a hint (matches Domain/Conservation's own
-      // buttons); the tooltip is the one extra nudge that costs nothing.
-      btn.title = "Filter which variant categories (GoF, LoF, gnomAD, etc.) are shown";
-      btn.textContent = categoryButtonLabel();
-      wrap.appendChild(btn);
-      var exportBtn = controls.querySelector("#vtbl-export-csv");
-      if (exportBtn) controls.insertBefore(wrap, exportBtn); else controls.appendChild(wrap);
-      wrap.appendChild(toggleBox);
-      toggleBox.classList.add("vt-docked");
-      // Collapsed-by-default is fine for Domain/Conservation — those were
-      // ALWAYS behind a button, never a surprise. Categories used to be a
-      // permanently-open card on the Map view; a tooltip on the button only
-      // helps someone already looking at it. Leaving the panel open the
-      // FIRST time Table is ever shown means a new user just sees the
-      // checklist, no hover/click required to learn it's there — every
-      // switch after that collapses normally, like the others.
-      if (categoryPanelIntroduced) toggleBox.setAttribute("hidden", "");
-      else categoryPanelIntroduced = true;
-      if (oldWrap && oldWrap !== wrap) oldWrap.remove();
+      var row = host && host.querySelector("#vtbl-cat-row");
+      if (!row) return;
+      row.appendChild(toggleBox);
+      toggleBox.classList.add("vt-inline");
     } else {
       if (toggleBox.parentElement !== document.body) document.body.appendChild(toggleBox);
-      toggleBox.classList.remove("vt-docked");
-      toggleBox.removeAttribute("hidden");
-      if (oldWrap) oldWrap.remove();
+      toggleBox.classList.remove("vt-inline");
     }
   }
   // Adds ONE checkbox to the already-built toggle box, for a category that
@@ -893,44 +847,6 @@
     });
     document.body.appendChild(box);
   }
-  function prefersReducedMotion() {
-    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }
-  // Deliberately NOT a cross-position FLIP morph (an earlier version tried
-  // that and it was consistently janky in both directions). Two real reasons
-  // it doesn't work well for this element specifically:
-  //  1. A FLIP morph fakes "still in the old spot" via a non-uniform
-  //     translate+scale transform, then releases it. Scaling a box that
-  //     contains TEXT and checkboxes (not a solid shape/image) visibly warps
-  //     that content mid-flight — letters and checkbox squares stretch into
-  //     the wrong aspect ratio. That reads as broken, not smooth, no matter
-  //     how the timing is tuned.
-  //  2. It needs the box's "new" position measured via getBoundingClientRect
-  //     right after the corresponding huge DOM section (the ~2,500-tick map)
-  //     gets shown/hidden — forcing that measurement forces an immediate,
-  //     synchronous layout of everything else that's dirty too, which is
-  //     exactly the stall that made switching feel slow and glitchy.
-  // A plain, self-contained pop/fade sidesteps both: no cross-element
-  // position math (so nothing forces an early layout of the map), and only
-  // opacity + a UNIFORM scale (which doesn't distort text/checkboxes) —
-  // just "the button/box eases into view where it already naturally is."
-  function popIn(el) {
-    if (!el || prefersReducedMotion()) return;
-    // The Table direction's button is a brand-new element every time
-    // (dockCategoryToggles creates it fresh) — never already has .vt-pop, so
-    // a plain add() always (re)starts the animation, no trick needed.
-    if (!el.classList.contains("vt-pop")) { el.classList.add("vt-pop"); return; }
-    // The Map direction reuses the SAME toggleBox across every switch, so it
-    // can already have .vt-pop from a previous run, and just re-adding the
-    // same class is a no-op (CSS animations don't restart on that). The
-    // classic fix is remove + force a layout read + re-add — but forcing a
-    // layout read is exactly the synchronous-reflow cost that made this
-    // whole feature janky in the first place (see setView()'s own comment).
-    // Waiting a frame does the same "notice it's gone" job without forcing
-    // anything early — a real render tick happens on its own regardless.
-    el.classList.remove("vt-pop");
-    requestAnimationFrame(function () { el.classList.add("vt-pop"); });
-  }
   var currentView = "map";
   function setView(view) {
     if (view === currentView) return;
@@ -951,38 +867,17 @@
     document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
       b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
     });
-    // Map -> Table: docking the box away in the same tick the table appears
-    // means it just vanishes — popIn() animates the button arriving, but
-    // nothing ever animated the box LEAVING, so that half read as an abrupt
-    // cut rather than a transition. Let it fade out in place first (still
-    // fixed, still on top of the now-visible table for a beat) — a plain
-    // opacity transition, no transform/layout math, so it can't reintroduce
-    // the forced-reflow jank the rest of this feature had to work around.
-    if (isTable && toggleBox && !prefersReducedMotion()) {
-      toggleBox.classList.add("vt-fade-out");
-      setTimeout(function () {
-        toggleBox.classList.remove("vt-fade-out");
-        finishToggleDock(view);
-      }, 160);
-    } else {
-      finishToggleDock(view);
-    }
-  }
-  function finishToggleDock(view) {
-    var isTable = view === "table";
     dockCategoryToggles(view);
     currentView = view;
-    popIn(isTable ? document.getElementById("vt-cat-btn") : toggleBox);
     // run() no-ops while hidden (see its own comment), so geometry can go
     // stale while Table was showing (e.g. the window was resized). Force one
-    // fresh, correct pass now that the Map is visible again — but not
-    // *immediately*: run() walks every tick/label + domain-outline cell with
-    // its own forced reflow, heavy enough to stall the main thread for a
-    // beat right as the pop-in animation starts. Deferring past the
-    // animation's own (short) duration lets it finish first; run() itself
-    // already no-ops if the user has switched away again by the time this
-    // fires, so a rapid Map->Table->Map isn't at risk of doing wasted work.
-    if (!isTable) setTimeout(run, 260);
+    // fresh, correct pass now that the Map is visible again. Deferred one
+    // tick (not immediate) so the display:"" swap above gets to paint before
+    // run()'s own heavy reflow (it walks every tick/label + domain-outline
+    // cell) runs on the main thread; run() itself already no-ops if the user
+    // has switched away again by the time this fires, so a rapid
+    // Map->Table->Map isn't at risk of doing wasted work.
+    if (!isTable) setTimeout(run, 0);
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----
@@ -1174,12 +1069,13 @@
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
+      '<div class="vtbl-cat-row" id="vtbl-cat-row"></div>' +
       '<div class="vtbl-scroll"><table class="vtbl">' + colgroupHtml + "<thead>" + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
     applyTableFilters();   // re-apply protein/domain(s)/conservation(s)/search to the freshly-built rows
-    // .vtbl-controls just got fully replaced above, which orphans the
-    // category dropdown if it was docked in there (sort clicks, gnomAD
-    // injection both call buildTableView() again) — re-home it in the fresh
-    // controls row. Only when Table is actually the active view: this also
+    // The whole host got fully replaced above, which orphans the category
+    // checkboxes if they were docked in the old #vtbl-cat-row (sort clicks,
+    // gnomAD injection both call buildTableView() again) — re-home them in
+    // the fresh row. Only when Table is actually the active view: this also
     // runs from init() before the user has ever switched views, and toggleBox
     // must stay in its Map-mode fixed position until they actually do.
     if (currentView === "table") dockCategoryToggles("table");
@@ -1206,11 +1102,7 @@
         var mbtn = e.target.closest && e.target.closest(".vtbl-mbtn");
         if (mbtn) {
           var mt = mbtn.getAttribute("data-mtarget");
-          // "category" isn't in MULTI_FILTERS — its panel IS toggleBox itself
-          // (docked here, not a fresh <div> built from a template like
-          // Domain/Conservation's), so it can't be found by the generic
-          // "vtbl-<key>-panel" id pattern.
-          var panel = mt === "category" ? toggleBox : document.getElementById("vtbl-" + mt + "-panel");
+          var panel = document.getElementById("vtbl-" + mt + "-panel");
           if (panel) panel.toggleAttribute("hidden");
           return;
         }
@@ -1236,10 +1128,6 @@
             panel.setAttribute("hidden", "");
           }
         });
-        if (toggleBox && currentView === "table" && !toggleBox.hasAttribute("hidden") &&
-            !e.target.closest('[data-mtarget="category"]')) {
-          toggleBox.setAttribute("hidden", "");
-        }
       });
       host.addEventListener("change", function (e) {
         if (e.target.classList && e.target.classList.contains("vtbl-mcb")) {

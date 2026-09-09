@@ -768,6 +768,9 @@
   // dockCategoryToggles/setView below). Same checkboxes, same listener,
   // wherever it currently lives.
   var toggleBox = null;
+  // Set true the first time Table is ever shown (dockCategoryToggles) — one
+  // page-load, not persisted, so a fresh visit always gets the introduction.
+  var categoryPanelIntroduced = false;
   function buildToggles() {
     if (document.getElementById("variant-toggles")) return;
     var box = document.createElement("div");
@@ -838,7 +841,15 @@
       if (exportBtn) controls.insertBefore(wrap, exportBtn); else controls.appendChild(wrap);
       wrap.appendChild(toggleBox);
       toggleBox.classList.add("vt-docked");
-      toggleBox.setAttribute("hidden", "");   // starts closed, like the other filter panels
+      // Collapsed-by-default is fine for Domain/Conservation — those were
+      // ALWAYS behind a button, never a surprise. Categories used to be a
+      // permanently-open card on the Map view; a tooltip on the button only
+      // helps someone already looking at it. Leaving the panel open the
+      // FIRST time Table is ever shown means a new user just sees the
+      // checklist, no hover/click required to learn it's there — every
+      // switch after that collapses normally, like the others.
+      if (categoryPanelIntroduced) toggleBox.setAttribute("hidden", "");
+      else categoryPanelIntroduced = true;
       if (oldWrap && oldWrap !== wrap) oldWrap.remove();
     } else {
       if (toggleBox.parentElement !== document.body) document.body.appendChild(toggleBox);

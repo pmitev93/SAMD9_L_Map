@@ -451,5 +451,113 @@ window.VARIANT_DETAILS = {
     "gnomad": "Allele frequency: 6.21e-6",
     "phenotype": "LoF",
     "method": "EdU Assay"
+  },
+  "SAMD9:F882X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:Q855X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:E895X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:Q908X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:F920GfsX4": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "Somatic",
+    "method": "EdU Assay"
+  },
+  "SAMD9:S934X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:S936X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:Q937X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "NoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:M890X": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "GoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:E865GfsX13": {
+    "paper": "Mitev",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:T744G": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:D799N": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:D800N": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:T748G": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:D803N": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:D804N": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9L:D1511X": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
+  },
+  "SAMD9:D1516X": {
+    "paper": "UP",
+    "gnomad":,
+    "phenotype": "LoF",
+    "method": "EdU Assay"
   }
 };

@@ -2487,14 +2487,6 @@ window.VARIANTS =
 {
 "protein": "SAMD9",
 "residue": 1495,
-"label": "K1495E / R344X",
-"effect": "LoF",
-"origin": "Klco",
-"group": "SAMD9-R1495"
-},
-{
-"protein": "SAMD9",
-"residue": 1495,
 "label": "K1495E",
 "effect": "LoF",
 "origin": "Klco",
@@ -3421,13 +3413,6 @@ window.VARIANTS =
 {
 "protein": "SAMD9L",
 "residue": 637,
-"label": "A637T",
-"effect": "NoF",
-"origin": "Klco"
-},
-{
-"protein": "SAMD9L",
-"residue": 637,
 "label": "A637VfsX8",
 "effect": "gnomAD",
 "origin": "single"
@@ -4285,13 +4270,6 @@ window.VARIANTS =
 "label": "T1101QfsX11",
 "effect": "gnomAD",
 "origin": "single"
-},
-{
-"protein": "SAMD9L",
-"residue": 1105,
-"label": "W1105R",
-"effect": "NoF",
-"origin": "Bryceson"
 },
 {
 "protein": "SAMD9L",
@@ -5306,5 +5284,117 @@ window.VARIANTS =
 "label": "R223E",
 "effect": "LoF",
 "origin": "Peng"
+},
+{
+"protein": "SAMD9",
+"residue": 855,
+"label": "Q855X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 895,
+"label": "E895X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 908,
+"label": "Q908X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 934,
+"label": "S934X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 936,
+"label": "S936X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 937,
+"label": "Q937X",
+"effect": "NoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 890,
+"label": "M890X",
+"effect": "GoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 865,
+"label": "E865GfsX13",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 744,
+"label": "T744G",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 799,
+"label": "D799N",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 800,
+"label": "D800N",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 748,
+"label": "T748G",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 803,
+"label": "D803N",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 804,
+"label": "D804N",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9L",
+"residue": 1511,
+"label": "D1511X",
+"effect": "LoF",
+"origin": "Mitev"
+},
+{
+"protein": "SAMD9",
+"residue": 1516,
+"label": "D1516X",
+"effect": "NoF",
+"origin": "Mitev"
 }
 ];

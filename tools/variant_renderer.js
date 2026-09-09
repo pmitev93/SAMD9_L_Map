@@ -878,76 +878,45 @@
   function prefersReducedMotion() {
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
-  // FLIP technique (First-Last-Invert-Play): el has ALREADY landed in its new
-  // spot (new layout applied) when this runs. We paint it, via a transform,
-  // back at prevRect's position/size — visually indistinguishable from not
-  // having moved yet — then clear the transform with a transition, so the
-  // browser animates the one real change (the transform going to identity)
-  // instead of trying to interpolate `position` or `display` directly
-  // (neither of which is animatable, which is why a plain CSS transition on
-  // top/left never works for "move an element between two layout contexts").
-  function animateFlip(el, prevRect) {
-    if (!el || !prevRect || prefersReducedMotion() || document.hidden) return;
-    // Measuring el's new rect right here (synchronously, still inside the
-    // click handler) forces the browser to immediately resolve layout for
-    // whatever just got shown/hidden — on the Table -> Map direction that
-    // means the ~2,500-tick map, and that forced-early reflow alone measured
-    // ~80-300ms depending on what else was dirty, which is what made the
-    // "expand back out" animation look like it froze then jumped: the click
-    // handler itself was blocking the main thread that long before the
-    // animation even started. Deferring the measurement into a rAF lets the
-    // browser resolve that same layout as part of its normal next paint
-    // instead of an out-of-band forced one, so the click handler returns
-    // immediately and the freeze disappears.
-    requestAnimationFrame(function () {
-      var newRect = el.getBoundingClientRect();
-      if (!newRect.width || !newRect.height) return;   // landed hidden -> nothing visible to animate
-      var dx = prevRect.left - newRect.left;
-      var dy = prevRect.top - newRect.top;
-      var sx = prevRect.width / newRect.width;
-      var sy = prevRect.height / newRect.height;
-      el.style.transition = "none";
-      el.style.transformOrigin = "top left";
-      el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
-      el.style.opacity = "0.55";
-      // rAF can be throttled or fully paused (backgrounded tab, low-power
-      // mode) — without a fallback, the element would be stuck showing the
-      // huge "disguised as the old shape" transform forever, since nothing
-      // would ever fire to start the transition back to identity. `played`
-      // guards against the rAF path AND the timeout path both firing.
-      var played = false;
-      function play() {
-        if (played) return;
-        played = true;
-        // Slightly longer than a typical UI transition, and with a small
-        // overshoot (the "1.3" in the cubic-bezier) — a plain ease-out reads
-        // as instant/easy to miss at this size and corner-of-the-eye spot.
-        el.style.transition = "transform .46s cubic-bezier(.28,1.3,.32,1), opacity .32s ease";
-        el.style.transform = "";
-        el.style.opacity = "1";
-      }
-      requestAnimationFrame(function () { requestAnimationFrame(play); });
-      setTimeout(play, 80);
-      el.addEventListener("transitionend", function cleanup() {
-        el.style.transition = ""; el.style.transformOrigin = ""; el.style.opacity = "";
-        el.removeEventListener("transitionend", cleanup);
-      });
-    });
+  // Deliberately NOT a cross-position FLIP morph (an earlier version tried
+  // that and it was consistently janky in both directions). Two real reasons
+  // it doesn't work well for this element specifically:
+  //  1. A FLIP morph fakes "still in the old spot" via a non-uniform
+  //     translate+scale transform, then releases it. Scaling a box that
+  //     contains TEXT and checkboxes (not a solid shape/image) visibly warps
+  //     that content mid-flight — letters and checkbox squares stretch into
+  //     the wrong aspect ratio. That reads as broken, not smooth, no matter
+  //     how the timing is tuned.
+  //  2. It needs the box's "new" position measured via getBoundingClientRect
+  //     right after the corresponding huge DOM section (the ~2,500-tick map)
+  //     gets shown/hidden — forcing that measurement forces an immediate,
+  //     synchronous layout of everything else that's dirty too, which is
+  //     exactly the stall that made switching feel slow and glitchy.
+  // A plain, self-contained pop/fade sidesteps both: no cross-element
+  // position math (so nothing forces an early layout of the map), and only
+  // opacity + a UNIFORM scale (which doesn't distort text/checkboxes) —
+  // just "the button/box eases into view where it already naturally is."
+  function popIn(el) {
+    if (!el || prefersReducedMotion()) return;
+    // The Table direction's button is a brand-new element every time
+    // (dockCategoryToggles creates it fresh) — never already has .vt-pop, so
+    // a plain add() always (re)starts the animation, no trick needed.
+    if (!el.classList.contains("vt-pop")) { el.classList.add("vt-pop"); return; }
+    // The Map direction reuses the SAME toggleBox across every switch, so it
+    // can already have .vt-pop from a previous run, and just re-adding the
+    // same class is a no-op (CSS animations don't restart on that). The
+    // classic fix is remove + force a layout read + re-add — but forcing a
+    // layout read is exactly the synchronous-reflow cost that made this
+    // whole feature janky in the first place (see setView()'s own comment).
+    // Waiting a frame does the same "notice it's gone" job without forcing
+    // anything early — a real render tick happens on its own regardless.
+    el.classList.remove("vt-pop");
+    requestAnimationFrame(function () { el.classList.add("vt-pop"); });
   }
   var currentView = "map";
   function setView(view) {
     if (view === currentView) return;
     var isTable = view === "table";
-    // Capture the CURRENTLY VISIBLE toggle representation's rect before
-    // anything moves — the big fixed box when leaving Map, the small docked
-    // button when leaving Table (see dockCategoryToggles/categoryButtonLabel
-    // above — same toggleBox, two different homes).
-    var prevRect = null;
-    if (toggleBox) {
-      prevRect = !isTable
-        ? (function () { var b = document.getElementById("vt-cat-btn"); return b && b.getBoundingClientRect(); })()
-        : toggleBox.getBoundingClientRect();
-    }
     var mapTable = document.getElementById("samd9-table");
     var tv = document.getElementById("table-view");
     var strip = document.getElementById("bottom-legend-strip");
@@ -966,21 +935,17 @@
     });
     dockCategoryToggles(view);
     currentView = view;
-    if (toggleBox && prevRect) {
-      animateFlip(isTable ? document.getElementById("vt-cat-btn") : toggleBox, prevRect);
-    }
+    popIn(isTable ? document.getElementById("vt-cat-btn") : toggleBox);
     // run() no-ops while hidden (see its own comment), so geometry can go
     // stale while Table was showing (e.g. the window was resized). Force one
     // fresh, correct pass now that the Map is visible again — but not
     // *immediately*: run() walks every tick/label + domain-outline cell with
-    // its own forced reflow, which is heavy enough to stall the main thread
-    // for a beat right as the category box's "expand back out" transition
-    // starts, so the animation appeared to freeze then jump. Deferring past
-    // the transition's own duration lets the box finish moving first; run()
-    // itself already no-ops if the user has switched away again by the time
-    // this fires, so a rapid Map->Table->Map isn't at risk of doing wasted
-    // (or wrong) work.
-    if (!isTable) setTimeout(run, 480);
+    // its own forced reflow, heavy enough to stall the main thread for a
+    // beat right as the pop-in animation starts. Deferring past the
+    // animation's own (short) duration lets it finish first; run() itself
+    // already no-ops if the user has switched away again by the time this
+    // fires, so a rapid Map->Table->Map isn't at risk of doing wasted work.
+    if (!isTable) setTimeout(run, 260);
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----

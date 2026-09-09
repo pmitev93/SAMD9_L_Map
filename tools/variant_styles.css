@@ -109,6 +109,12 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
   box-shadow:0 8px 24px rgba(0,0,0,.12);
 }
 #variant-toggles.vt-docked .vt-title { display:none; }
+/* Map<->Table switch (popIn(), variant_renderer.js) — a plain fade + UNIFORM
+   scale-up where the button/box already naturally is, not a cross-position
+   morph. Uniform scale (same X/Y) doesn't stretch the checkbox rows or their
+   text the way a non-uniform one would; it just eases in. */
+@keyframes vt-pop { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+.vt-pop { animation:vt-pop .18s ease-out; }
 /* gradient text: category hue -> a slightly darker version of it */
 #variant-toggles .vt-name {
   font-weight:500; font-size:1.05em; letter-spacing:.005em;

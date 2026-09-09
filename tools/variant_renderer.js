@@ -825,6 +825,13 @@
       btn.id = "vt-cat-btn";
       btn.className = "vtbl-export vtbl-mbtn";
       btn.setAttribute("data-mtarget", "category");
+      // This one replaces a box that was always fully open on the Map view
+      // (a whole "SHOW VARIANTS" card, impossible to miss) — collapsed into
+      // a button like this, a first-time visitor might not realize it's the
+      // same filter, not just another export-style button. The label already
+      // shows a live count as a hint (matches Domain/Conservation's own
+      // buttons); the tooltip is the one extra nudge that costs nothing.
+      btn.title = "Filter which variant categories (GoF, LoF, gnomAD, etc.) are shown";
       btn.textContent = categoryButtonLabel();
       wrap.appendChild(btn);
       var exportBtn = controls.querySelector("#vtbl-export-csv");
@@ -933,6 +940,25 @@
     document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
       b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
     });
+    // Map -> Table: docking the box away in the same tick the table appears
+    // means it just vanishes — popIn() animates the button arriving, but
+    // nothing ever animated the box LEAVING, so that half read as an abrupt
+    // cut rather than a transition. Let it fade out in place first (still
+    // fixed, still on top of the now-visible table for a beat) — a plain
+    // opacity transition, no transform/layout math, so it can't reintroduce
+    // the forced-reflow jank the rest of this feature had to work around.
+    if (isTable && toggleBox && !prefersReducedMotion()) {
+      toggleBox.classList.add("vt-fade-out");
+      setTimeout(function () {
+        toggleBox.classList.remove("vt-fade-out");
+        finishToggleDock(view);
+      }, 160);
+    } else {
+      finishToggleDock(view);
+    }
+  }
+  function finishToggleDock(view) {
+    var isTable = view === "table";
     dockCategoryToggles(view);
     currentView = view;
     popIn(isTable ? document.getElementById("vt-cat-btn") : toggleBox);

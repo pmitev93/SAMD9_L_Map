@@ -115,6 +115,9 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
    text the way a non-uniform one would; it just eases in. */
 @keyframes vt-pop { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
 .vt-pop { animation:vt-pop .18s ease-out; }
+/* Map -> Table departure (setView()) — plain opacity, no transform, so it
+   can't reintroduce the forced-reflow jank a transform-based exit would. */
+#variant-toggles.vt-fade-out { transition:opacity .16s ease; opacity:0; pointer-events:none; }
 /* gradient text: category hue -> a slightly darker version of it */
 #variant-toggles .vt-name {
   font-weight:500; font-size:1.05em; letter-spacing:.005em;

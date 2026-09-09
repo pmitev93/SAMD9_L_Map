@@ -843,20 +843,20 @@
   var TABLE_COLUMNS = [
     { key: "protein",      label: "Protein" },
     { key: "variant",      label: "Variant" },
-    { key: "domain",       label: "Domain" },
     { key: "conservation", label: "Conservation" },
+    { key: "domain",       label: "Domain" },
     { key: "category",     label: "Category" },
     { key: "method",       label: "Method" },
-    { key: "gnomad",       label: "gnomAD frequency" },
-    { key: "hom",          label: "gnomAD homozygotes" },
+    { key: "gnomad",       label: "gnomAD<br>frequency" },
+    { key: "hom",          label: "gnomAD<br>homozygotes" },
     { key: "source",       label: "Source" }
   ];
-  var EXPORT_HEADERS = ["Protein", "Variant", "Domain", "Conservation", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
+  var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
   var SORT_VAL = {
     protein:      function (r) { return r.protein; },
     variant:      function (r) { return r.label.toLowerCase(); },
-    domain:       function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
     conservation: function (r) { return r.conservation == null ? -1 : r.conservation; },
+    domain:       function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
     category:     function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
     method:       function (r) { return (r.method || "").toLowerCase(); },
     gnomad:       function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
@@ -864,14 +864,24 @@
     source:       function (r) { return (r.sourceTitle || "").toLowerCase(); }
   };
   var tableSort = { key: "protein", dir: 1 };
-  // Search text + protein/domain(s)/conservation pick are table-view-only
-  // state, independent of the shared category toggles — search is a plain
-  // substring match against each row's own rendered text (already covers
-  // protein/variant/domain/category/method/gnomAD/source in one go, no
-  // separate index). `domains` is a Set of ALLOWED domain/linker/terminus
-  // names — multi-select, so it starts holding every name (nothing filtered
-  // out) rather than an "all" sentinel.
-  var tableFilter = { search: "", protein: "all", domains: new Set(DOMAIN_FILTER_ORDER), conservation: "all" };
+  // Both Domain and Conservation are multi-select (checkbox panels, not a
+  // single dropdown) — same mechanics for both, so MULTI_FILTERS/tableFilter
+  // .multi drive both through one set of shared functions instead of two
+  // near-duplicate ones. Each starts holding every one of its own options
+  // (nothing filtered out) rather than an "all" sentinel.
+  var CONSERVATION_SCORES = ["9", "8", "7", "6", "5", "4", "3", "2", "1"];
+  var MULTI_FILTERS = {
+    domain: { options: DOMAIN_FILTER_ORDER, label: "Domain" },
+    conservation: { options: CONSERVATION_SCORES, label: "Conservation" }
+  };
+  // Search text + protein pick are table-view-only state too, independent of
+  // the shared category toggles — search is a plain substring match against
+  // each row's own rendered text (already covers protein/variant/domain/
+  // category/method/gnomAD/source in one go, no separate index).
+  var tableFilter = {
+    search: "", protein: "all",
+    multi: { domain: new Set(DOMAIN_FILTER_ORDER), conservation: new Set(CONSERVATION_SCORES) }
+  };
 
   // Same present/absent/loading logic as gnomadRowFor (the popup), but split
   // into a display string + numeric allele frequency + homozygote count so
@@ -934,7 +944,11 @@
 
     var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
       var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
-      return '<th data-sort="' + c.key + '">' + esc(c.label) + arrow + "</th>";
+      // c.label is a hardcoded constant (never variant data), so the "<br>"
+      // a couple of labels carry (to wrap "gnomAD" onto its own line — those
+      // two headers were overflowing even on a large screen) can go through
+      // unescaped here.
+      return '<th data-sort="' + c.key + '">' + c.label + arrow + "</th>";
     }).join("") + "</tr>";
 
     var dcolors = domainColors();
@@ -952,8 +966,14 @@
           : esc(r.sourceTitle);
         if (r.pmid && r.pmid !== "pending") src += '<div class="vtbl-pmid">PMID: ' + esc(r.pmid) + "</div>";
       }
-      var homCell = r.gnomadHom != null
-        ? '<span class="' + (r.gnomadHom > 0 ? "vtbl-hom-pos" : "") + '">' + r.gnomadHom + "</span>"
+      // Zero and "unknown" were both landing on screen as visually distinct
+      // (0 vs —), which read as an inconsistency rather than two different
+      // real states. Simplify: only a CONFIRMED positive homozygote count
+      // gets a number; zero and unknown both just show "—" on screen. (The
+      // export still writes the real 0 — that distinction is worth keeping
+      // in a data file, just not worth the on-screen confusion.)
+      var homCell = r.gnomadHom > 0
+        ? '<span class="vtbl-hom-pos">' + r.gnomadHom + "</span>"
         : "—";
       var consCell = r.conservation != null
         ? '<span class="cs-box vtbl-cons Score' + r.conservation + '">' + r.conservation + "</span>"
@@ -962,8 +982,8 @@
         '" data-conservation="' + (r.conservation == null ? "" : r.conservation) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
-        '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
         "<td>" + consCell + "</td>" +
+        '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
         '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         "<td>" + esc(r.method || "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
@@ -978,40 +998,23 @@
       return '<button type="button" class="vs-btn vtbl-pbtn' + active + '" data-protein="' + p + '">' +
              (p === "all" ? "All" : p) + "</button>";
     }).join("");
-    var domainCbHtml = DOMAIN_FILTER_ORDER.map(function (name) {
-      var checked = tableFilter.domains.has(name) ? " checked" : "";
-      return '<label><input type="checkbox" class="vtbl-domain-cb" value="' + esc(name) + '"' + checked + '><span>' + esc(name) + "</span></label>";
-    }).join("");
-    var consOptHtml = '<option value="all">All conservation</option>' +
-      [9, 8, 7, 6, 5, 4, 3, 2, 1].map(function (n) {
-        var sel = tableFilter.conservation === String(n) ? " selected" : "";
-        var extra = n === 9 ? " (most conserved)" : n === 1 ? " (most variable)" : "";
-        return '<option value="' + n + '"' + sel + ">" + n + extra + "</option>";
-      }).join("");
+    var domainPanelHtml = multiSelectHtml("domain");
+    var conservationPanelHtml = multiSelectHtml("conservation");
 
     host.innerHTML =
       '<div class="vtbl-head">' +
         '<div class="vtbl-controls">' +
           '<input type="search" id="vtbl-search" placeholder="Search variants…" value="' + esc(tableFilter.search) + '">' +
           '<div class="vtbl-protein-filter">' + proteinHtml + "</div>" +
-          '<div class="vtbl-domain-wrap">' +
-            '<button type="button" class="vtbl-export" id="vtbl-domain-btn">' + esc(domainButtonLabel()) + "</button>" +
-            '<div id="vtbl-domain-panel" class="vtbl-domain-panel" hidden>' +
-              '<div class="vtbl-domain-actions">' +
-                '<button type="button" data-daction="all">Select all</button>' +
-                '<button type="button" data-daction="none">Clear</button>' +
-              "</div>" +
-              domainCbHtml +
-            "</div>" +
-          "</div>" +
-          '<select id="vtbl-conservation" title="Filter by conservation score">' + consOptHtml + "</select>" +
+          domainPanelHtml +
+          conservationPanelHtml +
           '<button type="button" class="vtbl-export" id="vtbl-export-csv">Export CSV</button>' +
           '<button type="button" class="vtbl-export" id="vtbl-export-xlsx">Export Excel</button>' +
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
       '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
-    applyTableFilters();   // re-apply protein/domain(s)/conservation/search to the freshly-built rows
+    applyTableFilters();   // re-apply protein/domain(s)/conservation(s)/search to the freshly-built rows
 
     if (!host.__wired) {
       host.__wired = true;
@@ -1032,40 +1035,40 @@
           applyTableFilters();
           return;
         }
-        if (e.target.id === "vtbl-domain-btn") {
-          document.getElementById("vtbl-domain-panel").toggleAttribute("hidden");
+        var mbtn = e.target.closest && e.target.closest(".vtbl-mbtn");
+        if (mbtn) {
+          document.getElementById("vtbl-" + mbtn.getAttribute("data-mtarget") + "-panel").toggleAttribute("hidden");
           return;
         }
         var daction = e.target.closest && e.target.closest("[data-daction]");
         if (daction) {
+          var mkey = daction.getAttribute("data-mtarget");
           var toAll = daction.getAttribute("data-daction") === "all";
-          tableFilter.domains = new Set(toAll ? DOMAIN_FILTER_ORDER : []);
-          host.querySelectorAll(".vtbl-domain-cb").forEach(function (cb) { cb.checked = toAll; });
-          document.getElementById("vtbl-domain-btn").textContent = domainButtonLabel();
+          tableFilter.multi[mkey] = new Set(toAll ? MULTI_FILTERS[mkey].options : []);
+          host.querySelectorAll('.vtbl-mcb[data-mtarget="' + mkey + '"]').forEach(function (cb) { cb.checked = toAll; });
+          document.getElementById("vtbl-" + mkey + "-btn").textContent = multiSelectLabel(mkey);
           applyTableFilters();
           return;
         }
         if (e.target.id === "vtbl-export-csv") { exportCSV(); return; }
         if (e.target.id === "vtbl-export-xlsx") { exportExcel(); return; }
-        // Clicking anywhere else while the domain panel is open closes it —
-        // but not a click ON the panel/checkboxes/button themselves (each of
+        // Clicking anywhere else while a filter panel is open closes it — but
+        // not a click ON that panel/its checkboxes/its own button (each of
         // those is handled above, or is a checkbox toggle via the "change"
         // listener below, and none of those paths should also close it).
-        var panel = document.getElementById("vtbl-domain-panel");
-        if (panel && !panel.hasAttribute("hidden") && !e.target.closest("#vtbl-domain-wrap")) {
-          panel.setAttribute("hidden", "");
-        }
+        Object.keys(MULTI_FILTERS).forEach(function (key) {
+          var panel = document.getElementById("vtbl-" + key + "-panel");
+          if (panel && !panel.hasAttribute("hidden") && !e.target.closest('[data-mtarget="' + key + '"]')) {
+            panel.setAttribute("hidden", "");
+          }
+        });
       });
       host.addEventListener("change", function (e) {
-        if (e.target.classList && e.target.classList.contains("vtbl-domain-cb")) {
-          if (e.target.checked) tableFilter.domains.add(e.target.value);
-          else tableFilter.domains.delete(e.target.value);
-          document.getElementById("vtbl-domain-btn").textContent = domainButtonLabel();
-          applyTableFilters();
-          return;
-        }
-        if (e.target.id === "vtbl-conservation") {
-          tableFilter.conservation = e.target.value;
+        if (e.target.classList && e.target.classList.contains("vtbl-mcb")) {
+          var mkey2 = e.target.getAttribute("data-mtarget");
+          if (e.target.checked) tableFilter.multi[mkey2].add(e.target.value);
+          else tableFilter.multi[mkey2].delete(e.target.value);
+          document.getElementById("vtbl-" + mkey2 + "-btn").textContent = multiSelectLabel(mkey2);
           applyTableFilters();
         }
       });
@@ -1081,26 +1084,48 @@
       });
     }
   }
-  function domainButtonLabel() {
-    var n = tableFilter.domains.size, total = DOMAIN_FILTER_ORDER.length;
-    if (n === total) return "Domain: All ▾";
-    if (n === 0) return "Domain: None ▾";
-    return "Domain: " + n + " selected ▾";
+  // Builds one multi-select filter (a button that opens a checkbox panel) —
+  // shared by Domain and Conservation, the two filters where more than one
+  // value can be picked at once (unlike the plain protein buttons).
+  function multiSelectHtml(key) {
+    var cfg = MULTI_FILTERS[key];
+    var set = tableFilter.multi[key];
+    var cbHtml = cfg.options.map(function (name) {
+      var checked = set.has(name) ? " checked" : "";
+      return '<label><input type="checkbox" class="vtbl-mcb" data-mtarget="' + key + '" value="' + esc(name) + '"' + checked + '><span>' + esc(name) + "</span></label>";
+    }).join("");
+    return '<div class="vtbl-domain-wrap" data-mtarget="' + key + '">' +
+      '<button type="button" class="vtbl-export vtbl-mbtn" data-mtarget="' + key + '" id="vtbl-' + key + '-btn">' + esc(multiSelectLabel(key)) + "</button>" +
+      '<div id="vtbl-' + key + '-panel" class="vtbl-domain-panel" hidden>' +
+        '<div class="vtbl-domain-actions">' +
+          '<button type="button" data-mtarget="' + key + '" data-daction="all">Select all</button>' +
+          '<button type="button" data-mtarget="' + key + '" data-daction="none">Clear</button>' +
+        "</div>" + cbHtml +
+      "</div>" +
+    "</div>";
   }
-  // Applies the protein/domain(s)/conservation pick + search text on top of
-  // whatever the category toggles already did via CSS (their !important rule
-  // always wins, so we never fight it — a category-hidden row just stays
-  // hidden regardless of what we set here). Cheap enough to run on every
-  // keystroke: substring match against the row's own rendered text, no
-  // separate search index.
+  function multiSelectLabel(key) {
+    var cfg = MULTI_FILTERS[key];
+    var n = tableFilter.multi[key].size, total = cfg.options.length;
+    if (n === total) return cfg.label + ": All ▾";
+    if (n === 0) return cfg.label + ": None ▾";
+    return cfg.label + ": " + n + " selected ▾";
+  }
+  // Applies the protein/domain(s)/conservation(s) pick + search text on top
+  // of whatever the category toggles already did via CSS (their !important
+  // rule always wins, so we never fight it — a category-hidden row just
+  // stays hidden regardless of what we set here). Cheap enough to run on
+  // every keystroke: substring match against the row's own rendered text,
+  // no separate search index.
   function applyTableFilters() {
     var host = document.getElementById("table-view");
     if (!host) return;
     var rows = host.querySelectorAll("tbody tr");
     rows.forEach(function (tr) {
       var proteinOk = tableFilter.protein === "all" || tr.getAttribute("data-protein") === tableFilter.protein;
-      var domainOk = tableFilter.domains.has(tr.getAttribute("data-domain"));
-      var consOk = tableFilter.conservation === "all" || tr.getAttribute("data-conservation") === tableFilter.conservation;
+      var domainOk = tableFilter.multi.domain.has(tr.getAttribute("data-domain"));
+      var consAttr = tr.getAttribute("data-conservation");
+      var consOk = consAttr === "" || tableFilter.multi.conservation.has(consAttr);
       var searchOk = !tableFilter.search || tr.textContent.toLowerCase().indexOf(tableFilter.search) !== -1;
       tr.style.display = (proteinOk && domainOk && consOk && searchOk) ? "" : "none";
     });
@@ -1120,7 +1145,7 @@
   // current sort order, since that's "what you're looking at" in the table.
   function exportRowValues(r) {
     return [
-      r.protein, r.label, r.domain, r.conservation != null ? r.conservation : "",
+      r.protein, r.label, r.conservation != null ? r.conservation : "", r.domain,
       (CFG[r.category] || CFG.Other).legend.replace(" (unannotated)", ""),
       r.method || "", r.gnomadText, r.gnomadHom != null ? r.gnomadHom : "",
       r.sourceTitle || "", r.pmid || ""
@@ -1180,8 +1205,8 @@
       var v = exportRowValues(r);
       return "<Row>" +
         cell(v[0]) + cell(v[1]) +
-        cell(v[2], "dom_" + r.domainKey) +
-        cell(v[3], null, r.conservation != null ? "Number" : "String") +
+        cell(v[2], null, r.conservation != null ? "Number" : "String") +
+        cell(v[3], "dom_" + r.domainKey) +
         cell(v[4], "cat_" + r.category) +
         cell(v[5]) + cell(v[6]) +
         cell(v[7], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +

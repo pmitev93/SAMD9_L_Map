@@ -205,11 +205,17 @@ table.vtbl tbody td.vtbl-left { text-align:left; }
   background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
   color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
 }
-/* Domain — plain colored text (no pill), so it reads as a different kind of
-   tag than Category's badge rather than a duplicate of it. Reuses the Map's
-   own --domain-*-dark colors (via --dm-c) directly, un-mixed — a variant's
-   domain color in the table always matches its outline color on the Map. */
-.vtbl-dom { font-weight:600; color:var(--dm-c,#9AA0A6); white-space:nowrap; }
+/* Domain — a bordered, square-cornered chip (vs. Category's filled, fully
+   rounded pill) so the two read as different kinds of tag rather than
+   lookalikes. Reuses the Map's own --domain-*-dark colors (via --dm-c) — a
+   variant's domain color in the table always matches its outline on the Map. */
+.vtbl-dom {
+  display:inline-block; padding:1px 8px; border-radius:4px; font-size:12px; font-weight:600;
+  white-space:nowrap;
+  background:color-mix(in srgb, var(--dm-c,#9AA0A6) 8%, white);
+  border:1.5px solid color-mix(in srgb, var(--dm-c,#9AA0A6) 55%, white);
+  color:color-mix(in srgb, var(--dm-c,#9AA0A6) 75%, black);
+}
 .vtbl-hom-pos { color:#1E9E5B; font-weight:700; }
 /* Conservation swatch: reuses the page's own .cs-box.ScoreN classes (the
    ConSurf 1-9 palette already shown in the bottom legend) so a variant's

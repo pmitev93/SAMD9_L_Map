@@ -315,14 +315,21 @@ window.VARIANTS =
 "residue": 196,
 "label": "E196A",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Zhang",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Northern blot"
 },
 {
 "protein": "SAMD9",
 "residue": 198,
 "label": "K198E",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Peng",
+"phenotype": "LoF",
+"method": "Viral infection/flow cytometry"
 },
 {
 "protein": "SAMD9",
@@ -336,14 +343,22 @@ window.VARIANTS =
 "residue": 214,
 "label": "K214E",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Peng",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Viral infection/flow cytometry"
 },
 {
 "protein": "SAMD9",
 "residue": 218,
 "label": "D218A",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Zhang",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Northern blot"
 },
 {
 "protein": "SAMD9",
@@ -364,7 +379,11 @@ window.VARIANTS =
 "residue": 221,
 "label": "R221E",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Zhang",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Viral infection/flow cytometry"
 },
 {
 "protein": "SAMD9",
@@ -413,7 +432,11 @@ window.VARIANTS =
 "residue": 241,
 "label": "D241A",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Zhang",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Northern blot"
 },
 {
 "protein": "SAMD9",
@@ -760,7 +783,10 @@ window.VARIANTS =
 "residue": 459,
 "label": "R459Q",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
@@ -774,7 +800,10 @@ window.VARIANTS =
 "residue": 464,
 "label": "H464Y",
 "effect": "SIRT2",
-"origin": "Bryceson"
+"origin": "Bryceson",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
@@ -1340,7 +1369,11 @@ window.VARIANTS =
 "residue": 778,
 "label": "T778I",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
@@ -1480,7 +1513,10 @@ window.VARIANTS =
 "residue": 855,
 "label": "Q855X",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -1557,14 +1593,20 @@ window.VARIANTS =
 "residue": 882,
 "label": "F882X",
 "effect": "LoF",
-"origin": "Bryceson"
+"origin": "Bryceson",
+"paper": "Mitev",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 895,
 "label": "E895X",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -1578,7 +1620,10 @@ window.VARIANTS =
 "residue": 920,
 "label": "F920GfsX4",
 "effect": "Somatic",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Mitev",
+"phenotype": "Somatic",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -1592,14 +1637,20 @@ window.VARIANTS =
 "residue": 934,
 "label": "S934X",
 "effect": "gnomAD",
-"origin": "single"
+"origin": "single",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 936,
 "label": "S936X",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -1613,7 +1664,10 @@ window.VARIANTS =
 "residue": 937,
 "label": "Q937X",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -1677,7 +1731,10 @@ window.VARIANTS =
 "label": "R982H",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9-R982"
+"group": "SAMD9-R982",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
@@ -1685,14 +1742,20 @@ window.VARIANTS =
 "label": "R982C",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9-R982"
+"group": "SAMD9-R982",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
 "residue": 983,
 "label": "I983S",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
@@ -1897,7 +1960,11 @@ window.VARIANTS =
 "residue": 1136,
 "label": "E1136Q",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
@@ -2213,7 +2280,10 @@ window.VARIANTS =
 "label": "R1293Q",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9-R1293"
+"group": "SAMD9-R1293",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
@@ -2221,7 +2291,11 @@ window.VARIANTS =
 "label": "R1293W",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9-R1293"
+"group": "SAMD9-R1293",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
@@ -2419,14 +2493,22 @@ window.VARIANTS =
 "residue": 1455,
 "label": "E1455VfsX14",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "NM",
+"gnomad": "Allele frequency: 1.24e-6",
+"phenotype": "GoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 1455,
 "label": "E1455VfsX14",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "NM",
+"gnomad": "Allele frequency: 1.24e-6",
+"phenotype": "GoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
@@ -2670,7 +2752,10 @@ window.VARIANTS =
 "residue": 1569,
 "label": "K1569N",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Buon",
+"phenotype": "GoF",
+"method": "Cell counting"
 },
 {
 "protein": "SAMD9",
@@ -2714,7 +2799,11 @@ window.VARIANTS =
 "residue": 19,
 "label": "V19E",
 "effect": "Somatic",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "klco_2021",
+"gnomad": "Not present",
+"phenotype": "Somatic",
+"method": "clonal/growth expansion"
 },
 {
 "protein": "SAMD9L",
@@ -2835,7 +2924,11 @@ window.VARIANTS =
 "residue": 186,
 "label": "E186A",
 "effect": "LoF",
-"origin": "Bryceson"
+"origin": "Bryceson",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
@@ -2870,7 +2963,11 @@ window.VARIANTS =
 "residue": 233,
 "label": "T233N",
 "effect": "LoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "tesi_2017",
+"gnomad": "Allele frequency: 4.34e-6",
+"phenotype": "LoF",
+"method": "CellTrace"
 },
 {
 "protein": "SAMD9L",
@@ -3145,7 +3242,10 @@ window.VARIANTS =
 "residue": 468,
 "label": "H468Y",
 "effect": "SIRT2",
-"origin": "Bryceson"
+"origin": "Bryceson",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -3387,7 +3487,11 @@ window.VARIANTS =
 "residue": 626,
 "label": "S626L",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -3436,7 +3540,11 @@ window.VARIANTS =
 "residue": 665,
 "label": "T665P",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "NM",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
@@ -3662,7 +3770,11 @@ window.VARIANTS =
 "residue": 770,
 "label": "K770E",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "NM",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
@@ -3732,7 +3844,11 @@ window.VARIANTS =
 "residue": 830,
 "label": "E830X",
 "effect": "LoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "Mitev",
+"gnomad": "Allele frequency: 6.21e-6",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
@@ -3769,7 +3885,11 @@ window.VARIANTS =
 "residue": 843,
 "label": "R843W",
 "effect": "LoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -3818,7 +3938,10 @@ window.VARIANTS =
 "residue": 865,
 "label": "E865GfsX13",
 "effect": "gnomAD",
-"origin": "mt1"
+"origin": "mt1",
+"paper": "Mitev",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
@@ -3861,7 +3984,11 @@ window.VARIANTS =
 "label": "I876LfsX15",
 "effect": "NoF",
 "origin": "Klco",
-"group": "SAMD9L-R876"
+"group": "SAMD9L-R876",
+"paper": "Rsl",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
@@ -3877,7 +4004,11 @@ window.VARIANTS =
 "label": "K878SfsX12",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9L-R878"
+"group": "SAMD9L-R878",
+"paper": "Rsl",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
@@ -3898,14 +4029,22 @@ window.VARIANTS =
 "residue": 880,
 "label": "H880Q",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 883,
 "label": "C883X",
 "effect": "GoF",
-"origin": "Bryceson"
+"origin": "Bryceson",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -3919,35 +4058,55 @@ window.VARIANTS =
 "residue": 885,
 "label": "N885TfsX6",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Rsl",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 886,
 "label": "F886LfsX11",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Rsl",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 886,
 "label": "F886X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 889,
 "label": "F889SfsX2",
 "effect": "NoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "Rsl",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 891,
 "label": "I891T",
 "effect": "GoF",
-"origin": "Klco"
+"origin": "Klco",
+"paper": "tesi_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "CellTrace"
 },
 {
 "protein": "SAMD9L",
@@ -3968,28 +4127,44 @@ window.VARIANTS =
 "residue": 898,
 "label": "E898X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 910,
 "label": "K910X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 917,
 "label": "K917X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 927,
 "label": "L927X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
@@ -4017,14 +4192,22 @@ window.VARIANTS =
 "residue": 938,
 "label": "S938X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
 "residue": 950,
 "label": "Y950X",
 "effect": "GoF",
-"origin": "Allenspach"
+"origin": "Allenspach",
+"paper": "Alsp",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "Flow Cytometry"
 },
 {
 "protein": "SAMD9L",
@@ -4095,7 +4278,11 @@ window.VARIANTS =
 "label": "R986C",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9L-R986"
+"group": "SAMD9L-R986",
+"paper": "tesi_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "CellTrace"
 },
 {
 "protein": "SAMD9L",
@@ -4103,7 +4290,11 @@ window.VARIANTS =
 "label": "R986C",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9L-R986"
+"group": "SAMD9L-R986",
+"paper": "tesi_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "CellTrace"
 },
 {
 "protein": "SAMD9L",
@@ -4111,7 +4302,11 @@ window.VARIANTS =
 "label": "R986H",
 "effect": "GoF",
 "origin": "Klco",
-"group": "SAMD9L-R986"
+"group": "SAMD9L-R986",
+"paper": "tesi_2017",
+"gnomad": "Allele frequency: 9.30e-6",
+"phenotype": "GoF",
+"method": "CellTrace"
 },
 {
 "protein": "SAMD9L",
@@ -4409,7 +4604,11 @@ window.VARIANTS =
 "residue": 1180,
 "label": "W1180R",
 "effect": "GoF",
-"origin": "Sch"
+"origin": "Sch",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -4627,7 +4826,11 @@ window.VARIANTS =
 "label": "R1281K",
 "effect": "GoF",
 "origin": "Klco, Bryceson",
-"group": "SAMD9L-R1281"
+"group": "SAMD9L-R1281",
+"paper": "sch_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -4643,7 +4846,11 @@ window.VARIANTS =
 "label": "R1281del",
 "effect": "GoF",
 "origin": "Klco, Bryceson",
-"group": "SAMD9L-R1281"
+"group": "SAMD9L-R1281",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -5037,7 +5244,11 @@ window.VARIANTS =
 "label": "R1524H",
 "effect": "LoF",
 "origin": "Klco",
-"group": "SAMD9L-R1524"
+"group": "SAMD9L-R1524",
+"paper": "Mitev",
+"gnomad": "Allele frequency: 4.21e-5",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -5045,7 +5256,11 @@ window.VARIANTS =
 "label": "R1524QfsX9",
 "effect": "LoF",
 "origin": "Klco",
-"group": "SAMD9L-R1524"
+"group": "SAMD9L-R1524",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
@@ -5129,154 +5344,228 @@ window.VARIANTS =
 "residue": 807,
 "label": "E807K",
 "effect": "GoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 1176,
 "label": "E1176K",
 "effect": "GoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 1105,
 "label": "W1105R",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 679,
 "label": "F679L",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Allele frequency: 1.24e-6",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 1553,
 "label": "I1553T",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Allele frequency: 9.61e-5",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 937,
 "label": "Q937K",
 "effect": "GoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 195,
 "label": "H195R",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"gnomad": "Allele frequency: 6.20e-7",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 184,
 "label": "E184A",
 "effect": "LoF",
-"origin": "Zhang"
+"origin": "Zhang",
+"paper": "Zhang",
+"gnomad": "Not present",
+"phenotype": "LoF",
+"method": "Northern blot"
 },
 {
 "protein": "SAMD9L",
 "residue": 463,
 "label": "R463Q",
 "effect": "GoF",
-"origin": "Other"
+"origin": "Other",
+"paper": "UP",
+"phenotype": "GoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 33,
 "label": "R33K",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 134,
 "label": "G134A",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 150,
 "label": "T150S",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 221,
 "label": "R221Q",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 244,
 "label": "H244R",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 1529,
 "label": "R1529H",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 72,
 "label": "Y72C",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 169,
 "label": "D169H",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 635,
 "label": "L635F",
 "effect": "Somatic",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 637,
 "label": "A637T",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 690,
 "label": "G690D",
 "effect": "NoF",
-"origin": "NM"
+"origin": "NM",
+"paper": "UP",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 878,
 "label": "K878X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU assay"
 },
 {
 "protein": "SAMD9",
 "residue": 257,
 "label": "K257E",
 "effect": "LoF",
-"origin": "Peng"
+"origin": "Peng",
+"paper": "Peng",
+"phenotype": "LoF",
+"method": "Viral infection/flow cytometry"
 },
 {
 "protein": "SAMD9",
@@ -5290,111 +5579,180 @@ window.VARIANTS =
 "residue": 855,
 "label": "Q855X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 895,
 "label": "E895X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 908,
 "label": "Q908X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 934,
 "label": "S934X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 936,
 "label": "S936X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 937,
 "label": "Q937X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "NoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 890,
 "label": "M890X",
 "effect": "GoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "GoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 865,
 "label": "E865GfsX13",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "Mitev",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 744,
 "label": "T744G",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 799,
 "label": "D799N",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 800,
 "label": "D800N",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 748,
 "label": "T748G",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 803,
 "label": "D803N",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 804,
 "label": "D804N",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9L",
 "residue": 1511,
 "label": "D1511X",
 "effect": "LoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
 },
 {
 "protein": "SAMD9",
 "residue": 1516,
 "label": "D1516X",
 "effect": "NoF",
-"origin": "Mitev"
+"origin": "Mitev",
+"paper": "UP",
+"phenotype": "LoF",
+"method": "EdU Assay"
+},
+{
+"protein": "SAMD9L",
+"residue": 986,
+"label": "R986F",
+"effect": "GoF",
+"origin": "Tesi",
+"paper": "tesi_2017",
+"gnomad": "Not present",
+"phenotype": "GoF",
+"method": "CellTrace"
+},
+{
+"protein": "SAMD9L",
+"residue": 223,
+"label": "R223E",
+"effect": "LoF",
+"origin": "Peng",
+"paper": "Peng",
+"phenotype": "LoF",
+"method": "Viral infection/flow cytometry"
 }
 ];

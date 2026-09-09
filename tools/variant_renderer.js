@@ -155,9 +155,10 @@
   }
   // Formats the gnomAD popup row. Live data wins whenever we have it (a real
   // match, or a confirmed absence from the full canonical-transcript variant
-  // list); falls back to the manually-curated data_details.js text only when
-  // live data can't speak to this specific label (still loading, fetch
-  // failed, or the label is a compound variant gnomAD can't be asked about).
+  // list); falls back to the manually-curated "gnomad" field (on the variant
+  // itself, in data_variants.js) only when live data can't speak to this
+  // specific label (still loading, fetch failed, or the label is a compound
+  // variant gnomAD can't be asked about).
   function gnomadRowFor(protein, label, staticGnomad) {
     if (GNOMAD_LIVE.ready && isSimpleLabel(label)) {
       var hit = GNOMAD_LIVE.byLabel[protein] && GNOMAD_LIVE.byLabel[protein][label];
@@ -337,7 +338,14 @@
     DATA.forEach(function (v) { v.category = deriveCategory(v.effect); });
     OV      = window.VARIANT_OVERRIDES || {};
     PAPERS  = window.PAPERS || {};
-    DETAILS = window.VARIANT_DETAILS || {};
+    // DETAILS used to be a separate data_details.js file keyed "PROTEIN:label".
+    // paper/gnomad/phenotype/method now live directly on each DATA entry (one
+    // file, one object per variant) — DETAILS is just that same lookup,
+    // rebuilt from DATA itself, so openPopup()/buildTableView() (which read
+    // d.paper / d.phenotype / d.method / d.gnomad off whatever this returns)
+    // don't need to change at all.
+    DETAILS = {};
+    DATA.forEach(function (v) { DETAILS[v.protein + ":" + v.label] = v; });
     run();
     buildViewSwitcher();
     buildTableView();
@@ -1266,7 +1274,7 @@
   function boot() {
     updateLastUpdatedDate();
     loadGnomadLive();   // fires in the background; popups just check GNOMAD_LIVE whenever opened
-    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_details.js"];
+    var files = ["data_variants.js", "data_overrides.js", "data_papers.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;
     files.forEach(function (f) {

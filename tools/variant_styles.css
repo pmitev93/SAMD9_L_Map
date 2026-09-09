@@ -97,6 +97,18 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 }
 #variant-toggles label:hover { background:rgba(90,90,95,.08); }
 #variant-toggles input { width:1.05em; height:1.05em; accent-color:#888; }
+/* Docked in the Table view's control row (dockCategoryToggles()) — same
+   element, same #variant-toggles rules above still apply (label/input/hover),
+   just repositioned as a dropdown instead of a fixed corner card. ID+class
+   beats the plain #variant-toggles rule above on the properties that clash
+   (position/top/right/etc.) since ID+class is the more specific selector. */
+#variant-toggles.vt-docked {
+  position:absolute; top:calc(100% + 6px); left:0; right:auto; bottom:auto; z-index:20;
+  width:240px; max-height:280px; overflow-y:auto;
+  padding:.5em; border-radius:10px; font-size:13px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+#variant-toggles.vt-docked .vt-title { display:none; }
 /* gradient text: category hue -> a slightly darker version of it */
 #variant-toggles .vt-name {
   font-weight:500; font-size:1.05em; letter-spacing:.005em;

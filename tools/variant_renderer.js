@@ -762,6 +762,12 @@
     });
   }
 
+  // toggleBox is the ONE actual toggle-list element — never duplicated.
+  // On Map it's a fixed top-right box; on Table it's re-parented into a
+  // dropdown docked among the other filter controls (see
+  // dockCategoryToggles/setView below). Same checkboxes, same listener,
+  // wherever it currently lives.
+  var toggleBox = null;
   function buildToggles() {
     if (document.getElementById("variant-toggles")) return;
     var box = document.createElement("div");
@@ -785,8 +791,54 @@
       // count needs an explicit refresh since it's plain text, not CSS.
       var tv = document.getElementById("table-view");
       if (tv && tv.__wired) updateTableCount();
+      var btn = document.getElementById("vt-cat-btn");
+      if (btn) btn.textContent = categoryButtonLabel();
     });
     document.body.appendChild(box);
+    toggleBox = box;
+  }
+  function categoryButtonLabel() {
+    if (!toggleBox) return "Categories ▾";
+    var boxes = toggleBox.querySelectorAll('input[type="checkbox"]');
+    var total = boxes.length, checked = 0;
+    boxes.forEach(function (cb) { if (cb.checked) checked++; });
+    if (checked === total) return "Categories: All ▾";
+    if (checked === 0) return "Categories: None ▾";
+    return "Categories: " + checked + " selected ▾";
+  }
+  // Re-parents the ONE toggleBox between its two homes. Table view builds a
+  // fresh .vtbl-controls on every rebuild (sort clicks, gnomAD injection), so
+  // this has to be callable repeatedly, not just once on the first switch.
+  function dockCategoryToggles(view) {
+    if (!toggleBox) return;
+    var oldWrap = document.getElementById("vt-cat-wrap");
+    if (view === "table") {
+      var host = document.getElementById("table-view");
+      var controls = host && host.querySelector(".vtbl-controls");
+      if (!controls) return;
+      var wrap = document.createElement("div");
+      wrap.id = "vt-cat-wrap";
+      wrap.className = "vtbl-domain-wrap";
+      wrap.setAttribute("data-mtarget", "category");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "vt-cat-btn";
+      btn.className = "vtbl-export vtbl-mbtn";
+      btn.setAttribute("data-mtarget", "category");
+      btn.textContent = categoryButtonLabel();
+      wrap.appendChild(btn);
+      var exportBtn = controls.querySelector("#vtbl-export-csv");
+      if (exportBtn) controls.insertBefore(wrap, exportBtn); else controls.appendChild(wrap);
+      wrap.appendChild(toggleBox);
+      toggleBox.classList.add("vt-docked");
+      toggleBox.setAttribute("hidden", "");   // starts closed, like the other filter panels
+      if (oldWrap && oldWrap !== wrap) oldWrap.remove();
+    } else {
+      if (toggleBox.parentElement !== document.body) document.body.appendChild(toggleBox);
+      toggleBox.classList.remove("vt-docked");
+      toggleBox.removeAttribute("hidden");
+      if (oldWrap) oldWrap.remove();
+    }
   }
   // Adds ONE checkbox to the already-built toggle box, for a category that
   // only becomes known after the initial render (gnomADmis — discovered
@@ -823,8 +875,63 @@
     });
     document.body.appendChild(box);
   }
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+  // FLIP technique (First-Last-Invert-Play): el has ALREADY landed in its new
+  // spot (new layout applied) when this runs. We paint it, via a transform,
+  // back at prevRect's position/size — visually indistinguishable from not
+  // having moved yet — then clear the transform with a transition, so the
+  // browser animates the one real change (the transform going to identity)
+  // instead of trying to interpolate `position` or `display` directly
+  // (neither of which is animatable, which is why a plain CSS transition on
+  // top/left never works for "move an element between two layout contexts").
+  function animateFlip(el, prevRect) {
+    if (!el || !prevRect || prefersReducedMotion() || document.hidden) return;
+    var newRect = el.getBoundingClientRect();
+    if (!newRect.width || !newRect.height) return;   // landed hidden -> nothing visible to animate
+    var dx = prevRect.left - newRect.left;
+    var dy = prevRect.top - newRect.top;
+    var sx = prevRect.width / newRect.width;
+    var sy = prevRect.height / newRect.height;
+    el.style.transition = "none";
+    el.style.transformOrigin = "top left";
+    el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+    el.style.opacity = "0.55";
+    // rAF can be throttled or fully paused (backgrounded tab, low-power mode)
+    // — without a fallback, the element would be stuck showing the huge
+    // "disguised as the old shape" transform forever, since nothing would
+    // ever fire to start the transition back to identity. `played` guards
+    // against the rAF path AND the timeout path both firing.
+    var played = false;
+    function play() {
+      if (played) return;
+      played = true;
+      el.style.transition = "transform .32s cubic-bezier(.22,.85,.32,1), opacity .26s ease";
+      el.style.transform = "";
+      el.style.opacity = "1";
+    }
+    requestAnimationFrame(function () { requestAnimationFrame(play); });
+    setTimeout(play, 80);
+    el.addEventListener("transitionend", function cleanup() {
+      el.style.transition = ""; el.style.transformOrigin = ""; el.style.opacity = "";
+      el.removeEventListener("transitionend", cleanup);
+    });
+  }
+  var currentView = "map";
   function setView(view) {
+    if (view === currentView) return;
     var isTable = view === "table";
+    // Capture the CURRENTLY VISIBLE toggle representation's rect before
+    // anything moves — the big fixed box when leaving Map, the small docked
+    // button when leaving Table (see dockCategoryToggles/categoryButtonLabel
+    // above — same toggleBox, two different homes).
+    var prevRect = null;
+    if (toggleBox) {
+      prevRect = !isTable
+        ? (function () { var b = document.getElementById("vt-cat-btn"); return b && b.getBoundingClientRect(); })()
+        : toggleBox.getBoundingClientRect();
+    }
     var mapTable = document.getElementById("samd9-table");
     var tv = document.getElementById("table-view");
     var strip = document.getElementById("bottom-legend-strip");
@@ -841,6 +948,11 @@
     document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
       b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
     });
+    dockCategoryToggles(view);
+    currentView = view;
+    if (toggleBox && prevRect) {
+      animateFlip(isTable ? document.getElementById("vt-cat-btn") : toggleBox, prevRect);
+    }
     // run() no-ops while hidden (see its own comment), so geometry can go
     // stale while Table was showing (e.g. the window was resized). Force one
     // fresh, correct pass now that the Map is visible again.
@@ -1038,6 +1150,13 @@
       "</div>" +
       '<div class="vtbl-scroll"><table class="vtbl">' + colgroupHtml + "<thead>" + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
     applyTableFilters();   // re-apply protein/domain(s)/conservation(s)/search to the freshly-built rows
+    // .vtbl-controls just got fully replaced above, which orphans the
+    // category dropdown if it was docked in there (sort clicks, gnomAD
+    // injection both call buildTableView() again) — re-home it in the fresh
+    // controls row. Only when Table is actually the active view: this also
+    // runs from init() before the user has ever switched views, and toggleBox
+    // must stay in its Map-mode fixed position until they actually do.
+    if (currentView === "table") dockCategoryToggles("table");
 
     if (!host.__wired) {
       host.__wired = true;
@@ -1060,7 +1179,13 @@
         }
         var mbtn = e.target.closest && e.target.closest(".vtbl-mbtn");
         if (mbtn) {
-          document.getElementById("vtbl-" + mbtn.getAttribute("data-mtarget") + "-panel").toggleAttribute("hidden");
+          var mt = mbtn.getAttribute("data-mtarget");
+          // "category" isn't in MULTI_FILTERS — its panel IS toggleBox itself
+          // (docked here, not a fresh <div> built from a template like
+          // Domain/Conservation's), so it can't be found by the generic
+          // "vtbl-<key>-panel" id pattern.
+          var panel = mt === "category" ? toggleBox : document.getElementById("vtbl-" + mt + "-panel");
+          if (panel) panel.toggleAttribute("hidden");
           return;
         }
         var daction = e.target.closest && e.target.closest("[data-daction]");
@@ -1085,6 +1210,10 @@
             panel.setAttribute("hidden", "");
           }
         });
+        if (toggleBox && currentView === "table" && !toggleBox.hasAttribute("hidden") &&
+            !e.target.closest('[data-mtarget="category"]')) {
+          toggleBox.setAttribute("hidden", "");
+        }
       });
       host.addEventListener("change", function (e) {
         if (e.target.classList && e.target.classList.contains("vtbl-mcb")) {

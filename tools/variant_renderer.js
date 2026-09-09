@@ -1004,7 +1004,11 @@
         "<td>" + consCell + "</td>" +
         '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
         '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
-        "<td>" + (r.method ? esc(r.method).replace(/\//g, "/<wbr>") : "—") + "</td>" +
+        // <wbr> (a soft break hint) let the browser's greedy line-fill still
+        // choose to break at the LATER space instead — "Viral infection/flow"
+        // / "cytometry" — since that packed more characters onto line 1. A
+        // hard <br> forces the split to always land right after the "/".
+        "<td>" + (r.method ? esc(r.method).replace(/\//g, "/<br>") : "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
         "<td>" + homCell + "</td>" +
         '<td class="vtbl-source">' + src + "</td>" +

@@ -888,34 +888,50 @@
   // top/left never works for "move an element between two layout contexts").
   function animateFlip(el, prevRect) {
     if (!el || !prevRect || prefersReducedMotion() || document.hidden) return;
-    var newRect = el.getBoundingClientRect();
-    if (!newRect.width || !newRect.height) return;   // landed hidden -> nothing visible to animate
-    var dx = prevRect.left - newRect.left;
-    var dy = prevRect.top - newRect.top;
-    var sx = prevRect.width / newRect.width;
-    var sy = prevRect.height / newRect.height;
-    el.style.transition = "none";
-    el.style.transformOrigin = "top left";
-    el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
-    el.style.opacity = "0.55";
-    // rAF can be throttled or fully paused (backgrounded tab, low-power mode)
-    // — without a fallback, the element would be stuck showing the huge
-    // "disguised as the old shape" transform forever, since nothing would
-    // ever fire to start the transition back to identity. `played` guards
-    // against the rAF path AND the timeout path both firing.
-    var played = false;
-    function play() {
-      if (played) return;
-      played = true;
-      el.style.transition = "transform .32s cubic-bezier(.22,.85,.32,1), opacity .26s ease";
-      el.style.transform = "";
-      el.style.opacity = "1";
-    }
-    requestAnimationFrame(function () { requestAnimationFrame(play); });
-    setTimeout(play, 80);
-    el.addEventListener("transitionend", function cleanup() {
-      el.style.transition = ""; el.style.transformOrigin = ""; el.style.opacity = "";
-      el.removeEventListener("transitionend", cleanup);
+    // Measuring el's new rect right here (synchronously, still inside the
+    // click handler) forces the browser to immediately resolve layout for
+    // whatever just got shown/hidden — on the Table -> Map direction that
+    // means the ~2,500-tick map, and that forced-early reflow alone measured
+    // ~80-300ms depending on what else was dirty, which is what made the
+    // "expand back out" animation look like it froze then jumped: the click
+    // handler itself was blocking the main thread that long before the
+    // animation even started. Deferring the measurement into a rAF lets the
+    // browser resolve that same layout as part of its normal next paint
+    // instead of an out-of-band forced one, so the click handler returns
+    // immediately and the freeze disappears.
+    requestAnimationFrame(function () {
+      var newRect = el.getBoundingClientRect();
+      if (!newRect.width || !newRect.height) return;   // landed hidden -> nothing visible to animate
+      var dx = prevRect.left - newRect.left;
+      var dy = prevRect.top - newRect.top;
+      var sx = prevRect.width / newRect.width;
+      var sy = prevRect.height / newRect.height;
+      el.style.transition = "none";
+      el.style.transformOrigin = "top left";
+      el.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+      el.style.opacity = "0.55";
+      // rAF can be throttled or fully paused (backgrounded tab, low-power
+      // mode) — without a fallback, the element would be stuck showing the
+      // huge "disguised as the old shape" transform forever, since nothing
+      // would ever fire to start the transition back to identity. `played`
+      // guards against the rAF path AND the timeout path both firing.
+      var played = false;
+      function play() {
+        if (played) return;
+        played = true;
+        // Slightly longer than a typical UI transition, and with a small
+        // overshoot (the "1.3" in the cubic-bezier) — a plain ease-out reads
+        // as instant/easy to miss at this size and corner-of-the-eye spot.
+        el.style.transition = "transform .46s cubic-bezier(.28,1.3,.32,1), opacity .32s ease";
+        el.style.transform = "";
+        el.style.opacity = "1";
+      }
+      requestAnimationFrame(function () { requestAnimationFrame(play); });
+      setTimeout(play, 80);
+      el.addEventListener("transitionend", function cleanup() {
+        el.style.transition = ""; el.style.transformOrigin = ""; el.style.opacity = "";
+        el.removeEventListener("transitionend", cleanup);
+      });
     });
   }
   var currentView = "map";
@@ -955,8 +971,16 @@
     }
     // run() no-ops while hidden (see its own comment), so geometry can go
     // stale while Table was showing (e.g. the window was resized). Force one
-    // fresh, correct pass now that the Map is visible again.
-    if (!isTable) run();
+    // fresh, correct pass now that the Map is visible again — but not
+    // *immediately*: run() walks every tick/label + domain-outline cell with
+    // its own forced reflow, which is heavy enough to stall the main thread
+    // for a beat right as the category box's "expand back out" transition
+    // starts, so the animation appeared to freeze then jump. Deferring past
+    // the transition's own duration lets the box finish moving first; run()
+    // itself already no-ops if the user has switched away again by the time
+    // this fires, so a rapid Map->Table->Map isn't at risk of doing wasted
+    // (or wrong) work.
+    if (!isTable) setTimeout(run, 480);
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----

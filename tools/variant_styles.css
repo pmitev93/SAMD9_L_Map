@@ -197,6 +197,10 @@ table.vtbl thead th {
   color:#333; white-space:nowrap;
 }
 table.vtbl thead th:hover { background:#eef0f4; }
+/* The two wrapped headers (gnomAD / frequency, gnomAD / homozygotes) sat too
+   close to their own <br> — inline-block so margin-top actually applies
+   after a forced line break (a bare inline element ignores it). */
+.vtbl-th-sub { display:inline-block; margin-top:4px; }
 /* Source is prose (paper titles), everything else is a short discrete value —
    left-align just that last column, center the rest. */
 table.vtbl thead th:last-child { text-align:left; }

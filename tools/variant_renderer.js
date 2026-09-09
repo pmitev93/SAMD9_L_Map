@@ -848,14 +848,14 @@
   // width despite needing very different amounts of room. The last column
   // (Source) has no width — it absorbs whatever's left.
   var TABLE_COLUMNS = [
-    { key: "protein",      label: "Protein",             width: 74 },
-    { key: "variant",      label: "Variant",             width: 100 },
-    { key: "conservation", label: "Conservation",        width: 64 },
-    { key: "domain",       label: "Domain",              width: 210 },
-    { key: "category",     label: "Category",           width: 170 },
-    { key: "method",       label: "Method",              width: 170 },
-    { key: "gnomad",       label: "gnomAD<br>frequency", width: 92 },
-    { key: "hom",          label: "gnomAD<br>homozygotes", width: 92 },
+    { key: "protein",      label: "Protein",             width: 95 },
+    { key: "variant",      label: "Variant",             width: 130 },
+    { key: "conservation", label: "Conservation",        width: 80 },
+    { key: "domain",       label: "Domain",              width: 260 },
+    { key: "category",     label: "Category",           width: 210 },
+    { key: "method",       label: "Method",              width: 210 },
+    { key: "gnomad",       label: 'gnomAD<br><span class="vtbl-th-sub">frequency</span>',   width: 120 },
+    { key: "hom",          label: 'gnomAD<br><span class="vtbl-th-sub">homozygotes</span>', width: 130 },
     { key: "source",       label: "Source" }
   ];
   var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];

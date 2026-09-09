@@ -134,10 +134,34 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 #vtbl-search:focus { outline:2px solid rgba(120,140,175,.4); outline-offset:1px; }
 .vtbl-protein-filter { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
 .vtbl-protein-filter .vs-btn { padding:.4em .85em; font-size:.9em; }
-.vtbl-scroll { overflow-x:auto; border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06); }
+#vtbl-domain {
+  font-family:inherit; font-size:.9em; padding:.5em .7em;
+  border:1px solid rgba(120,140,175,.35); border-radius:9px; background:#fff; color:#222;
+}
+.vtbl-export {
+  font-family:inherit; font-size:.9em; font-weight:600; cursor:pointer;
+  padding:.5em .9em; border-radius:9px; border:1px solid rgba(120,140,175,.35);
+  background:#fff; color:#333; transition:background .12s ease;
+}
+.vtbl-export:hover { background:#f2f3f5; }
+/* overflow-x:auto alone would make the UA compute overflow-y:auto too (a CSS
+   overflow-computed-value quirk: an x/y pair with one "visible" and one not
+   gets the visible axis silently forced to auto) — that accidentally turns
+   this box into ITS OWN scroll container with no visible scrollbar (nothing
+   in it ever overflows vertically, since it has no max-height), which breaks
+   position:sticky below: it sticks relative to THIS box's scrollport, and
+   that scrollport's internal scrollTop never moves the page does the
+   scrolling, not this box so the header never actually appears to stick.
+   Declaring both axes "auto" on purpose, WITH a max-height that actually
+   overflows, makes this box the genuine scroll container: the table scrolls
+   in its own bounded region and the header freezes at its top. */
+.vtbl-scroll {
+  overflow:auto; max-height:70vh;
+  border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06);
+}
 table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
 table.vtbl thead th {
-  position:sticky; top:0; background:#f7f8fa; text-align:center; font-weight:700;
+  position:sticky; top:0; z-index:5; background:#f7f8fa; text-align:center; font-weight:700;
   padding:9px 12px; border-bottom:1px solid #e2e2e2; cursor:pointer; user-select:none;
   color:#333; white-space:nowrap;
 }
@@ -154,6 +178,18 @@ table.vtbl tbody tr:hover { background:#fafbfd; }
   background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
   color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
 }
+/* Domain badge — same recipe as .vtbl-cat (a tinted pill keyed to one color
+   variable) but a distinct shape (square-ish corners) so Domain and Category
+   read as two different kinds of tag, not duplicates of each other. Reuses
+   the Map's own --domain-*-dark colors (via --dm-c), so a variant's domain
+   pill in the table always matches the outline color around it on the Map. */
+.vtbl-dom {
+  display:inline-block; padding:2px 8px; border-radius:5px; font-size:12px; font-weight:600;
+  white-space:nowrap;
+  background:color-mix(in srgb, var(--dm-c,#9AA0A6) 18%, white);
+  color:color-mix(in srgb, var(--dm-c,#9AA0A6) 65%, black);
+}
+.vtbl-hom-pos { color:#1E9E5B; font-weight:700; }
 .vtbl-source { white-space:normal; max-width:320px; text-align:left; }
 .vtbl-source a { color:#0b48c2; text-decoration:none; }
 .vtbl-source a:hover { text-decoration:underline; }

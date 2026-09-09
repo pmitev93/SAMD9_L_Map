@@ -10,10 +10,16 @@ patient/population variants.
 
 - **Switch between Map and Table** with the buttons in the top-left. Map is the
   aligned-sequence figure; Table is every variant as a sortable list — click a
-  column header to sort by it (click again to reverse). Table also has its own
-  **search box** (matches anything in the row: protein, variant, category,
-  method, gnomAD, source) and a **protein filter** (All / SAMD9 / SAMD9L,
-  All by default) — both independent of the category toggles below.
+  column header to sort by it (click again to reverse), scroll and the header
+  row stays frozen. Table also has its own **search box** (matches anything in
+  the row), a **protein filter** (All / SAMD9 / SAMD9L), and a **domain
+  filter** (dropdown — every domain plus the linker/N-/C-terminus regions
+  between them) — all independent of the category toggles below, all "All" by
+  default.
+- **Export the table** with the CSV / Excel buttons above it — exports exactly
+  the rows currently visible (search + protein/domain filter + category
+  toggles + sort order all apply), not the whole dataset regardless of what
+  you're looking at.
 - **Toggle variant categories** with the box in the top-right (GoF / LoF / gnomAD
   / Somatic / NoF / Other / gnomAD missense). All gnomAD categories are off by
   default. These toggles filter **both** views — Table rows carry the same
@@ -21,7 +27,9 @@ patient/population variants.
 - **Hover an amino-acid box** to see its exact position (e.g. `K133`).
 - **Click a variant** to open a card with the source paper (linked), PMID,
   gnomAD status, phenotype, and method of functional assessment. gnomAD
-  status is **live** — see below.
+  status is **live** — see below. The Table's gnomAD columns are also live,
+  and include the population **homozygote count** (highlighted green when
+  >0) alongside allele frequency.
 
 ## Files
 
@@ -113,6 +121,12 @@ python3 tools/build_variants.py
 ### Deploy an update
 Commit and push (e.g. with GitHub Desktop). The live site updates within ~1
 minute. Hard-refresh (Cmd/Ctrl+Shift+R) if you don't see changes immediately.
+
+### Change a domain boundary
+Domain residue ranges live in ONE place, `DOMAIN_RANGES` near the top of
+`tools/variant_renderer.js` — both the Map's colored outlines and the Table's
+Domain column/filter/export read from it, so editing a boundary there updates
+everywhere at once (then `python3 tools/embed_variants.py` to rebuild).
 
 ## Tuning knobs
 

@@ -12670,10 +12670,34 @@ tr.vmark > td { padding:0; border:0; background:transparent; }
 #vtbl-search:focus { outline:2px solid rgba(120,140,175,.4); outline-offset:1px; }
 .vtbl-protein-filter { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
 .vtbl-protein-filter .vs-btn { padding:.4em .85em; font-size:.9em; }
-.vtbl-scroll { overflow-x:auto; border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06); }
+#vtbl-domain {
+  font-family:inherit; font-size:.9em; padding:.5em .7em;
+  border:1px solid rgba(120,140,175,.35); border-radius:9px; background:#fff; color:#222;
+}
+.vtbl-export {
+  font-family:inherit; font-size:.9em; font-weight:600; cursor:pointer;
+  padding:.5em .9em; border-radius:9px; border:1px solid rgba(120,140,175,.35);
+  background:#fff; color:#333; transition:background .12s ease;
+}
+.vtbl-export:hover { background:#f2f3f5; }
+/* overflow-x:auto alone would make the UA compute overflow-y:auto too (a CSS
+   overflow-computed-value quirk: an x/y pair with one "visible" and one not
+   gets the visible axis silently forced to auto) — that accidentally turns
+   this box into ITS OWN scroll container with no visible scrollbar (nothing
+   in it ever overflows vertically, since it has no max-height), which breaks
+   position:sticky below: it sticks relative to THIS box's scrollport, and
+   that scrollport's internal scrollTop never moves the page does the
+   scrolling, not this box so the header never actually appears to stick.
+   Declaring both axes "auto" on purpose, WITH a max-height that actually
+   overflows, makes this box the genuine scroll container: the table scrolls
+   in its own bounded region and the header freezes at its top. */
+.vtbl-scroll {
+  overflow:auto; max-height:70vh;
+  border:1px solid #e8e8e8; border-radius:10px; box-shadow:0 1px 7px rgba(0,0,0,.06);
+}
 table.vtbl { border-collapse:collapse; width:100%; font-size:13px; }
 table.vtbl thead th {
-  position:sticky; top:0; background:#f7f8fa; text-align:center; font-weight:700;
+  position:sticky; top:0; z-index:5; background:#f7f8fa; text-align:center; font-weight:700;
   padding:9px 12px; border-bottom:1px solid #e2e2e2; cursor:pointer; user-select:none;
   color:#333; white-space:nowrap;
 }
@@ -12690,6 +12714,18 @@ table.vtbl tbody tr:hover { background:#fafbfd; }
   background:color-mix(in srgb, var(--vt-c,#888) 16%, white);
   color:color-mix(in srgb, var(--vt-c,#888) 70%, black);
 }
+/* Domain badge — same recipe as .vtbl-cat (a tinted pill keyed to one color
+   variable) but a distinct shape (square-ish corners) so Domain and Category
+   read as two different kinds of tag, not duplicates of each other. Reuses
+   the Map's own --domain-*-dark colors (via --dm-c), so a variant's domain
+   pill in the table always matches the outline color around it on the Map. */
+.vtbl-dom {
+  display:inline-block; padding:2px 8px; border-radius:5px; font-size:12px; font-weight:600;
+  white-space:nowrap;
+  background:color-mix(in srgb, var(--dm-c,#9AA0A6) 18%, white);
+  color:color-mix(in srgb, var(--dm-c,#9AA0A6) 65%, black);
+}
+.vtbl-hom-pos { color:#1E9E5B; font-weight:700; }
 .vtbl-source { white-space:normal; max-width:320px; text-align:left; }
 .vtbl-source a { color:#0b48c2; text-decoration:none; }
 .vtbl-source a:hover { text-decoration:underline; }
@@ -12825,7 +12861,8 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   }
   function fetchGnomadGene(symbol) {
     var query = "query($sym:String!){ gene(gene_symbol:$sym, reference_genome: GRCh38) { " +
-                "variants(dataset: " + GNOMAD_DATASET + ") { hgvsp transcript_id exome{ac an af} genome{ac an af} } } }";
+                "variants(dataset: " + GNOMAD_DATASET + ") { hgvsp transcript_id " +
+                "exome{ac an af homozygote_count} genome{ac an af homozygote_count} } } }";
     return fetch("https://gnomad.broadinstitute.org/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -12852,7 +12889,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
           if (!label) return;
           var freq = v.exome || v.genome;
           if (!freq) return;
-          GNOMAD_LIVE.byLabel[g.protein][label] = { ac: freq.ac, an: freq.an, af: freq.af };
+          GNOMAD_LIVE.byLabel[g.protein][label] = { ac: freq.ac, an: freq.an, af: freq.af, hom: freq.homozygote_count };
           if (freq.ac > 0 && isMissenseLabel(label)) {
             var residue = +label.match(/^[A-Z](\d+)/)[1];
             GNOMAD_LIVE.missense[g.protein].push({ label: label, residue: residue });
@@ -12943,6 +12980,115 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     return null;
   }
 
+  // ---- Domain boundaries + color utilities — single source of truth shared
+  // by the Map's gradient outlines (run(), below) AND the Table's Domain
+  // column/filter/export. N-to-C order matters: it's how linker/terminus
+  // names between consecutive domains get generated. Boundaries were
+  // extracted directly from the live, previously-correct page (not
+  // re-derived/guessed), residue by residue, so they match the original
+  // domains exactly.
+  var DOMAIN_RANGES = [
+    { name: "SAM",           key: "sam",     SAMD9L: [10, 86],     SAMD9: [10, 86] },
+    { name: "AlbA",          key: "alba",    SAMD9L: [157, 389],   SAMD9: [157, 384] },
+    { name: "SIR2",          key: "sir2",    SAMD9L: [394, 625],   SAMD9: [390, 622] },
+    { name: "P-loop NTPase", key: "ploop",   SAMD9L: [712, 1017],  SAMD9: [708, 1013] },
+    { name: "TPR",           key: "tpr",     SAMD9L: [1027, 1187], SAMD9: [1023, 1187] },
+    { name: "Helical",       key: "helical", SAMD9L: [1193, 1497], SAMD9: [1193, 1502] },
+    { name: "OB-fold",       key: "obfold",  SAMD9L: [1511, 1579], SAMD9: [1516, 1584] }
+  ];
+  function hexToRgb(hex) {
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+  }
+  // Named CSS colors (yellow/blue/orange/red/purple) don't parse via hexToRgb
+  // directly — resolve anything through the browser first.
+  function toHex(cssColor) {
+    var probe = document.createElement("div");
+    probe.style.color = cssColor;
+    document.body.appendChild(probe);
+    var rgb = getComputedStyle(probe).color.match(/\d+/g).map(Number);
+    document.body.removeChild(probe);
+    return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+  }
+  function lerpColor(hexA, hexB, t) {
+    var a = hexToRgb(hexA), b = hexToRgb(hexB);
+    var rgb = a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); });
+    return "rgb(" + rgb.join(",") + ")";
+  }
+  // Blend a color toward white by `amount` (0-1) to get its "light" partner.
+  function lighten(hex, amount) {
+    var rgb = hexToRgb(hex).map(function (v) { return Math.round(v + (255 - v) * amount); });
+    return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+  }
+  function knob(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  // Oscillating wave, not a straight sweep: color alternates base -> light ->
+  // base -> light... every WAVELENGTH residues, all the way across the domain
+  // (continues smoothly across row-wraps since position is domain-relative).
+  var WAVELENGTH = 14; // residues per full dark->light->dark cycle — tune here
+  function waveColor(baseHex, lightHex, i) {
+    var phase = (i % WAVELENGTH) / WAVELENGTH;
+    var osc = (1 - Math.cos(2 * Math.PI * phase)) / 2;   // 0..1..0 smoothly
+    return lerpColor(baseHex, lightHex, osc);
+  }
+  // Resolved once (cheap, but no reason to redo it per row): a flat
+  // representative color per domain — for the Table's badges and exports,
+  // NOT the Map's animated dark/light wave. Reads the same --domain-*-dark
+  // knobs run() uses, so retuning those stays in sync everywhere. Linkers and
+  // the N-/C-termini get one shared neutral gray (they're not a domain).
+  var DOMAIN_COLOR_CACHE = null;
+  function domainColors() {
+    if (DOMAIN_COLOR_CACHE) return DOMAIN_COLOR_CACHE;
+    DOMAIN_COLOR_CACHE = {
+      sam:     toHex(knob("--domain-sam-dark", "yellow")),
+      alba:    toHex(knob("--domain-alba-dark", "blue")),
+      sir2:    toHex(knob("--domain-sir2-dark", "orange")),
+      ploop:   toHex(knob("--domain-ploop-dark", "red")),
+      tpr:     toHex(knob("--domain-tpr-dark", "#16D715")),
+      obfold:  toHex(knob("--domain-obfold-dark", "purple")),
+      helical: toHex(knob("--domain-helical-dark", "cyan")),
+      linker:  "#9AA0A6", nterm: "#9AA0A6", cterm: "#9AA0A6", none: "#9AA0A6"
+    };
+    return DOMAIN_COLOR_CACHE;
+  }
+  // Which domain a residue falls in — or, for a residue between two domains
+  // (or before the first / after the last), a synthesized "X–Y linker" /
+  // "N-terminus" / "C-terminus" name so every residue gets SOME label.
+  function domainInfoFor(protein, residue) {
+    for (var i = 0; i < DOMAIN_RANGES.length; i++) {
+      var range = DOMAIN_RANGES[i][protein];
+      if (range && residue >= range[0] && residue <= range[1]) {
+        return { name: DOMAIN_RANGES[i].name, key: DOMAIN_RANGES[i].key };
+      }
+    }
+    var prev = null, next = null;
+    for (var j = 0; j < DOMAIN_RANGES.length; j++) {
+      var r = DOMAIN_RANGES[j][protein];
+      if (!r) continue;
+      if (residue < r[0] && !next) next = DOMAIN_RANGES[j];
+      if (residue > r[1]) prev = DOMAIN_RANGES[j];
+    }
+    if (prev && next) return { name: prev.name + "–" + next.name + " linker", key: "linker" };
+    if (!prev && next) return { name: "N-terminus", key: "nterm" };
+    if (prev && !next) return { name: "C-terminus", key: "cterm" };
+    return { name: "—", key: "none" };
+  }
+  // Canonical N-to-C ordering for the Table's domain filter dropdown —
+  // domains interleaved with the linker names domainInfoFor() actually
+  // produces, so every option in the list can actually match a row.
+  var DOMAIN_FILTER_ORDER = (function () {
+    var order = ["N-terminus"];
+    DOMAIN_RANGES.forEach(function (d, i) {
+      order.push(d.name);
+      if (i < DOMAIN_RANGES.length - 1) order.push(d.name + "–" + DOMAIN_RANGES[i + 1].name + " linker");
+    });
+    order.push("C-terminus");
+    return order;
+  })();
+
   // ---- data: read from the data_*.js globals (loaded via <script src>, which
   //      works even on a double-clicked file). Edit a data_*.js + refresh = live.
   var DATA = [], OV = {}, PAPERS = {}, DETAILS = {};
@@ -12963,6 +13109,18 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   function run() {
     var table = document.getElementById("samd9-table");
     if (!table) return;
+    // Skip entirely while the Map is hidden (Table view active): every
+    // measurement below is a getBoundingClientRect, which returns all-zero
+    // rects for a display:none subtree, and the debounced window "resize"
+    // listener (schedule() at the bottom of this file) can absolutely fire
+    // while hidden — the Browser pane detaching/reattaching alone does it.
+    // Without this guard that corrupts every .vlayer's computed height into
+    // garbage (confirmed: 450-560px instead of the normal ~30-60px) that
+    // then persists after switching back to Map, since nothing else
+    // recomputes it. setView() forces one fresh run() on Map re-activation
+    // to guarantee correct geometry even if the window was resized while
+    // Table was showing.
+    if (table.offsetParent === null) return;
 
     // 1. drop legacy markers + any previous render (idempotent on resize)
     table.querySelectorAll(".vertical-line").forEach(function (n) { n.remove(); });
@@ -13043,70 +13201,18 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     // the whole domain and applied identically to top AND bottom, so the two
     // lines can never mismatch. Boundaries below were extracted directly from
     // the live, previously-correct page (not re-derived/guessed), residue by
-    // residue, so they match the original domains exactly.
-    function hexToRgb(hex) {
-      hex = hex.replace("#", "");
-      if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
-      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
-    }
-    // Named CSS colors (yellow/blue/orange/red/purple) don't parse via hexToRgb
-    // directly — resolve anything through the browser first.
-    function toHex(cssColor) {
-      var probe = document.createElement("div");
-      probe.style.color = cssColor;
-      document.body.appendChild(probe);
-      var rgb = getComputedStyle(probe).color.match(/\d+/g).map(Number);
-      document.body.removeChild(probe);
-      return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-    }
-    function lerpColor(hexA, hexB, t) {
-      var a = hexToRgb(hexA), b = hexToRgb(hexB);
-      var rgb = a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); });
-      return "rgb(" + rgb.join(",") + ")";
-    }
-    // Blend a color toward white by `amount` (0-1) to get its "light" partner.
-    function lighten(hex, amount) {
-      var rgb = hexToRgb(hex).map(function (v) { return Math.round(v + (255 - v) * amount); });
-      return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
-    }
-    function knob(name, fallback) {
-      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      return v || fallback;
-    }
-    // Oscillating wave, not a straight sweep: color alternates base -> light ->
-    // base -> light... every WAVELENGTH residues, all the way across the domain
-    // (continues smoothly across row-wraps since position is domain-relative).
-    var WAVELENGTH = 14; // residues per full dark->light->dark cycle — tune here
-    function waveColor(baseHex, lightHex, i) {
-      var phase = (i % WAVELENGTH) / WAVELENGTH;
-      var osc = (1 - Math.cos(2 * Math.PI * phase)) / 2;   // 0..1..0 smoothly
-      return lerpColor(baseHex, lightHex, osc);
-    }
-    var PAL = {
-      sam:     toHex(knob("--domain-sam-dark", "yellow")),
-      alba:    toHex(knob("--domain-alba-dark", "blue")),
-      sir2:    toHex(knob("--domain-sir2-dark", "orange")),
-      ploop:   toHex(knob("--domain-ploop-dark", "red")),
-      tpr:     toHex(knob("--domain-tpr-dark", "#16D715")),
-      obfold:  toHex(knob("--domain-obfold-dark", "purple")),
-      helical: toHex(knob("--domain-helical-dark", "cyan"))
-    };
-    var DOMAIN_OUTLINES = [
-      { protein: "SAMD9L", start: 10,   end: 86,   pal: PAL.sam },     // SAM
-      { protein: "SAMD9",  start: 10,   end: 86,   pal: PAL.sam },
-      { protein: "SAMD9L", start: 157,  end: 389,  pal: PAL.alba },    // AlbA
-      { protein: "SAMD9",  start: 157,  end: 384,  pal: PAL.alba },
-      { protein: "SAMD9L", start: 394,  end: 625,  pal: PAL.sir2 },    // SIR2
-      { protein: "SAMD9",  start: 390,  end: 622,  pal: PAL.sir2 },
-      { protein: "SAMD9L", start: 712,  end: 1017, pal: PAL.ploop },   // P-loop NTPase
-      { protein: "SAMD9",  start: 708,  end: 1013, pal: PAL.ploop },
-      { protein: "SAMD9L", start: 1027, end: 1187, pal: PAL.tpr },     // TPR
-      { protein: "SAMD9",  start: 1023, end: 1187, pal: PAL.tpr },
-      { protein: "SAMD9L", start: 1193, end: 1497, pal: PAL.helical }, // Helical
-      { protein: "SAMD9",  start: 1193, end: 1502, pal: PAL.helical },
-      { protein: "SAMD9L", start: 1511, end: 1579, pal: PAL.obfold },  // OB-fold
-      { protein: "SAMD9",  start: 1516, end: 1584, pal: PAL.obfold }
-    ];
+    // residue, so they match the original domains exactly. (The color
+    // utilities and the boundaries themselves now live at module scope —
+    // shared with the Table's Domain column/filter/export — see
+    // DOMAIN_RANGES / domainColors() above.)
+    var PAL = domainColors();
+    var DOMAIN_OUTLINES = [];
+    DOMAIN_RANGES.forEach(function (d) {
+      ["SAMD9L", "SAMD9"].forEach(function (protein) {
+        var range = d[protein];
+        if (range) DOMAIN_OUTLINES.push({ protein: protein, start: range[0], end: range[1], pal: PAL[d.key] });
+      });
+    });
     var DOMAIN_BORDER_W = 2; // px — thinner than the original 3px
     DOMAIN_OUTLINES.forEach(function (d) {
       var startCell = maps[d.protein] && maps[d.protein][d.start];
@@ -13484,55 +13590,67 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     document.querySelectorAll("#view-switcher .vs-btn").forEach(function (b) {
       b.classList.toggle("vs-active", b.getAttribute("data-view") === view);
     });
+    // run() no-ops while hidden (see its own comment), so geometry can go
+    // stale while Table was showing (e.g. the window was resized). Force one
+    // fresh, correct pass now that the Map is visible again.
+    if (!isTable) run();
   }
 
   // ---- Table view: every variant as a sortable, filterable list ----
   var TABLE_COLUMNS = [
     { key: "protein",   label: "Protein" },
     { key: "variant",   label: "Variant" },
+    { key: "domain",    label: "Domain" },
     { key: "category",  label: "Category" },
     { key: "method",    label: "Method" },
     { key: "gnomad",    label: "gnomAD frequency" },
+    { key: "hom",       label: "gnomAD homozygotes" },
     { key: "source",    label: "Source" }
   ];
+  var EXPORT_HEADERS = ["Protein", "Variant", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
   var SORT_VAL = {
     protein:   function (r) { return r.protein; },
     variant:   function (r) { return r.label.toLowerCase(); },
+    domain:    function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
     category:  function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
     method:    function (r) { return (r.method || "").toLowerCase(); },
     gnomad:    function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
+    hom:       function (r) { return r.gnomadHom == null ? -1 : r.gnomadHom; },
     source:    function (r) { return (r.sourceTitle || "").toLowerCase(); }
   };
   var tableSort = { key: "protein", dir: 1 };
-  // Search text + protein pick are table-view-only state, independent of the
-  // shared category toggles — a plain substring match against each row's own
-  // rendered text (already covers protein/variant/category/method/gnomAD/
-  // source in one go, no separate search index to keep in sync).
-  var tableFilter = { search: "", protein: "all" };
+  // Search text + protein/domain pick are table-view-only state, independent
+  // of the shared category toggles — search is a plain substring match
+  // against each row's own rendered text (already covers protein/variant/
+  // domain/category/method/gnomAD/source in one go, no separate index).
+  var tableFilter = { search: "", protein: "all", domain: "all" };
 
   // Same present/absent/loading logic as gnomadRowFor (the popup), but split
-  // into a display string + a numeric allele frequency so the gnomAD column
-  // can be sorted, not just read.
+  // into a display string + numeric allele frequency + homozygote count so
+  // those columns can be sorted, not just read.
   function gnomadCellFor(protein, label, staticGnomad) {
     if (GNOMAD_LIVE.ready && isSimpleLabel(label)) {
       var hit = GNOMAD_LIVE.byLabel[protein] && GNOMAD_LIVE.byLabel[protein][label];
-      if (hit && hit.ac > 0) return { text: hit.af.toExponential(2), af: hit.af };
-      return { text: "Not present", af: 0 };
+      if (hit && hit.ac > 0) return { text: hit.af.toExponential(2), af: hit.af, hom: hit.hom };
+      return { text: "Not present", af: 0, hom: null };
     }
     if (staticGnomad != null) {
       var g = (typeof staticGnomad === "object")
         ? (staticGnomad.present ? "Yes" + (staticGnomad.maf ? " (MAF " + staticGnomad.maf + ")" : "") : "No")
         : staticGnomad;
-      return { text: g, af: null };
+      return { text: g, af: null, hom: null };
     }
-    if (GNOMAD_LIVE.failed) return { text: "—", af: null };
-    return { text: isSimpleLabel(label) ? "Loading…" : "—", af: null };
+    if (GNOMAD_LIVE.failed) return { text: "—", af: null, hom: null };
+    return { text: isSimpleLabel(label) ? "Loading…" : "—", af: null, hom: null };
   }
 
   // Rebuilds the whole table from the current DATA snapshot. Called after
   // init (DATA loaded) and after gnomAD-missense injection (DATA grew) — NOT
   // on every resize/run(), since rebuilding thousands of rows on resize would
   // be wasteful and gains nothing (the table has no geometry to recompute).
+  // `lastRows` (module-level) is the export buttons' source: they read
+  // whichever of these rows correspond to currently-visible <tr>s.
+  var lastRows = [];
   function buildTableView() {
     var host = document.getElementById("table-view");
     if (!host) return;
@@ -13541,10 +13659,12 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       var d = DETAILS[v.protein + ":" + v.label] || DETAILS[v.label];
       var paper = (d && d.paper && PAPERS[d.paper]) || null;
       var gc = gnomadCellFor(v.protein, v.label, d && d.gnomad);
+      var dom = domainInfoFor(v.protein, v.residue);
       return {
         protein: v.protein, residue: v.residue, label: v.label, category: v.category,
+        domain: dom.name, domainKey: dom.key,
         method: d && d.method,
-        gnomadAF: gc.af, gnomadText: gc.text,
+        gnomadAF: gc.af, gnomadText: gc.text, gnomadHom: gc.hom,
         sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
       };
     });
@@ -13556,12 +13676,14 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       if (!cmp) cmp = (a.protein < b.protein ? -1 : a.protein > b.protein ? 1 : 0) || (a.residue - b.residue);
       return cmp * tableSort.dir;
     });
+    lastRows = rows;
 
     var theadHtml = "<tr>" + TABLE_COLUMNS.map(function (c) {
       var arrow = tableSort.key === c.key ? (tableSort.dir === 1 ? " ▲" : " ▼") : "";
       return '<th data-sort="' + c.key + '">' + esc(c.label) + arrow + "</th>";
     }).join("") + "</tr>";
 
+    var dcolors = domainColors();
     var bodyHtml = rows.map(function (r) {
       var color = (CFG[r.category] || CFG.Other).color;
       var legend = (CFG[r.category] || CFG.Other).legend;
@@ -13572,12 +13694,17 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
           : esc(r.sourceTitle);
         if (r.pmid && r.pmid !== "pending") src += '<div class="vtbl-pmid">PMID: ' + esc(r.pmid) + "</div>";
       }
-      return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '">' +
+      var homCell = r.gnomadHom != null
+        ? '<span class="' + (r.gnomadHom > 0 ? "vtbl-hom-pos" : "") + '">' + r.gnomadHom + "</span>"
+        : "—";
+      return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '" data-domain="' + esc(r.domain) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
+        '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
         '<td><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         "<td>" + esc(r.method || "—") + "</td>" +
         "<td>" + esc(r.gnomadText) + "</td>" +
+        "<td>" + homCell + "</td>" +
         '<td class="vtbl-source">' + src + "</td>" +
         "</tr>";
     }).join("");
@@ -13588,17 +13715,24 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       return '<button type="button" class="vs-btn vtbl-pbtn' + active + '" data-protein="' + p + '">' +
              (p === "all" ? "All" : p) + "</button>";
     }).join("");
+    var domainOptHtml = '<option value="all">All domains</option>' + DOMAIN_FILTER_ORDER.map(function (name) {
+      var sel = tableFilter.domain === name ? " selected" : "";
+      return '<option value="' + esc(name) + '"' + sel + ">" + esc(name) + "</option>";
+    }).join("");
 
     host.innerHTML =
       '<div class="vtbl-head">' +
         '<div class="vtbl-controls">' +
           '<input type="search" id="vtbl-search" placeholder="Search variants…" value="' + esc(tableFilter.search) + '">' +
           '<div class="vtbl-protein-filter">' + proteinHtml + "</div>" +
+          '<select id="vtbl-domain" title="Filter by domain">' + domainOptHtml + "</select>" +
+          '<button type="button" class="vtbl-export" id="vtbl-export-csv">Export CSV</button>' +
+          '<button type="button" class="vtbl-export" id="vtbl-export-xlsx">Export Excel</button>' +
         "</div>" +
         '<span id="vtbl-count"></span>' +
       "</div>" +
       '<div class="vtbl-scroll"><table class="vtbl"><thead>' + theadHtml + "</thead><tbody>" + bodyHtml + "</tbody></table></div>";
-    applyTableFilters();   // re-apply protein/search filters to the freshly-built rows
+    applyTableFilters();   // re-apply protein/domain/search filters to the freshly-built rows
 
     if (!host.__wired) {
       host.__wired = true;
@@ -13617,7 +13751,15 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
             b.classList.toggle("vs-active", b === pbtn);
           });
           applyTableFilters();
+          return;
         }
+        if (e.target.id === "vtbl-export-csv") { exportCSV(); return; }
+        if (e.target.id === "vtbl-export-xlsx") { exportExcel(); return; }
+      });
+      host.addEventListener("change", function (e) {
+        if (e.target.id !== "vtbl-domain") return;
+        tableFilter.domain = e.target.value;
+        applyTableFilters();
       });
       var searchTimer;
       host.addEventListener("input", function (e) {
@@ -13631,10 +13773,10 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       });
     }
   }
-  // Applies the protein pick + search text on top of whatever the category
-  // toggles already did via CSS (their !important rule always wins, so we
-  // never fight it — a category-hidden row just stays hidden regardless of
-  // what we set here). Cheap enough to run on every keystroke: substring
+  // Applies the protein/domain pick + search text on top of whatever the
+  // category toggles already did via CSS (their !important rule always wins,
+  // so we never fight it — a category-hidden row just stays hidden regardless
+  // of what we set here). Cheap enough to run on every keystroke: substring
   // match against the row's own rendered text, no separate search index.
   function applyTableFilters() {
     var host = document.getElementById("table-view");
@@ -13642,8 +13784,9 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     var rows = host.querySelectorAll("tbody tr");
     rows.forEach(function (tr) {
       var proteinOk = tableFilter.protein === "all" || tr.getAttribute("data-protein") === tableFilter.protein;
+      var domainOk = tableFilter.domain === "all" || tr.getAttribute("data-domain") === tableFilter.domain;
       var searchOk = !tableFilter.search || tr.textContent.toLowerCase().indexOf(tableFilter.search) !== -1;
-      tr.style.display = (proteinOk && searchOk) ? "" : "none";
+      tr.style.display = (proteinOk && domainOk && searchOk) ? "" : "none";
     });
     updateTableCount();
   }
@@ -13654,6 +13797,90 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     var total = rows.length, shown = 0;
     rows.forEach(function (tr) { if (getComputedStyle(tr).display !== "none") shown++; });
     el.textContent = shown.toLocaleString() + " of " + total.toLocaleString() + " variants shown";
+  }
+
+  // ---- Table export (CSV / Excel) — exports exactly what's currently
+  // visible (category toggles + protein/domain filter + search), in the
+  // current sort order, since that's "what you're looking at" in the table.
+  function exportRowValues(r) {
+    return [
+      r.protein, r.label, r.domain, (CFG[r.category] || CFG.Other).legend,
+      r.method || "", r.gnomadText, r.gnomadHom != null ? r.gnomadHom : "",
+      r.sourceTitle || "", r.pmid || ""
+    ];
+  }
+  function visibleExportRows() {
+    var host = document.getElementById("table-view");
+    if (!host) return [];
+    var trs = host.querySelectorAll("tbody tr");
+    var out = [];
+    trs.forEach(function (tr, i) {
+      if (getComputedStyle(tr).display !== "none" && lastRows[i]) out.push(lastRows[i]);
+    });
+    return out;
+  }
+  function downloadBlob(content, filename, mime) {
+    var blob = new Blob([content], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+  function csvEscape(v) {
+    var s = String(v == null ? "" : v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function exportCSV() {
+    var lines = [EXPORT_HEADERS.map(csvEscape).join(",")];
+    visibleExportRows().forEach(function (r) { lines.push(exportRowValues(r).map(csvEscape).join(",")); });
+    downloadBlob(lines.join("\r\n"), "samd9_samd9l_variants.csv", "text/csv;charset=utf-8;");
+  }
+  // A genuine Excel file with no external library: SpreadsheetML (Excel's
+  // 2003 XML format) is a plain, documented XML schema Excel opens natively
+  // and warning-free — unlike the common "save an HTML table as .xls" trick,
+  // which triggers a format-mismatch warning. Colors category/domain cells to
+  // match the on-page badges (lighten() reused from the domain-outline code
+  // above) and highlights homozygote-positive counts, same as the table.
+  function toExcelXML(rows) {
+    var dcolors = domainColors();
+    function cell(value, styleId, type) {
+      var attr = styleId ? ' ss:StyleID="' + styleId + '"' : "";
+      return "<Cell" + attr + '><Data ss:Type="' + (type || "String") + '">' + esc(value) + "</Data></Cell>";
+    }
+    var styles = [
+      '<Style ss:ID="sHeader"><Font ss:Bold="1"/><Interior ss:Color="#F0F0F0" ss:Pattern="Solid"/></Style>',
+      '<Style ss:ID="sHomPos"><Font ss:Color="#1E9E5B" ss:Bold="1"/></Style>'
+    ];
+    Object.keys(CFG).forEach(function (cat) {
+      styles.push('<Style ss:ID="cat_' + cat + '"><Interior ss:Color="' + lighten(CFG[cat].color, 0.84) + '" ss:Pattern="Solid"/></Style>');
+    });
+    Object.keys(dcolors).forEach(function (key) {
+      styles.push('<Style ss:ID="dom_' + key + '"><Interior ss:Color="' + lighten(dcolors[key], 0.82) + '" ss:Pattern="Solid"/></Style>');
+    });
+    var headerRow = "<Row>" + EXPORT_HEADERS.map(function (h) { return cell(h, "sHeader"); }).join("") + "</Row>";
+    var bodyRows = rows.map(function (r) {
+      var v = exportRowValues(r);
+      return "<Row>" +
+        cell(v[0]) + cell(v[1]) +
+        cell(v[2], "dom_" + r.domainKey) +
+        cell(v[3], "cat_" + r.category) +
+        cell(v[4]) + cell(v[5]) +
+        cell(v[6], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
+        cell(v[7]) + cell(v[8]) +
+        "</Row>";
+    }).join("");
+    return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
+      'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+      'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      "<Styles>" + styles.join("") + "</Styles>" +
+      '<Worksheet ss:Name="Variants"><Table>' + headerRow + bodyRows + "</Table></Worksheet>" +
+      "</Workbook>";
+  }
+  function exportExcel() {
+    downloadBlob(toExcelXML(visibleExportRows()), "samd9_samd9l_variants.xls", "application/vnd.ms-excel");
   }
 
   // "Last updated" — fetched live from GitHub's own commit history, purely

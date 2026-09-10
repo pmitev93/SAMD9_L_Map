@@ -4,6 +4,7 @@
      40  bottom legend bar*           45  corner info boxes (bottom)
      50  fixed title bar*             55  AA position tooltip
      60  "Show variants" toggle box   70  variant detail popup
+     80  3D structure panel
    (* = styled inline in index.html, not here)
    Everything fixed to the viewport must outrank the variant labels (1-3) or
    the labels scroll over it. The title/legend chrome in turn sits below the
@@ -306,6 +307,44 @@ td.wB  { color: var(--walkerB-color,  #B388EB) !important; }  /* Walker B     */
   position:absolute; display:none; z-index:55; pointer-events:none;
   transform:translateX(-50%); font-family:var(--ui-font);
   font-size:12px; font-weight:600; color:#000; white-space:nowrap;
+}
+/* Every real residue box is clickable now (opens the 3D panel below) —
+   pointer cursor is the cheap, standard "this does something" signal;
+   nothing fancier (no onboarding/animation) until we know it's needed. */
+td[data-pos] { cursor:pointer; }
+
+/* ---- 3D structure panel (#structure-panel) ----
+   Plain show/hide via the .sp-open class, no transition — an overlay
+   covering the right half of the viewport, not a page reflow (see project
+   notes: v1 scope). Intentionally no animation, matching the category-row
+   redesign above. */
+#structure-panel {
+  display:none; flex-direction:column;
+  position:fixed; top:0; right:0; width:50%; height:100vh; z-index:80;
+  background:#fff; border-left:1px solid rgba(120,140,175,.35);
+  box-shadow:-8px 0 24px rgba(0,0,0,.14);
+  font-family:var(--ui-font);
+}
+#structure-panel.sp-open { display:flex; }
+.sp-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.8em 1.1em; border-bottom:1px solid #eee; flex:none;
+}
+.sp-title { font-weight:700; font-size:.95em; color:#222; }
+.sp-close {
+  border:0; background:none; cursor:pointer; font-size:1.5em; line-height:1;
+  color:#888; padding:0 .2em; font-family:inherit;
+}
+.sp-close:hover { color:#222; }
+.sp-body { position:relative; flex:1; min-height:0; }
+.sp-status {
+  position:absolute; top:1.2em; left:0; right:0; z-index:1;
+  text-align:center; color:#888; font-size:.9em; pointer-events:none;
+}
+#sp-viewer { position:absolute; inset:0; }
+.sp-foot {
+  flex:none; padding:.6em 1.1em; border-top:1px solid #eee;
+  font-size:11px; color:#999; text-align:center;
 }
 body.hide-cat-GoF       [data-category="GoF"],
 body.hide-cat-LoF       [data-category="LoF"],

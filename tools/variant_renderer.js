@@ -434,6 +434,8 @@
           maps[sr.protein][counters[sr.protein]] = cells[i];
           cells[i].dataset.pos = txt + counters[sr.protein];   // e.g. "K133"
           cells[i].dataset.side = sr.side;                     // top / bottom
+          cells[i].dataset.protein = sr.protein;                // SAMD9 / SAMD9L
+          cells[i].dataset.resnum = counters[sr.protein];       // numeric residue #, for the 3D-structure click (setupResidueClick, below)
         }
       }
     });
@@ -583,6 +585,7 @@
 
     buildToggles();
     setupPosTip(table);
+    setupResidueClick(table);
     window.__variantInfo = { total: DATA.length, missing: missing, counts: counters };
     if (missing) console.warn("variant renderer: " + missing + " unmapped variants");
   }
@@ -759,6 +762,142 @@
     });
     table.addEventListener("mouseout", function (e) {
       if (e.target.closest && e.target.closest("td[data-pos]")) tip.style.display = "none";
+    });
+  }
+
+  // ---- 3D structure viewer (AlphaFold model, opens on any residue click) ----
+  // A right-side panel that shows the clicked residue's position in that
+  // protein's AlphaFold model (3Dmol.js). Deliberately lazy in both pieces:
+  // 3Dmol.js itself (~600KB) and each protein's structure file (~1MB PDB,
+  // local under structures/ — not fetched from AlphaFold DB at runtime, so
+  // this doesn't depend on their CORS policy or uptime) only ever load the
+  // first time they're actually needed, so a visitor who never clicks a
+  // residue pays nothing for this feature. Step 1 of a planned series (see
+  // project notes) — AlphaFold only for now, one structure at a time, no
+  // superposition/neighbor-highlighting/export yet.
+  var STRUCTURE_SOURCES = {
+    SAMD9:  { file: "structures/SAMD9_AF.pdb" },
+    SAMD9L: { file: "structures/SAMD9L_AF.pdb" }
+  };
+  var structureText = {};   // protein -> already-fetched PDB text (session cache)
+  var mol3dReady = null;    // becomes a resolved Promise once 3Dmol.js has loaded
+  var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
+  var loadedProtein = null;     // which protein's model is currently addModel()'d into it
+
+  function load3Dmol() {
+    if (window.$3Dmol) return Promise.resolve();
+    if (mol3dReady) return mol3dReady;
+    mol3dReady = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js";
+      s.onload = function () { resolve(); };
+      s.onerror = function () { mol3dReady = null; reject(new Error("couldn't load 3Dmol.js")); };
+      document.head.appendChild(s);
+    });
+    return mol3dReady;
+  }
+
+  function fetchStructure(protein) {
+    if (structureText[protein]) return Promise.resolve(structureText[protein]);
+    var src = STRUCTURE_SOURCES[protein];
+    if (!src) return Promise.reject(new Error("no structure file for " + protein));
+    return fetch(src.file).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    }).then(function (text) {
+      structureText[protein] = text;
+      return text;
+    });
+  }
+
+  function buildStructurePanel() {
+    if (document.getElementById("structure-panel")) return;
+    var panel = document.createElement("div");
+    panel.id = "structure-panel";
+    panel.innerHTML =
+      '<div class="sp-head">' +
+        '<span class="sp-title" id="sp-title">Structure</span>' +
+        '<button type="button" class="sp-close" id="sp-close" aria-label="Close">&times;</button>' +
+      "</div>" +
+      '<div class="sp-body">' +
+        '<div class="sp-status" id="sp-status"></div>' +
+        '<div id="sp-viewer"></div>' +
+      "</div>" +
+      '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
+    document.body.appendChild(panel);
+    panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
+  }
+
+  function closeStructurePanel() {
+    var panel = document.getElementById("structure-panel");
+    if (panel) panel.classList.remove("sp-open");
+    document.body.classList.remove("structure-panel-open");
+  }
+
+  function setStructureStatus(msg) {
+    var el = document.getElementById("sp-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.display = msg ? "block" : "none";
+  }
+
+  // Entry point: setupResidueClick() below calls this with whatever residue
+  // the user just clicked on the Map.
+  function showResidueIn3D(protein, resnum, label) {
+    buildStructurePanel();
+    document.getElementById("structure-panel").classList.add("sp-open");
+    document.body.classList.add("structure-panel-open");
+    document.getElementById("sp-title").textContent = protein + " — " + (label || ("residue " + resnum));
+    setStructureStatus("Loading " + protein + " structure…");
+
+    load3Dmol()
+      .then(function () { return fetchStructure(protein); })
+      .then(function () {
+        setStructureStatus(null);
+        renderResidue(protein, resnum);
+      })
+      .catch(function (err) {
+        setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
+      });
+  }
+
+  function renderResidue(protein, resnum) {
+    var el = document.getElementById("sp-viewer");
+    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: "white" });
+    if (loadedProtein !== protein) {
+      structureViewer.removeAllModels();
+      structureViewer.addModel(structureText[protein], "pdb");
+      loadedProtein = protein;
+    }
+    // Reset everyone to plain cartoon first (setStyle replaces, not merges —
+    // this is what clears whichever OTHER residue was highlighted before),
+    // then layer stick+sphere on just the clicked one.
+    structureViewer.setStyle({}, { cartoon: { color: "spectrum" } });
+    structureViewer.setStyle({ resi: resnum },
+      { cartoon: { color: "spectrum" }, stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
+    // zoomTo() alone frames just the clicked residue's own atoms — tight
+    // enough that the surrounding fold (the actual point of looking here)
+    // barely shows. Pull back afterward for context.
+    structureViewer.zoomTo({ resi: resnum });
+    structureViewer.zoom(.4, 300);
+    structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise
+    structureViewer.render();
+  }
+
+  // Click ANY residue box on the Map (curated variant or not — this is
+  // separate from the .vtick/.vlabel popup click handler in setupPopup(),
+  // which lives on different overlay elements entirely, so the two never
+  // fire for the same click) to open/update the 3D panel.
+  function setupResidueClick(table) {
+    if (table.__resClick) return;
+    table.__resClick = true;
+    table.addEventListener("click", function (e) {
+      var cell = e.target.closest ? e.target.closest("td[data-pos]") : null;
+      if (!cell) return;
+      var protein = cell.dataset.protein;
+      var resnum = parseInt(cell.dataset.resnum, 10);
+      if (!protein || !resnum) return;
+      showResidueIn3D(protein, resnum, cell.dataset.pos);
     });
   }
 

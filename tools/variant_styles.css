@@ -315,9 +315,10 @@ td[data-pos] { cursor:pointer; }
 
 /* ---- 3D structure panel (#structure-panel) ----
    Plain show/hide via the .sp-open class, no transition — an overlay
-   covering the right half of the viewport, not a page reflow (see project
-   notes: v1 scope). Intentionally no animation, matching the category-row
-   redesign above. */
+   covering the right half of the viewport. The rest of the page (map/title/
+   legend) shrinks into the left half via body.structure-panel-open below,
+   so nothing sits underneath the panel unreachable. Intentionally no
+   animation, matching the category-row redesign above. */
 #structure-panel {
   display:none; flex-direction:column;
   position:fixed; top:0; right:0; width:50%; height:100vh; z-index:80;
@@ -327,15 +328,27 @@ td[data-pos] { cursor:pointer; }
 }
 #structure-panel.sp-open { display:flex; }
 .sp-head {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:.8em 1.1em; border-bottom:1px solid #eee; flex:none;
+  position:relative; display:flex; align-items:center; justify-content:center;
+  padding:.9em 3em; border-bottom:1px solid #eee; flex:none;
 }
-.sp-title { font-weight:700; font-size:.95em; color:#222; }
+.sp-title { font-weight:700; font-size:1.5em; color:#222; text-align:center; }
 .sp-close {
+  position:absolute; right:.6em; top:50%; transform:translateY(-50%);
   border:0; background:none; cursor:pointer; font-size:1.5em; line-height:1;
   color:#888; padding:0 .2em; font-family:inherit;
 }
 .sp-close:hover { color:#222; }
+.sp-controls {
+  display:flex; align-items:center; justify-content:center; gap:.6em;
+  flex-wrap:wrap; padding:.6em 1.1em; border-bottom:1px solid #eee; flex:none;
+}
+.sp-seg { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
+.sp-seg-btn {
+  border:0; background:none; cursor:pointer; font-family:inherit; font-weight:600;
+  font-size:.82em; color:#666; padding:.4em .85em; border-radius:7px;
+}
+.sp-seg-btn:hover { background:rgba(90,90,95,.08); }
+.sp-seg-btn.sp-seg-active { background:#2b2f36; color:#fff; }
 .sp-body { position:relative; flex:1; min-height:0; }
 .sp-status {
   position:absolute; top:1.2em; left:0; right:0; z-index:1;
@@ -344,8 +357,20 @@ td[data-pos] { cursor:pointer; }
 #sp-viewer { position:absolute; inset:0; }
 .sp-foot {
   flex:none; padding:.6em 1.1em; border-top:1px solid #eee;
-  font-size:11px; color:#999; text-align:center;
+  font-size:13px; color:#999; text-align:center;
 }
+
+/* Shift the map/title/legend into the left half while the structure panel
+   is open, so it's scrollable rather than hidden underneath the panel.
+   .center-content already wraps the whole page's flow content (the table,
+   Table view, etc.) — shrinking IT is enough; its children don't need
+   individual changes. overflow-x:auto lets anything wider than the new
+   50% width scroll instead of being clipped or spilling under the panel. */
+body.structure-panel-open .center-content { width:50%; overflow-x:auto; }
+body.structure-panel-open h1 { width:50%; }
+body.structure-panel-open #variant-toggles:not(.vt-inline) { right:calc(50% + 14px); }
+body.structure-panel-open #bottom-legend-strip,
+body.structure-panel-open #bottom-legend-bar { width:50%; }
 body.hide-cat-GoF       [data-category="GoF"],
 body.hide-cat-LoF       [data-category="LoF"],
 body.hide-cat-gnomAD    [data-category="gnomAD"],

@@ -779,10 +779,20 @@
     SAMD9:  { file: "structures/SAMD9_AF.pdb" },
     SAMD9L: { file: "structures/SAMD9L_AF.pdb" }
   };
+  // Same 1-9 ConSurf palette as the 2D map's td.ScoreN cells (index.html's
+  // inline <style>) — kept as a literal copy, not read off the DOM, since
+  // there's no single shared cartoon-vs-td color source to read from.
+  var CONSERVATION_COLORS = {
+    1: "#107f84", 2: "#44afbf", 3: "#a6dde7", 4: "#d7eef2", 5: "#FFFFFF",
+    6: "#fbecf4", 7: "#f9c9dd", 8: "#f07dab", 9: "#a12561"
+  };
   var structureText = {};   // protein -> already-fetched PDB text (session cache)
   var mol3dReady = null;    // becomes a resolved Promise once 3Dmol.js has loaded
   var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
   var loadedProtein = null;     // which protein's model is currently addModel()'d into it
+  var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
+  var structureColorMode = "conservation";   // "conservation" | "domain"
+  var structureBg = "black";                 // "black" | "white"
 
   function load3Dmol() {
     if (window.$3Dmol) return Promise.resolve();
@@ -810,6 +820,19 @@
     });
   }
 
+  // One [data-value] segmented control per group ("color": conservation/
+  // domain, "bg": black/white) — shared markup+listener, dispatched by
+  // data-group below. Doesn't touch the camera; only setColorMode/
+  // setStructureBackground do, and neither of those moves it either.
+  function segHtml(group, options, active) {
+    return '<div class="sp-seg" data-group="' + group + '">' +
+      options.map(function (o) {
+        return '<button type="button" class="sp-seg-btn' + (o.value === active ? " sp-seg-active" : "") +
+               '" data-value="' + o.value + '">' + o.label + "</button>";
+      }).join("") +
+      "</div>";
+  }
+
   function buildStructurePanel() {
     if (document.getElementById("structure-panel")) return;
     var panel = document.createElement("div");
@@ -819,6 +842,10 @@
         '<span class="sp-title" id="sp-title">Structure</span>' +
         '<button type="button" class="sp-close" id="sp-close" aria-label="Close">&times;</button>' +
       "</div>" +
+      '<div class="sp-controls">' +
+        segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
+        segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
+      "</div>" +
       '<div class="sp-body">' +
         '<div class="sp-status" id="sp-status"></div>' +
         '<div id="sp-viewer"></div>' +
@@ -826,6 +853,29 @@
       '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
     document.body.appendChild(panel);
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
+    panel.querySelector(".sp-controls").addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest(".sp-seg-btn");
+      if (!btn) return;
+      var seg = btn.closest(".sp-seg");
+      seg.querySelectorAll(".sp-seg-btn").forEach(function (b) { b.classList.toggle("sp-seg-active", b === btn); });
+      var group = seg.getAttribute("data-group"), value = btn.getAttribute("data-value");
+      if (group === "color") setColorMode(value);
+      else if (group === "bg") setStructureBackground(value);
+    });
+  }
+
+  // Re-style only — never touches the camera, so toggling color/background
+  // mid-inspection can't undo a zoom/pan the user set up (see renderResidue).
+  function setColorMode(mode) {
+    structureColorMode = mode;
+    if (!structureViewer || !loadedProtein) return;
+    applyStructureStyle(loadedProtein);
+    if (currentResnum != null) highlightResidue(currentResnum);
+    structureViewer.render();
+  }
+  function setStructureBackground(color) {
+    structureBg = color;
+    if (structureViewer) { structureViewer.setBackgroundColor(color); structureViewer.render(); }
   }
 
   function closeStructurePanel() {
@@ -861,26 +911,63 @@
       });
   }
 
+  function residueColor(protein, resnum) {
+    if (structureColorMode === "domain") {
+      return domainColors()[domainInfoFor(protein, resnum).key] || domainColors().none;
+    }
+    var score = conservationFor(protein, resnum);
+    return (score != null && CONSERVATION_COLORS[score]) || "#9AA0A6";
+  }
+  // Colors every atom's cartoon by the current mode, via a per-atom callback
+  // (atom.resi is 3Dmol's own residue-number field off the parsed PDB).
+  // setStyle REPLACES style for matched atoms rather than merging — calling
+  // this on {} (all atoms) is what clears a previous highlight's stick/
+  // sphere before highlightResidue() re-adds one, so the two always run
+  // together (see setColorMode / highlightResidue's own callers).
+  function applyStructureStyle(protein) {
+    structureViewer.setStyle({}, { cartoon: { colorfunc: function (atom) { return residueColor(protein, atom.resi); } } });
+  }
+  // Layers a stick+sphere marker onto ONE residue via addStyle (adds a
+  // representation without touching the cartoon applyStructureStyle() just
+  // set — setStyle here would strip that residue's cartoon instead).
+  function highlightResidue(resnum) {
+    currentResnum = resnum;
+    structureViewer.addStyle({ resi: resnum },
+      { stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
+  }
+
   function renderResidue(protein, resnum) {
     var el = document.getElementById("sp-viewer");
-    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: "white" });
-    if (loadedProtein !== protein) {
+    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg });
+    var isNewProtein = loadedProtein !== protein;
+    if (isNewProtein) {
       structureViewer.removeAllModels();
       structureViewer.addModel(structureText[protein], "pdb");
       loadedProtein = protein;
     }
-    // Reset everyone to plain cartoon first (setStyle replaces, not merges —
-    // this is what clears whichever OTHER residue was highlighted before),
-    // then layer stick+sphere on just the clicked one.
-    structureViewer.setStyle({}, { cartoon: { color: "spectrum" } });
-    structureViewer.setStyle({ resi: resnum },
-      { cartoon: { color: "spectrum" }, stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
-    // zoomTo() alone frames just the clicked residue's own atoms — tight
-    // enough that the surrounding fold (the actual point of looking here)
-    // barely shows. Pull back afterward for context.
-    structureViewer.zoomTo({ resi: resnum });
-    structureViewer.zoom(.4, 300);
+    applyStructureStyle(protein);
+    highlightResidue(resnum);
     structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise
+    // No animation (duration 0 / omitted) — an earlier feature on this page
+    // (the category-toggle redesign) hit real jank from animated transitions
+    // depending on requestAnimationFrame timing; instant camera moves avoid
+    // that whole class of bug here too.
+    if (isNewProtein) {
+      // First look at this protein (or the very first click of the session)
+      // — no established view to preserve, so frame it fresh. zoomTo() alone
+      // frames just the clicked residue's own atoms — tight enough that the
+      // surrounding fold (the actual point of looking here) barely shows;
+      // pull back afterward for context.
+      structureViewer.zoomTo({ resi: resnum });
+      structureViewer.zoom(.4);
+    } else if (typeof structureViewer.center === "function") {
+      // Same protein as before: pan/rotate to the new residue WITHOUT
+      // resetting whatever zoom level the user already set up by scrolling —
+      // center() re-points the camera, unlike zoomTo() which also re-fits.
+      structureViewer.center({ resi: resnum });
+    } else {
+      structureViewer.zoomTo({ resi: resnum });
+    }
     structureViewer.render();
   }
 

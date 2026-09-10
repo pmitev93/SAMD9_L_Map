@@ -12851,9 +12851,10 @@ td[data-pos] { cursor:pointer; }
 
 /* ---- 3D structure panel (#structure-panel) ----
    Plain show/hide via the .sp-open class, no transition — an overlay
-   covering the right half of the viewport, not a page reflow (see project
-   notes: v1 scope). Intentionally no animation, matching the category-row
-   redesign above. */
+   covering the right half of the viewport. The rest of the page (map/title/
+   legend) shrinks into the left half via body.structure-panel-open below,
+   so nothing sits underneath the panel unreachable. Intentionally no
+   animation, matching the category-row redesign above. */
 #structure-panel {
   display:none; flex-direction:column;
   position:fixed; top:0; right:0; width:50%; height:100vh; z-index:80;
@@ -12863,15 +12864,27 @@ td[data-pos] { cursor:pointer; }
 }
 #structure-panel.sp-open { display:flex; }
 .sp-head {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:.8em 1.1em; border-bottom:1px solid #eee; flex:none;
+  position:relative; display:flex; align-items:center; justify-content:center;
+  padding:.9em 3em; border-bottom:1px solid #eee; flex:none;
 }
-.sp-title { font-weight:700; font-size:.95em; color:#222; }
+.sp-title { font-weight:700; font-size:1.5em; color:#222; text-align:center; }
 .sp-close {
+  position:absolute; right:.6em; top:50%; transform:translateY(-50%);
   border:0; background:none; cursor:pointer; font-size:1.5em; line-height:1;
   color:#888; padding:0 .2em; font-family:inherit;
 }
 .sp-close:hover { color:#222; }
+.sp-controls {
+  display:flex; align-items:center; justify-content:center; gap:.6em;
+  flex-wrap:wrap; padding:.6em 1.1em; border-bottom:1px solid #eee; flex:none;
+}
+.sp-seg { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
+.sp-seg-btn {
+  border:0; background:none; cursor:pointer; font-family:inherit; font-weight:600;
+  font-size:.82em; color:#666; padding:.4em .85em; border-radius:7px;
+}
+.sp-seg-btn:hover { background:rgba(90,90,95,.08); }
+.sp-seg-btn.sp-seg-active { background:#2b2f36; color:#fff; }
 .sp-body { position:relative; flex:1; min-height:0; }
 .sp-status {
   position:absolute; top:1.2em; left:0; right:0; z-index:1;
@@ -12880,8 +12893,20 @@ td[data-pos] { cursor:pointer; }
 #sp-viewer { position:absolute; inset:0; }
 .sp-foot {
   flex:none; padding:.6em 1.1em; border-top:1px solid #eee;
-  font-size:11px; color:#999; text-align:center;
+  font-size:13px; color:#999; text-align:center;
 }
+
+/* Shift the map/title/legend into the left half while the structure panel
+   is open, so it's scrollable rather than hidden underneath the panel.
+   .center-content already wraps the whole page's flow content (the table,
+   Table view, etc.) — shrinking IT is enough; its children don't need
+   individual changes. overflow-x:auto lets anything wider than the new
+   50% width scroll instead of being clipped or spilling under the panel. */
+body.structure-panel-open .center-content { width:50%; overflow-x:auto; }
+body.structure-panel-open h1 { width:50%; }
+body.structure-panel-open #variant-toggles:not(.vt-inline) { right:calc(50% + 14px); }
+body.structure-panel-open #bottom-legend-strip,
+body.structure-panel-open #bottom-legend-bar { width:50%; }
 body.hide-cat-GoF       [data-category="GoF"],
 body.hide-cat-LoF       [data-category="LoF"],
 body.hide-cat-gnomAD    [data-category="gnomAD"],
@@ -13673,10 +13698,20 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     SAMD9:  { file: "structures/SAMD9_AF.pdb" },
     SAMD9L: { file: "structures/SAMD9L_AF.pdb" }
   };
+  // Same 1-9 ConSurf palette as the 2D map's td.ScoreN cells (index.html's
+  // inline <style>) — kept as a literal copy, not read off the DOM, since
+  // there's no single shared cartoon-vs-td color source to read from.
+  var CONSERVATION_COLORS = {
+    1: "#107f84", 2: "#44afbf", 3: "#a6dde7", 4: "#d7eef2", 5: "#FFFFFF",
+    6: "#fbecf4", 7: "#f9c9dd", 8: "#f07dab", 9: "#a12561"
+  };
   var structureText = {};   // protein -> already-fetched PDB text (session cache)
   var mol3dReady = null;    // becomes a resolved Promise once 3Dmol.js has loaded
   var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
   var loadedProtein = null;     // which protein's model is currently addModel()'d into it
+  var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
+  var structureColorMode = "conservation";   // "conservation" | "domain"
+  var structureBg = "black";                 // "black" | "white"
 
   function load3Dmol() {
     if (window.$3Dmol) return Promise.resolve();
@@ -13704,6 +13739,19 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     });
   }
 
+  // One [data-value] segmented control per group ("color": conservation/
+  // domain, "bg": black/white) — shared markup+listener, dispatched by
+  // data-group below. Doesn't touch the camera; only setColorMode/
+  // setStructureBackground do, and neither of those moves it either.
+  function segHtml(group, options, active) {
+    return '<div class="sp-seg" data-group="' + group + '">' +
+      options.map(function (o) {
+        return '<button type="button" class="sp-seg-btn' + (o.value === active ? " sp-seg-active" : "") +
+               '" data-value="' + o.value + '">' + o.label + "</button>";
+      }).join("") +
+      "</div>";
+  }
+
   function buildStructurePanel() {
     if (document.getElementById("structure-panel")) return;
     var panel = document.createElement("div");
@@ -13713,6 +13761,10 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
         '<span class="sp-title" id="sp-title">Structure</span>' +
         '<button type="button" class="sp-close" id="sp-close" aria-label="Close">&times;</button>' +
       "</div>" +
+      '<div class="sp-controls">' +
+        segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
+        segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
+      "</div>" +
       '<div class="sp-body">' +
         '<div class="sp-status" id="sp-status"></div>' +
         '<div id="sp-viewer"></div>' +
@@ -13720,6 +13772,29 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
     document.body.appendChild(panel);
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
+    panel.querySelector(".sp-controls").addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest(".sp-seg-btn");
+      if (!btn) return;
+      var seg = btn.closest(".sp-seg");
+      seg.querySelectorAll(".sp-seg-btn").forEach(function (b) { b.classList.toggle("sp-seg-active", b === btn); });
+      var group = seg.getAttribute("data-group"), value = btn.getAttribute("data-value");
+      if (group === "color") setColorMode(value);
+      else if (group === "bg") setStructureBackground(value);
+    });
+  }
+
+  // Re-style only — never touches the camera, so toggling color/background
+  // mid-inspection can't undo a zoom/pan the user set up (see renderResidue).
+  function setColorMode(mode) {
+    structureColorMode = mode;
+    if (!structureViewer || !loadedProtein) return;
+    applyStructureStyle(loadedProtein);
+    if (currentResnum != null) highlightResidue(currentResnum);
+    structureViewer.render();
+  }
+  function setStructureBackground(color) {
+    structureBg = color;
+    if (structureViewer) { structureViewer.setBackgroundColor(color); structureViewer.render(); }
   }
 
   function closeStructurePanel() {
@@ -13755,26 +13830,63 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       });
   }
 
+  function residueColor(protein, resnum) {
+    if (structureColorMode === "domain") {
+      return domainColors()[domainInfoFor(protein, resnum).key] || domainColors().none;
+    }
+    var score = conservationFor(protein, resnum);
+    return (score != null && CONSERVATION_COLORS[score]) || "#9AA0A6";
+  }
+  // Colors every atom's cartoon by the current mode, via a per-atom callback
+  // (atom.resi is 3Dmol's own residue-number field off the parsed PDB).
+  // setStyle REPLACES style for matched atoms rather than merging — calling
+  // this on {} (all atoms) is what clears a previous highlight's stick/
+  // sphere before highlightResidue() re-adds one, so the two always run
+  // together (see setColorMode / highlightResidue's own callers).
+  function applyStructureStyle(protein) {
+    structureViewer.setStyle({}, { cartoon: { colorfunc: function (atom) { return residueColor(protein, atom.resi); } } });
+  }
+  // Layers a stick+sphere marker onto ONE residue via addStyle (adds a
+  // representation without touching the cartoon applyStructureStyle() just
+  // set — setStyle here would strip that residue's cartoon instead).
+  function highlightResidue(resnum) {
+    currentResnum = resnum;
+    structureViewer.addStyle({ resi: resnum },
+      { stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
+  }
+
   function renderResidue(protein, resnum) {
     var el = document.getElementById("sp-viewer");
-    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: "white" });
-    if (loadedProtein !== protein) {
+    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg });
+    var isNewProtein = loadedProtein !== protein;
+    if (isNewProtein) {
       structureViewer.removeAllModels();
       structureViewer.addModel(structureText[protein], "pdb");
       loadedProtein = protein;
     }
-    // Reset everyone to plain cartoon first (setStyle replaces, not merges —
-    // this is what clears whichever OTHER residue was highlighted before),
-    // then layer stick+sphere on just the clicked one.
-    structureViewer.setStyle({}, { cartoon: { color: "spectrum" } });
-    structureViewer.setStyle({ resi: resnum },
-      { cartoon: { color: "spectrum" }, stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
-    // zoomTo() alone frames just the clicked residue's own atoms — tight
-    // enough that the surrounding fold (the actual point of looking here)
-    // barely shows. Pull back afterward for context.
-    structureViewer.zoomTo({ resi: resnum });
-    structureViewer.zoom(.4, 300);
+    applyStructureStyle(protein);
+    highlightResidue(resnum);
     structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise
+    // No animation (duration 0 / omitted) — an earlier feature on this page
+    // (the category-toggle redesign) hit real jank from animated transitions
+    // depending on requestAnimationFrame timing; instant camera moves avoid
+    // that whole class of bug here too.
+    if (isNewProtein) {
+      // First look at this protein (or the very first click of the session)
+      // — no established view to preserve, so frame it fresh. zoomTo() alone
+      // frames just the clicked residue's own atoms — tight enough that the
+      // surrounding fold (the actual point of looking here) barely shows;
+      // pull back afterward for context.
+      structureViewer.zoomTo({ resi: resnum });
+      structureViewer.zoom(.4);
+    } else if (typeof structureViewer.center === "function") {
+      // Same protein as before: pan/rotate to the new residue WITHOUT
+      // resetting whatever zoom level the user already set up by scrolling —
+      // center() re-points the camera, unlike zoomTo() which also re-fits.
+      structureViewer.center({ resi: resnum });
+    } else {
+      structureViewer.zoomTo({ resi: resnum });
+    }
     structureViewer.render();
   }
 

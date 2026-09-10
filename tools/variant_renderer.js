@@ -786,6 +786,19 @@
     1: "#107f84", 2: "#44afbf", 3: "#a6dde7", 4: "#d7eef2", 5: "#FFFFFF",
     6: "#fbecf4", 7: "#f9c9dd", 8: "#f07dab", 9: "#a12561"
   };
+  // Deliberately NOT the Table's domainColors().linker/nterm/cterm/none grey
+  // (#9AA0A6) — that one's tuned to read on the Table's white background;
+  // this one only ever sits in the 3D viewer (black by default), so it gets
+  // its own, lighter value instead of the two use-cases fighting over one.
+  var STRUCTURE_NO_DOMAIN_GREY = "#D8DBDF";
+  // 3-letter PDB residue name -> 1-letter code, for labeling whatever the
+  // user clicks directly ON the structure (residueClickLabel, below) in the
+  // same "K620" style the rest of the page already uses.
+  var AA_3TO1 = {
+    ALA: "A", ARG: "R", ASN: "N", ASP: "D", CYS: "C", GLN: "Q", GLU: "E",
+    GLY: "G", HIS: "H", ILE: "I", LEU: "L", LYS: "K", MET: "M", PHE: "F",
+    PRO: "P", SER: "S", THR: "T", TRP: "W", TYR: "Y", VAL: "V"
+  };
   var structureText = {};   // protein -> already-fetched PDB text (session cache)
   var mol3dReady = null;    // becomes a resolved Promise once 3Dmol.js has loaded
   var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
@@ -793,6 +806,11 @@
   var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
   var structureColorMode = "conservation";   // "conservation" | "domain"
   var structureBg = "black";                 // "black" | "white"
+  var hasFramedView = false;    // true after the first-ever render — gates the one-time zoomTo
+                                 // vs. every render after that (incl. switching protein) using
+                                 // center(), so a zoom level the user set up survives a protein switch
+  var isFullscreen = false;
+  var panelWidthPct = 50;       // restored when exiting fullscreen
 
   function load3Dmol() {
     if (window.$3Dmol) return Promise.resolve();
@@ -835,9 +853,11 @@
 
   function buildStructurePanel() {
     if (document.getElementById("structure-panel")) return;
+    document.documentElement.style.setProperty("--sp-width", panelWidthPct + "%");
     var panel = document.createElement("div");
     panel.id = "structure-panel";
     panel.innerHTML =
+      '<div class="sp-drag" id="sp-drag" title="Drag to resize"></div>' +
       '<div class="sp-head">' +
         '<span class="sp-title" id="sp-title">Structure</span>' +
         '<button type="button" class="sp-close" id="sp-close" aria-label="Close">&times;</button>' +
@@ -845,14 +865,17 @@
       '<div class="sp-controls">' +
         segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
+        '<button type="button" class="sp-fs-btn" id="sp-fs-btn">Fullscreen</button>' +
       "</div>" +
       '<div class="sp-body">' +
         '<div class="sp-status" id="sp-status"></div>' +
         '<div id="sp-viewer"></div>' +
+        '<div class="sp-clickhint" id="sp-clickhint">Click an atom on the structure to identify it</div>' +
       "</div>" +
       '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
     document.body.appendChild(panel);
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
+    panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
       if (!btn) return;
@@ -861,6 +884,58 @@
       var group = seg.getAttribute("data-group"), value = btn.getAttribute("data-value");
       if (group === "color") setColorMode(value);
       else if (group === "bg") setStructureBackground(value);
+    });
+    setupDrag(panel.querySelector("#sp-drag"));
+  }
+
+  function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+    var panel = document.getElementById("structure-panel");
+    panel.classList.toggle("sp-fullscreen", isFullscreen);
+    document.getElementById("sp-fs-btn").textContent = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
+    resizeStructureViewer();
+  }
+
+  // Throttled to one resize+render per animation frame — a drag fires many
+  // mousemove events, and a WebGL canvas resize isn't free enough to do on
+  // every single one of them.
+  var resizePending = false;
+  function resizeStructureViewer() {
+    if (!structureViewer || resizePending) return;
+    resizePending = true;
+    requestAnimationFrame(function () {
+      resizePending = false;
+      structureViewer.resize();
+      structureViewer.render();
+    });
+  }
+
+  // Drag the panel's left edge to resize it against the map — updates the
+  // shared --sp-width custom property that both the panel and the map's own
+  // shrunk-width rules (variant_styles.css) read, so they stay in sync with
+  // one write instead of coordinating two separate elements.
+  function setupDrag(handle) {
+    var dragging = false;
+    handle.addEventListener("mousedown", function (e) {
+      if (isFullscreen) return;
+      dragging = true;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", function (e) {
+      if (!dragging) return;
+      var pct = 100 - (e.clientX / window.innerWidth * 100);
+      pct = Math.max(20, Math.min(85, pct));
+      panelWidthPct = pct;
+      document.documentElement.style.setProperty("--sp-width", pct + "%");
+      resizeStructureViewer();
+    });
+    document.addEventListener("mouseup", function () {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
     });
   }
 
@@ -911,40 +986,63 @@
       });
   }
 
+  var NON_DOMAIN_KEYS = { linker: 1, nterm: 1, cterm: 1, none: 1 };
   function residueColor(protein, resnum) {
     if (structureColorMode === "domain") {
-      return domainColors()[domainInfoFor(protein, resnum).key] || domainColors().none;
+      var key = domainInfoFor(protein, resnum).key;
+      return NON_DOMAIN_KEYS[key] ? STRUCTURE_NO_DOMAIN_GREY : domainColors()[key];
     }
     var score = conservationFor(protein, resnum);
-    return (score != null && CONSERVATION_COLORS[score]) || "#9AA0A6";
+    return (score != null && CONSERVATION_COLORS[score]) || STRUCTURE_NO_DOMAIN_GREY;
   }
   // Colors every atom's cartoon by the current mode, via a per-atom callback
   // (atom.resi is 3Dmol's own residue-number field off the parsed PDB).
   // setStyle REPLACES style for matched atoms rather than merging — calling
   // this on {} (all atoms) is what clears a previous highlight's stick/
   // sphere before highlightResidue() re-adds one, so the two always run
-  // together (see setColorMode / highlightResidue's own callers).
+  // together (see setColorMode / highlightResidue's own callers). Also
+  // (re-)establishes click-to-identify on every atom — setClickable has to
+  // be re-applied whenever a new model is loaded (see renderResidue).
   function applyStructureStyle(protein) {
     structureViewer.setStyle({}, { cartoon: { colorfunc: function (atom) { return residueColor(protein, atom.resi); } } });
+    structureViewer.setClickable({}, true, onStructureAtomClick);
   }
   // Layers a stick+sphere marker onto ONE residue via addStyle (adds a
   // representation without touching the cartoon applyStructureStyle() just
-  // set — setStyle here would strip that residue's cartoon instead).
+  // set — setStyle here would strip that residue's cartoon instead). "Jmol"
+  // colorscheme for both (not a flat color) so heteroatoms in the side
+  // chain read by element — N blue, O red, S yellow — the same convention
+  // as PyMOL's default element coloring.
   function highlightResidue(resnum) {
     currentResnum = resnum;
     structureViewer.addStyle({ resi: resnum },
-      { stick: { colorscheme: "orangeCarbon", radius: .35 }, sphere: { color: "red", scale: .4 } });
+      { stick: { colorscheme: "Jmol", radius: .16 }, sphere: { colorscheme: "Jmol", scale: .22 } });
+  }
+  // Click-to-identify: any atom on the structure (not just the highlighted
+  // residue) reports itself via a floating in-scene label, PyMOL-style.
+  // Re-set on every render (see applyStructureStyle) since it targets the
+  // CURRENTLY loaded model's atoms, not a fixed selection.
+  function onStructureAtomClick(atom) {
+    if (!structureViewer) return;
+    var oneLetter = AA_3TO1[atom.resn] || atom.resn;
+    structureViewer.removeAllLabels();
+    structureViewer.addLabel(oneLetter + atom.resi, {
+      position: { x: atom.x, y: atom.y, z: atom.z },
+      backgroundColor: "#1c1f26", backgroundOpacity: .85,
+      fontColor: "white", fontSize: 13, borderThickness: 0
+    });
+    structureViewer.render();
   }
 
   function renderResidue(protein, resnum) {
     var el = document.getElementById("sp-viewer");
     if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg });
-    var isNewProtein = loadedProtein !== protein;
-    if (isNewProtein) {
+    if (loadedProtein !== protein) {
       structureViewer.removeAllModels();
       structureViewer.addModel(structureText[protein], "pdb");
       loadedProtein = protein;
     }
+    structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
     applyStructureStyle(protein);
     highlightResidue(resnum);
     structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise
@@ -952,18 +1050,18 @@
     // (the category-toggle redesign) hit real jank from animated transitions
     // depending on requestAnimationFrame timing; instant camera moves avoid
     // that whole class of bug here too.
-    if (isNewProtein) {
-      // First look at this protein (or the very first click of the session)
-      // — no established view to preserve, so frame it fresh. zoomTo() alone
-      // frames just the clicked residue's own atoms — tight enough that the
-      // surrounding fold (the actual point of looking here) barely shows;
-      // pull back afterward for context.
+    if (!hasFramedView) {
+      // Very first click of the session — no established view to preserve,
+      // so frame it fresh. zoomTo() alone frames just the clicked residue's
+      // own atoms — tight enough that the surrounding fold (the actual
+      // point of looking here) barely shows; pull back afterward for
+      // context. Every later click, including a switch to the OTHER
+      // protein, uses center() instead (below) so a zoom level the user set
+      // up by scrolling survives — including across that switch.
       structureViewer.zoomTo({ resi: resnum });
       structureViewer.zoom(.4);
+      hasFramedView = true;
     } else if (typeof structureViewer.center === "function") {
-      // Same protein as before: pan/rotate to the new residue WITHOUT
-      // resetting whatever zoom level the user already set up by scrolling —
-      // center() re-points the camera, unlike zoomTo() which also re-fits.
       structureViewer.center({ resi: resnum });
     } else {
       structureViewer.zoomTo({ resi: resnum });

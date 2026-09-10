@@ -1,6 +1,8 @@
 /* Scoped to .sp-title only (structure panel) — a distinct, more modern
-   geometric sans for that one heading; everything else keeps --ui-font. */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap');
+   sans for that one heading; everything else keeps --ui-font. (2nd attempt —
+   Space Grotesk's geometric look didn't land; Plus Jakarta Sans is a
+   cleaner, more neutral "modern product UI" sans instead.) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap');
 
 /* ---- Data-driven variant layer ----
    Z-INDEX STACK (keep these in order when adding anything new):
@@ -349,7 +351,7 @@ td[data-pos] { cursor:pointer; }
 }
 /* Falls back to --ui-font if the Google Font import above hasn't resolved
    yet (or is blocked) — never left unstyled. */
-.sp-title { font-family:'Space Grotesk', var(--ui-font), sans-serif;
+.sp-title { font-family:'Plus Jakarta Sans', var(--ui-font), sans-serif;
   font-weight:700; font-size:1.5em; letter-spacing:.01em; color:#222; text-align:center; }
 .sp-close {
   position:absolute; right:.6em; top:50%; transform:translateY(-50%);
@@ -374,6 +376,8 @@ td[data-pos] { cursor:pointer; }
   background:#fff; color:#333;
 }
 .sp-fs-btn:hover { background:#f2f3f5; }
+.sp-fs-btn.sp-fs-btn-active { background:#2b2f36; color:#fff; border-color:#2b2f36; }
+.sp-fs-btn.sp-fs-btn-active:hover { background:#2b2f36; }
 .sp-body { position:relative; flex:1; min-height:0; }
 .sp-status {
   position:absolute; top:1.2em; left:0; right:0; z-index:1;
@@ -384,6 +388,14 @@ td[data-pos] { cursor:pointer; }
   position:absolute; bottom:.7em; left:0; right:0; z-index:1;
   text-align:center; color:#9a9a9e; font-size:11px; pointer-events:none;
 }
+/* "T50 is in proximity to..." / "...forms polar interactions with..." —
+   toggleNeighbors()/renderNeighbors() (variant_renderer.js). Empty +
+   display:none until the Nearby Residues button is actually clicked. */
+.sp-neighbors {
+  flex:none; padding:.7em 1.1em; border-top:1px solid #eee;
+  font-size:13px; color:#444; line-height:1.6;
+}
+.sp-neighbors b { color:#222; }
 .sp-foot {
   flex:none; padding:.6em 1.1em; border-top:1px solid #eee;
   font-size:15px; font-style:italic; color:#888; text-align:center;

@@ -775,9 +775,16 @@
   // residue pays nothing for this feature. Step 1 of a planned series (see
   // project notes) — AlphaFold only for now, one structure at a time, no
   // superposition/neighbor-highlighting/export yet.
+  // SAMD9L's file is a SUPERPOSED copy (tools/align_structures.py), not the
+  // raw AlphaFold download — coordinates pre-rotated/translated into
+  // SAMD9's own frame so the two share one coordinate system. SAMD9 is the
+  // fixed reference and needs no transform. That's what lets the camera
+  // (renderResidue's center()-based path) carry over an orientation across
+  // a protein switch and actually land on the corresponding view, not just
+  // the same zoom level. Re-run that script if either AlphaFold model updates.
   var STRUCTURE_SOURCES = {
     SAMD9:  { file: "structures/SAMD9_AF.pdb" },
-    SAMD9L: { file: "structures/SAMD9L_AF.pdb" }
+    SAMD9L: { file: "structures/SAMD9L_AF_aligned.pdb" }
   };
   // Same 1-9 ConSurf palette as the 2D map's td.ScoreN cells (index.html's
   // inline <style>) — kept as a literal copy, not read off the DOM, since
@@ -865,6 +872,7 @@
       '<div class="sp-controls">' +
         segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
+        '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
         '<button type="button" class="sp-fs-btn" id="sp-fs-btn">Fullscreen</button>' +
       "</div>" +
       '<div class="sp-body">' +
@@ -872,10 +880,12 @@
         '<div id="sp-viewer"></div>' +
         '<div class="sp-clickhint" id="sp-clickhint">Click an atom on the structure to identify it</div>' +
       "</div>" +
+      '<div class="sp-neighbors" id="sp-neighbors" style="display:none;"></div>' +
       '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
     document.body.appendChild(panel);
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
     panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
+    panel.querySelector("#sp-neighbors-btn").addEventListener("click", toggleNeighbors);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
       if (!btn) return;
@@ -946,11 +956,102 @@
     if (!structureViewer || !loadedProtein) return;
     applyStructureStyle(loadedProtein);
     if (currentResnum != null) highlightResidue(currentResnum);
-    structureViewer.render();
+    if (showingNeighbors) renderNeighbors(); else structureViewer.render();
   }
   function setStructureBackground(color) {
     structureBg = color;
     if (structureViewer) { structureViewer.setBackgroundColor(color); structureViewer.render(); }
+  }
+
+  // ---- Nearby residues (5A) + polar contacts ----
+  var NEIGHBOR_RADIUS = 5;      // Angstrom — "nearby" residues
+  var POLAR_DISTANCE  = 3.5;    // Angstrom — heteroatom pair counted as a polar contact
+  var POLAR_ELEMS     = { N: 1, O: 1 };
+  var BACKBONE_ATOMS  = { N: 1, CA: 1, C: 1, O: 1 };
+  var showingNeighbors = false;
+
+  function dist3(a, b) {
+    var dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
+  function toggleNeighbors() {
+    showingNeighbors = !showingNeighbors;
+    document.getElementById("sp-neighbors-btn").classList.toggle("sp-fs-btn-active", showingNeighbors);
+    if (showingNeighbors) renderNeighbors(); else clearNeighbors();
+  }
+
+  function clearNeighbors() {
+    if (structureViewer && loadedProtein) {
+      structureViewer.removeAllShapes();
+      applyStructureStyle(loadedProtein);
+      if (currentResnum != null) highlightResidue(currentResnum);
+      structureViewer.render();
+    }
+    var text = document.getElementById("sp-neighbors");
+    if (text) { text.innerHTML = ""; text.style.display = "none"; }
+  }
+
+  // Residues with any atom within NEIGHBOR_RADIUS of the selected residue,
+  // plus polar contacts: a SIDE-CHAIN N/O atom on the selected residue
+  // within POLAR_DISTANCE of an N/O atom on a DIFFERENT residue (backbone
+  // atoms allowed on that other side — the "side chain" restriction in the
+  // ask is about OUR residue's own side chain, not the partner's).
+  function renderNeighbors() {
+    if (!structureViewer || !loadedProtein || currentResnum == null) return;
+    var resnum = currentResnum;
+    var targetAtoms = structureViewer.selectedAtoms({ resi: resnum });
+    if (!targetAtoms.length) return;
+    var nearAtoms = structureViewer.selectedAtoms({ within: { distance: NEIGHBOR_RADIUS, sel: { resi: resnum } } })
+      .filter(function (a) { return a.resi !== resnum; });
+
+    var nearbyResidues = {};
+    nearAtoms.forEach(function (a) { nearbyResidues[a.resi] = a.resn; });
+    var nearbyResnums = Object.keys(nearbyResidues).map(Number).sort(function (a, b) { return a - b; });
+
+    var targetPolar = targetAtoms.filter(function (a) { return !BACKBONE_ATOMS[a.atom] && POLAR_ELEMS[a.elem]; });
+    var nearPolar = nearAtoms.filter(function (a) { return POLAR_ELEMS[a.elem]; });
+    var polarResidues = {}, lines = [];
+    targetPolar.forEach(function (ta) {
+      nearPolar.forEach(function (na) {
+        if (dist3(ta, na) <= POLAR_DISTANCE) {
+          lines.push([ta, na]);
+          polarResidues[na.resi] = na.resn;
+        }
+      });
+    });
+    var polarResnums = Object.keys(polarResidues).map(Number).sort(function (a, b) { return a - b; });
+
+    applyStructureStyle(loadedProtein);
+    highlightResidue(resnum);
+    structureViewer.removeAllShapes();
+    if (nearbyResnums.length) {
+      structureViewer.addStyle({ resi: nearbyResnums }, { stick: { colorscheme: "Jmol", radius: .13 } });
+    }
+    lines.forEach(function (pair) {
+      structureViewer.addLine({
+        start: { x: pair[0].x, y: pair[0].y, z: pair[0].z },
+        end:   { x: pair[1].x, y: pair[1].y, z: pair[1].z },
+        color: "yellow", dashed: true, linewidth: 2
+      });
+    });
+    structureViewer.render();
+
+    var label = function (resi, resn) { return (AA_3TO1[resn] || resn) + resi; };
+    var selfLabel = label(resnum, targetAtoms[0].resn);
+    var nearbyText = nearbyResnums.length
+      ? nearbyResnums.map(function (r) { return label(r, nearbyResidues[r]); }).join(", ")
+      : "none";
+    var polarText = polarResnums.length
+      ? polarResnums.map(function (r) { return label(r, polarResidues[r]); }).join(", ")
+      : "none found";
+    var text = document.getElementById("sp-neighbors");
+    if (text) {
+      text.innerHTML =
+        "<div><b>" + esc(selfLabel) + "</b> is in proximity to (within " + NEIGHBOR_RADIUS + "Å): " + esc(nearbyText) + "</div>" +
+        "<div>Its side chain forms polar interactions with: " + esc(polarText) + "</div>";
+      text.style.display = "block";
+    }
   }
 
   function closeStructurePanel() {
@@ -1026,23 +1127,38 @@
     if (!structureViewer) return;
     var oneLetter = AA_3TO1[atom.resn] || atom.resn;
     structureViewer.removeAllLabels();
-    structureViewer.addLabel(oneLetter + atom.resi, {
+    // 3Dmol rasterizes a label's text onto a plain <canvas> at the raw
+    // fontSize (CSS pixels), with no devicePixelRatio awareness — on a
+    // retina display that texture then gets upscaled onto the (correctly
+    // HiDPI-sized) WebGL canvas and looks soft, unlike the natively-drawn
+    // cartoon/stick geometry. Supersample the texture (bigger fontSize/
+    // padding) and scale the sprite back down by the same factor to land
+    // back at the original apparent size, but sharper.
+    var dpr = window.devicePixelRatio || 1;
+    var label = structureViewer.addLabel(oneLetter + atom.resi, {
       position: { x: atom.x, y: atom.y, z: atom.z },
       backgroundColor: "#1c1f26", backgroundOpacity: .85,
-      fontColor: "white", fontSize: 13, borderThickness: 0
+      fontColor: "white", fontSize: 13 * dpr, padding: 4 * dpr, borderThickness: 0
     });
+    if (label && label.sprite && dpr !== 1) label.sprite.scale.set(1 / dpr, 1 / dpr, 1);
     structureViewer.render();
   }
 
   function renderResidue(protein, resnum) {
     var el = document.getElementById("sp-viewer");
-    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg });
+    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
     if (loadedProtein !== protein) {
       structureViewer.removeAllModels();
       structureViewer.addModel(structureText[protein], "pdb");
       loadedProtein = protein;
     }
     structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
+    structureViewer.removeAllShapes();   // clear any prior residue's "nearby" polar-contact lines
+    showingNeighbors = false;
+    var neighborsBtn = document.getElementById("sp-neighbors-btn");
+    if (neighborsBtn) neighborsBtn.classList.remove("sp-fs-btn-active");
+    var neighborsText = document.getElementById("sp-neighbors");
+    if (neighborsText) { neighborsText.innerHTML = ""; neighborsText.style.display = "none"; }
     applyStructureStyle(protein);
     highlightResidue(resnum);
     structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise

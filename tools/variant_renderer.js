@@ -1168,7 +1168,17 @@
     var pop = window.__vpop;
     if (!pop) return;
     var anchor = document.createElement("div");
-    anchor.style.cssText = "position:fixed; left:" + clientX + "px; top:" + clientY + "px; width:0; height:0;";
+    // display:block !important: the global "body.hide-cat-X [data-category=X]
+    // { display:none !important }" rule (meant for Map ticks/Table rows)
+    // matches ANY element with that attribute — including this one, if the
+    // sphere's category happens to be hidden on the Map while still checked
+    // in the 3D picker (the two are independent — see renderAllVariants()).
+    // display:none here would zero out getBoundingClientRect() and break
+    // positionPopup() below; an !important inline style is the only thing
+    // that outranks an !important stylesheet rule regardless of selector
+    // specificity.
+    anchor.style.cssText = "position:fixed; left:" + clientX + "px; top:" + clientY +
+      "px; width:0; height:0; display:block !important;";
     anchor.setAttribute("data-protein", variant.protein);
     anchor.setAttribute("data-mutation", variant.label);
     anchor.setAttribute("data-category", variant.category);

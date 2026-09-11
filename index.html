@@ -12994,9 +12994,17 @@ td[data-pos] { cursor:pointer; }
   display:inline-block; padding:2px 9px; margin:1px 3px 1px 0; border-radius:999px;
   font-size:12px; font-weight:600; white-space:nowrap; vertical-align:middle;
 }
+/* --pill-c is a ConSurf conservation color (neighborPillHtml(), variant_
+   renderer.js) — score 5 ("average") is literal white. Mixing its BORDER
+   toward white the way the background/text do made that one pill's outline
+   disappear entirely against this panel's own white background: an
+   apparently blank gap in the list, not a missing residue — the actual bug
+   report. Mixing toward a light gray instead keeps every pill outlined
+   regardless of its own color, white included; for saturated colors the
+   result is indistinguishable from the old white-mix. */
 .sp-pill {
   background:color-mix(in srgb, var(--pill-c,#bbb) 16%, white);
-  border:1.5px solid color-mix(in srgb, var(--pill-c,#bbb) 45%, white);
+  border:1.5px solid color-mix(in srgb, var(--pill-c,#bbb) 45%, #ccc);
   color:color-mix(in srgb, var(--pill-c,#bbb) 68%, black);
 }
 .sp-pill-self { border-width:2px; font-weight:700; }
@@ -13030,6 +13038,18 @@ body.hide-cat-Somatic   [data-category="Somatic"],
 body.hide-cat-NoF       [data-category="NoF"],
 body.hide-cat-Other     [data-category="Other"],
 body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
+/* neighborPillHtml() (variant_renderer.js) reuses data-category on its
+   pills ONLY so a click can open the normal variant popup (openPopup()
+   reads it) — a nearby-residue pill isn't a Map tick or Table row and
+   shouldn't participate in the category-visibility toggles above, but the
+   attribute-selector rules just above match ANY element with that
+   attribute anywhere on the page. Without this override, a pill for a
+   variant whose category happens to be hidden right now (gnomADmis is off
+   by default) silently vanished — the actual "list shows very few/none"
+   bug report, unrelated to whether the residue is really within 5Å.
+   #structure-panel bumps specificity above the (also !important) rules
+   above, which only carry one class + one attribute selector. */
+#structure-panel .sp-neighbors [data-category] { display:inline-block !important; }
 
 </style>
 <script>
@@ -14203,7 +14223,17 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     var pop = window.__vpop;
     if (!pop) return;
     var anchor = document.createElement("div");
-    anchor.style.cssText = "position:fixed; left:" + clientX + "px; top:" + clientY + "px; width:0; height:0;";
+    // display:block !important: the global "body.hide-cat-X [data-category=X]
+    // { display:none !important }" rule (meant for Map ticks/Table rows)
+    // matches ANY element with that attribute — including this one, if the
+    // sphere's category happens to be hidden on the Map while still checked
+    // in the 3D picker (the two are independent — see renderAllVariants()).
+    // display:none here would zero out getBoundingClientRect() and break
+    // positionPopup() below; an !important inline style is the only thing
+    // that outranks an !important stylesheet rule regardless of selector
+    // specificity.
+    anchor.style.cssText = "position:fixed; left:" + clientX + "px; top:" + clientY +
+      "px; width:0; height:0; display:block !important;";
     anchor.setAttribute("data-protein", variant.protein);
     anchor.setAttribute("data-mutation", variant.label);
     anchor.setAttribute("data-category", variant.category);

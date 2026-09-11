@@ -378,12 +378,26 @@ td[data-pos] { cursor:pointer; }
 .sp-fs-btn:hover { background:#f2f3f5; }
 .sp-fs-btn.sp-fs-btn-active { background:#2b2f36; color:#fff; border-color:#2b2f36; }
 .sp-fs-btn.sp-fs-btn-active:hover { background:#2b2f36; }
+.sp-fs-btn:disabled { opacity:.4; cursor:not-allowed; }
+.sp-fs-btn:disabled:hover { background:#fff; }
 .sp-body { position:relative; flex:1; min-height:0; }
 .sp-status {
   position:absolute; top:1.2em; left:0; right:0; z-index:1;
   text-align:center; color:#888; font-size:.9em; pointer-events:none;
 }
-#sp-viewer { position:absolute; inset:0; }
+/* Compare (toggleCompare(), variant_renderer.js) splits this row into two
+   panes — #sp-viewer-pane-2 is display:none until then, so flex naturally
+   gives the one visible pane the full row width with no extra CSS needed
+   for the non-comparing case. */
+.sp-viewer-row { position:absolute; inset:0; display:flex; }
+.sp-viewer-pane { position:relative; flex:1; min-width:0; }
+.sp-viewer-pane + .sp-viewer-pane { border-left:1px solid #e2e2e2; }
+#sp-viewer, #sp-viewer-2 { position:absolute; inset:0; }
+.sp-pane-cap {
+  position:absolute; bottom:.6em; left:.6em; z-index:1; pointer-events:none;
+  background:rgba(30,30,34,.62); color:#fff; font-size:11px; font-weight:600;
+  padding:3px 9px; border-radius:999px;
+}
 .sp-clickhint {
   position:absolute; bottom:.7em; left:0; right:0; z-index:1;
   text-align:center; color:#9a9a9e; font-size:11px; pointer-events:none;
@@ -393,9 +407,32 @@ td[data-pos] { cursor:pointer; }
    display:none until the Nearby Residues button is actually clicked. */
 .sp-neighbors {
   flex:none; padding:.7em 1.1em; border-top:1px solid #eee;
-  font-size:13px; color:#444; line-height:1.6;
+  font-size:13px; color:#444; line-height:2.1;
 }
-.sp-neighbors b { color:#222; }
+/* Pills: colored by ConSurf conservation (--pill-c, set inline per pill —
+   neighborPillHtml(), variant_renderer.js), same color-mix technique as the
+   Table's .vtbl-cat/.vtbl-dom chips. A pill with a curated variant reuses
+   the Map's OWN .vlabel class + data-* attributes — setupPopup()'s existing
+   document-level click listener opens the normal variant popup for it with
+   no extra JS here, so this override only needs to undo .vlabel's
+   fixed-position-on-the-map styling (below), not reimplement the click. */
+.sp-pill, .sp-pill-none {
+  display:inline-block; padding:2px 9px; margin:1px 3px 1px 0; border-radius:999px;
+  font-size:12px; font-weight:600; white-space:nowrap; vertical-align:middle;
+}
+.sp-pill {
+  background:color-mix(in srgb, var(--pill-c,#bbb) 16%, white);
+  border:1.5px solid color-mix(in srgb, var(--pill-c,#bbb) 45%, white);
+  color:color-mix(in srgb, var(--pill-c,#bbb) 68%, black);
+}
+.sp-pill-self { border-width:2px; font-weight:700; }
+.sp-pill-none { color:#999; font-weight:400; background:none; }
+.sp-neighbors .vlabel.sp-pill {
+  position:static; transform:none; z-index:auto; cursor:pointer;
+  transition:filter .12s ease;
+}
+.sp-neighbors .vlabel.sp-pill:hover { filter:brightness(.94); }
+.sp-neighbors .vlabel.sp-pill::after { content:" ●"; font-size:8px; vertical-align:middle; opacity:.55; }
 .sp-foot {
   flex:none; padding:.6em 1.1em; border-top:1px solid #eee;
   font-size:15px; font-style:italic; color:#888; text-align:center;

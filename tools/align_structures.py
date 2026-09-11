@@ -22,6 +22,7 @@ file is untouched (it's the reference frame).
 
 Run from the project folder:  python3 tools/align_structures.py
 """
+import json
 import pathlib
 import numpy as np
 from Bio.PDB import PDBParser, PDBIO
@@ -33,6 +34,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 REF_PDB    = ROOT / "structures" / "SAMD9_AF.pdb"
 MOVE_PDB   = ROOT / "structures" / "SAMD9L_AF.pdb"
 OUT_PDB    = ROOT / "structures" / "SAMD9L_AF_aligned.pdb"
+OUT_MAP_JS = ROOT / "data_residue_map.js"
 
 OUTLIER_CUTOFF_A = 5.0   # post-fit CA distance beyond which a pair is dropped before refitting
 
@@ -113,6 +115,23 @@ def main():
     io.set_structure(structure)
     io.save(str(OUT_PDB))
     print(f"Wrote {OUT_PDB.relative_to(ROOT)}")
+
+    # Residue-number correspondence for the "Compare to SAMD9(L)" feature
+    # (variant_renderer.js) — the FULL sequence alignment (pairs, before the
+    # outlier-pruning above), not just the pruned core used for the rigid
+    # fit: pruning was about which pairs should influence the RIGID-BODY FIT,
+    # not about which residues have a sequence correspondent at all. A loop
+    # residue can be a perfectly good "analogous position" for comparison
+    # even if its CA didn't superpose tightly.
+    fwd, rev = {}, {}
+    for r, m in pairs:
+        fwd[ref_resnums[r]] = move_resnums[m]
+        rev[move_resnums[m]] = ref_resnums[r]
+    js = ("window.RESIDUE_MAP =\n" +
+          json.dumps({"SAMD9->SAMD9L": fwd, "SAMD9L->SAMD9": rev}, indent=0) + ";\n")
+    OUT_MAP_JS.write_text(js, encoding="utf-8")
+    print(f"Wrote {OUT_MAP_JS.relative_to(ROOT)}: {len(fwd)} SAMD9->SAMD9L, "
+          f"{len(rev)} SAMD9L->SAMD9 residue correspondences")
 
 
 if __name__ == "__main__":

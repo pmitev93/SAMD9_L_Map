@@ -40,11 +40,29 @@ patient/population variants.
 | `data_variants.js` | Every variant, one object each — base fields (protein, residue, label, effect) plus its popup details (paper, phenotype, method, gnomad) inline on the same object. |
 | `data_papers.js` | Paper repository — each paper stored once, referenced by a key. |
 | `data_overrides.js` | Manual label tweaks (nudge / line length). |
+| `data_residue_map.js` | SAMD9↔SAMD9L residue-number correspondence, for the 3D panel's "Compare" view. Generated — see below, don't hand-edit. |
 | `Conservation_Mutational_Landscape_Both.xlsx` | Master variant spreadsheet. |
+| `structures/` | AlphaFold models the 3D panel loads (`SAMD9_AF.pdb`, `SAMD9L_AF.pdb`) plus `SAMD9L_AF_aligned.pdb` — SAMD9L superposed onto SAMD9's frame. Generated — see below. |
 | `tools/` | Build scripts + the renderer/CSS that get embedded into `index.html`. |
 
-The three `data_*.js` files are **plain text you edit by hand**. After editing,
-just **refresh the page** — no build step needed.
+The `data_*.js` files are **plain text you edit by hand**. After editing,
+just **refresh the page** — no build step needed. `data_residue_map.js` is the
+one exception — it's generated, not hand-edited (see below).
+
+### Re-run the structure alignment
+Only needed if either AlphaFold model gets updated (`structures/SAMD9_AF.pdb` /
+`SAMD9L_AF.pdb`, re-downloaded from AlphaFold DB). Requires Python 3 with
+`biopython` and `numpy`:
+```
+python3 tools/align_structures.py
+```
+Superposes SAMD9L onto SAMD9 (sequence alignment → Kabsch/SVD fit → one round
+of outlier pruning so divergent loops don't skew it) and writes both
+`structures/SAMD9L_AF_aligned.pdb` (what the 3D panel actually loads for
+SAMD9L) and `data_residue_map.js` (the residue correspondence the panel's
+"Compare" button uses to find the analogous position on the other protein).
+Prints the achieved RMSD and pair count — worth a sanity glance after a
+re-run.
 
 ## How to…
 

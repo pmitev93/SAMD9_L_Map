@@ -812,12 +812,31 @@
   var loadedProtein = null;     // which protein's model is currently addModel()'d into it
   var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
   var structureColorMode = "conservation";   // "conservation" | "domain"
-  var structureBg = "black";                 // "black" | "white"
+  var structureBg = "white";                 // "black" | "white"
   var hasFramedView = false;    // true after the first-ever render — gates the one-time zoomTo
                                  // vs. every render after that (incl. switching protein) using
                                  // center(), so a zoom level the user set up survives a protein switch
   var isFullscreen = false;
   var panelWidthPct = 50;       // restored when exiting fullscreen
+
+  // ---- Compare: second, synced-camera viewer showing the OTHER protein at
+  // the analogous residue (data_residue_map.js, from tools/align_structures.py) ----
+  var compareMode = false;
+  var structureViewer2 = null;
+  var loadedProtein2 = null;
+  var currentResnum2 = null;
+
+  function otherProtein(protein) { return protein === "SAMD9" ? "SAMD9L" : "SAMD9"; }
+  // Residue-number correspondence is a byproduct of the SAME sequence
+  // alignment align_structures.py runs to superpose the two structures —
+  // exported alongside it as window.RESIDUE_MAP so this lookup is just a
+  // dictionary read, no alignment logic duplicated in the browser. Returns
+  // null for a position with no 1:1 correspondent (an indel column).
+  function analogousResidue(protein, resnum) {
+    var map = window.RESIDUE_MAP && window.RESIDUE_MAP[protein + "->" + otherProtein(protein)];
+    var mapped = map && map[resnum];
+    return mapped != null ? mapped : null;
+  }
 
   function load3Dmol() {
     if (window.$3Dmol) return Promise.resolve();
@@ -873,11 +892,21 @@
         segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
         '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
+        '<button type="button" class="sp-fs-btn" id="sp-compare-btn">Compare</button>' +
         '<button type="button" class="sp-fs-btn" id="sp-fs-btn">Fullscreen</button>' +
       "</div>" +
       '<div class="sp-body">' +
         '<div class="sp-status" id="sp-status"></div>' +
-        '<div id="sp-viewer"></div>' +
+        '<div class="sp-viewer-row" id="sp-viewer-row">' +
+          '<div class="sp-viewer-pane" id="sp-viewer-pane">' +
+            '<div id="sp-viewer"></div>' +
+            '<div class="sp-pane-cap" id="sp-pane-cap-1"></div>' +
+          "</div>" +
+          '<div class="sp-viewer-pane" id="sp-viewer-pane-2" style="display:none;">' +
+            '<div id="sp-viewer-2"></div>' +
+            '<div class="sp-pane-cap" id="sp-pane-cap-2"></div>' +
+          "</div>" +
+        "</div>" +
         '<div class="sp-clickhint" id="sp-clickhint">Click an atom on the structure to identify it</div>' +
       "</div>" +
       '<div class="sp-neighbors" id="sp-neighbors" style="display:none;"></div>' +
@@ -886,6 +915,7 @@
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
     panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
     panel.querySelector("#sp-neighbors-btn").addEventListener("click", toggleNeighbors);
+    panel.querySelector("#sp-compare-btn").addEventListener("click", toggleCompare);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
       if (!btn) return;
@@ -896,6 +926,7 @@
       else if (group === "bg") setStructureBackground(value);
     });
     setupDrag(panel.querySelector("#sp-drag"));
+    wireCompareSync();
   }
 
   function toggleFullscreen() {
@@ -917,6 +948,7 @@
       resizePending = false;
       structureViewer.resize();
       structureViewer.render();
+      if (structureViewer2) { structureViewer2.resize(); structureViewer2.render(); }
     });
   }
 
@@ -957,10 +989,16 @@
     applyStructureStyle(loadedProtein);
     if (currentResnum != null) highlightResidue(currentResnum);
     if (showingNeighbors) renderNeighbors(); else structureViewer.render();
+    if (compareMode && structureViewer2 && loadedProtein2) {
+      applyStructureStyle2(loadedProtein2);
+      if (currentResnum2 != null) highlightResidue2(currentResnum2);
+      structureViewer2.render();
+    }
   }
   function setStructureBackground(color) {
     structureBg = color;
     if (structureViewer) { structureViewer.setBackgroundColor(color); structureViewer.render(); }
+    if (structureViewer2) { structureViewer2.setBackgroundColor(color); structureViewer2.render(); }
   }
 
   // ---- Nearby residues (5A) + polar contacts ----
@@ -984,6 +1022,7 @@
   function clearNeighbors() {
     if (structureViewer && loadedProtein) {
       structureViewer.removeAllShapes();
+      structureViewer.removeAllLabels();
       applyStructureStyle(loadedProtein);
       if (currentResnum != null) highlightResidue(currentResnum);
       structureViewer.render();
@@ -997,17 +1036,47 @@
   // within POLAR_DISTANCE of an N/O atom on a DIFFERENT residue (backbone
   // atoms allowed on that other side — the "side chain" restriction in the
   // ask is about OUR residue's own side chain, not the partner's).
+  // Finds every curated variant at a residue (there can be more than one —
+  // e.g. R620Q and R620W both at 620) — used to decide whether a "nearby
+  // residue" pill (renderNeighbors, below) is clickable.
+  function variantsAt(protein, resnum) {
+    return DATA.filter(function (v) { return v.protein === protein && v.residue === resnum; });
+  }
+  // One pill: plain if this residue has no curated variant, or — reusing
+  // the SAME class + data-* attributes setData() puts on a Map tick/label —
+  // a real ".vlabel" if it does, so the page's EXISTING document-level click
+  // listener (setupPopup()) opens the normal variant popup for it with no
+  // extra wiring here. (Multiple variants at one residue: only the first is
+  // linked — a known simplification, rare in this dataset.)
+  function neighborPillHtml(protein, resnum, resn, isSelf) {
+    var score = conservationFor(protein, resnum);
+    var color = (score != null && CONSERVATION_COLORS[score]) || "#bbb";
+    var text = (AA_3TO1[resn] || resn) + resnum;
+    var variant = variantsAt(protein, resnum)[0];
+    var style = "--pill-c:" + color;
+    if (isSelf) return '<span class="sp-pill sp-pill-self" style="' + style + '">' + esc(text) + "</span>";
+    if (!variant) return '<span class="sp-pill" style="' + style + '">' + esc(text) + "</span>";
+    return '<span class="sp-pill vlabel" style="' + style + '" data-protein="' + esc(variant.protein) +
+      '" data-mutation="' + esc(variant.label) + '" data-category="' + esc(variant.category) +
+      '" data-origin="' + esc(variant.origin || "") + '" title="Click to view ' + esc(variant.label) + '">' +
+      esc(text) + "</span>";
+  }
+
   function renderNeighbors() {
     if (!structureViewer || !loadedProtein || currentResnum == null) return;
-    var resnum = currentResnum;
+    var protein = loadedProtein, resnum = currentResnum;
     var targetAtoms = structureViewer.selectedAtoms({ resi: resnum });
     if (!targetAtoms.length) return;
     var nearAtoms = structureViewer.selectedAtoms({ within: { distance: NEIGHBOR_RADIUS, sel: { resi: resnum } } })
       .filter(function (a) { return a.resi !== resnum; });
 
-    var nearbyResidues = {};
-    nearAtoms.forEach(function (a) { nearbyResidues[a.resi] = a.resn; });
-    var nearbyResnums = Object.keys(nearbyResidues).map(Number).sort(function (a, b) { return a - b; });
+    // One representative atom per nearby residue (prefer CA — a sensible,
+    // stable anchor point for that residue's in-scene label below).
+    var nearbyReps = {};
+    nearAtoms.forEach(function (a) {
+      if (!nearbyReps[a.resi] || a.atom === "CA") nearbyReps[a.resi] = a;
+    });
+    var nearbyResnums = Object.keys(nearbyReps).map(Number).sort(function (a, b) { return a - b; });
 
     var targetPolar = targetAtoms.filter(function (a) { return !BACKBONE_ATOMS[a.atom] && POLAR_ELEMS[a.elem]; });
     var nearPolar = nearAtoms.filter(function (a) { return POLAR_ELEMS[a.elem]; });
@@ -1022,34 +1091,52 @@
     });
     var polarResnums = Object.keys(polarResidues).map(Number).sort(function (a, b) { return a - b; });
 
-    applyStructureStyle(loadedProtein);
+    applyStructureStyle(protein);
     highlightResidue(resnum);
     structureViewer.removeAllShapes();
+    structureViewer.removeAllLabels();
     if (nearbyResnums.length) {
       structureViewer.addStyle({ resi: nearbyResnums }, { stick: { colorscheme: "Jmol", radius: .13 } });
     }
+    // addLine's dashed mode is a real WebGL line — most browsers/GPUs clamp
+    // gl.lineWidth to 1px regardless of the requested width, so it barely
+    // shows. addCylinder({dashed:true}) draws actual thin dashed CYLINDERS
+    // instead, genuinely thicker via `radius`, not subject to that clamp.
     lines.forEach(function (pair) {
-      structureViewer.addLine({
+      structureViewer.addCylinder({
         start: { x: pair[0].x, y: pair[0].y, z: pair[0].z },
         end:   { x: pair[1].x, y: pair[1].y, z: pair[1].z },
-        color: "yellow", dashed: true, linewidth: 2
+        radius: .045, dashed: true, dashLength: .25, gapLength: .2,
+        fromCap: false, toCap: false, color: "yellow"
       });
+    });
+    // In-scene labels for every nearby residue (not just polar partners) —
+    // same devicePixelRatio supersampling as onStructureAtomClick's label,
+    // so these read sharp too.
+    var dpr = window.devicePixelRatio || 1;
+    nearbyResnums.forEach(function (r) {
+      var rep = nearbyReps[r];
+      var lbl = structureViewer.addLabel((AA_3TO1[rep.resn] || rep.resn) + r, {
+        position: { x: rep.x, y: rep.y, z: rep.z },
+        backgroundColor: "#39424f", backgroundOpacity: .78,
+        fontColor: "white", fontSize: 11 * dpr, padding: 3 * dpr, borderThickness: 0
+      });
+      if (lbl && lbl.sprite && dpr !== 1) lbl.sprite.scale.set(1 / dpr, 1 / dpr, 1);
     });
     structureViewer.render();
 
-    var label = function (resi, resn) { return (AA_3TO1[resn] || resn) + resi; };
-    var selfLabel = label(resnum, targetAtoms[0].resn);
-    var nearbyText = nearbyResnums.length
-      ? nearbyResnums.map(function (r) { return label(r, nearbyResidues[r]); }).join(", ")
-      : "none";
-    var polarText = polarResnums.length
-      ? polarResnums.map(function (r) { return label(r, polarResidues[r]); }).join(", ")
-      : "none found";
+    var selfPill = neighborPillHtml(protein, resnum, targetAtoms[0].resn, true);
+    var nearbyPills = nearbyResnums.length
+      ? nearbyResnums.map(function (r) { return neighborPillHtml(protein, r, nearbyReps[r].resn, false); }).join("")
+      : '<span class="sp-pill-none">none</span>';
+    var polarPills = polarResnums.length
+      ? polarResnums.map(function (r) { return neighborPillHtml(protein, r, polarResidues[r], false); }).join("")
+      : '<span class="sp-pill-none">none found</span>';
     var text = document.getElementById("sp-neighbors");
     if (text) {
       text.innerHTML =
-        "<div><b>" + esc(selfLabel) + "</b> is in proximity to (within " + NEIGHBOR_RADIUS + "Å): " + esc(nearbyText) + "</div>" +
-        "<div>Its side chain forms polar interactions with: " + esc(polarText) + "</div>";
+        "<div>" + selfPill + " is in proximity to (within " + NEIGHBOR_RADIUS + "Å): " + nearbyPills + "</div>" +
+        "<div>Its side chain forms polar interactions with: " + polarPills + "</div>";
       text.style.display = "block";
     }
   }
@@ -1183,6 +1270,150 @@
       structureViewer.zoomTo({ resi: resnum });
     }
     structureViewer.render();
+
+    var cap1 = document.getElementById("sp-pane-cap-1");
+    if (cap1) cap1.textContent = protein + " — " + (AA_3TO1[targetAtoms0Resn(resnum)] || "") + resnum;
+    updateCompareButton(protein, resnum);
+    // Compare pane already open — keep it following the Map instead of
+    // making the user re-click Compare for every new residue. If this
+    // particular residue has no analogous position (an indel column),
+    // just exit rather than show a stale/wrong comparison.
+    if (compareMode) {
+      var analog = analogousResidue(protein, resnum);
+      if (analog != null) renderResidue2(otherProtein(protein), analog);
+      else exitCompare();
+    }
+  }
+  function targetAtoms0Resn(resnum) {
+    var a = structureViewer.selectedAtoms({ resi: resnum })[0];
+    return a ? a.resn : "";
+  }
+  function updateCompareButton(protein, resnum) {
+    var btn = document.getElementById("sp-compare-btn");
+    if (!btn) return;
+    var other = otherProtein(protein);
+    var analog = analogousResidue(protein, resnum);
+    btn.textContent = "Compare to " + other;
+    btn.disabled = analog == null;
+    btn.title = analog == null ? "No analogous position in " + other + " for this residue" : "";
+  }
+
+  // Same click-to-identify behavior as onStructureAtomClick, but for
+  // whichever viewer it's bound to — a factory instead of a second
+  // hand-copied function, since pane 2 (Compare) needs its own instance
+  // bound to structureViewer2, not the primary structureViewer.
+  function makeAtomClickHandler(viewer) {
+    return function (atom) {
+      if (!viewer) return;
+      var oneLetter = AA_3TO1[atom.resn] || atom.resn;
+      viewer.removeAllLabels();
+      var dpr = window.devicePixelRatio || 1;
+      var label = viewer.addLabel(oneLetter + atom.resi, {
+        position: { x: atom.x, y: atom.y, z: atom.z },
+        backgroundColor: "#1c1f26", backgroundOpacity: .85,
+        fontColor: "white", fontSize: 13 * dpr, padding: 4 * dpr, borderThickness: 0
+      });
+      if (label && label.sprite && dpr !== 1) label.sprite.scale.set(1 / dpr, 1 / dpr, 1);
+      viewer.render();
+    };
+  }
+  function applyStructureStyle2(protein) {
+    structureViewer2.setStyle({}, { cartoon: { colorfunc: function (atom) { return residueColor(protein, atom.resi); } } });
+    structureViewer2.setClickable({}, true, makeAtomClickHandler(structureViewer2));
+  }
+  function highlightResidue2(resnum) {
+    currentResnum2 = resnum;
+    structureViewer2.addStyle({ resi: resnum },
+      { stick: { colorscheme: "Jmol", radius: .16 }, sphere: { colorscheme: "Jmol", scale: .22 } });
+  }
+  // Pane 2's camera is never independently framed — it just COPIES pane 1's
+  // current view (setView, below). Both structures already share one
+  // coordinate frame (the superposition align_structures.py computed), so
+  // mirroring the raw camera state is what actually lands on "the same
+  // viewing angle of the corresponding fold", more robust than re-deriving
+  // a center point from the (sequence-based, not structure-based) residue
+  // map — that map is only used to pick WHICH residue to highlight here.
+  function renderResidue2(protein, resnum) {
+    var el = document.getElementById("sp-viewer-2");
+    if (!structureViewer2) structureViewer2 = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
+    if (loadedProtein2 !== protein) {
+      structureViewer2.removeAllModels();
+      structureViewer2.addModel(structureText[protein], "pdb");
+      loadedProtein2 = protein;
+    }
+    structureViewer2.removeAllLabels();
+    applyStructureStyle2(protein);
+    highlightResidue2(resnum);
+    structureViewer2.resize();
+    structureViewer2.setView(structureViewer.getView());
+    structureViewer2.render();
+    var resn = structureViewer2.selectedAtoms({ resi: resnum })[0];
+    var cap2 = document.getElementById("sp-pane-cap-2");
+    if (cap2) cap2.textContent = protein + " — " + (resn ? (AA_3TO1[resn.resn] || resn.resn) : "") + resnum;
+  }
+
+  function toggleCompare() {
+    if (compareMode) { exitCompare(); return; }
+    if (!loadedProtein || currentResnum == null) return;
+    var other = otherProtein(loadedProtein);
+    var otherResnum = analogousResidue(loadedProtein, currentResnum);
+    if (otherResnum == null) return;   // button is disabled in this case (updateCompareButton) — belt and suspenders
+    compareMode = true;
+    document.getElementById("sp-compare-btn").classList.add("sp-fs-btn-active");
+    document.getElementById("sp-viewer-pane-2").style.display = "block";
+    resizeStructureViewer();   // pane 1 just shrank from 100% to 50% width
+    setStructureStatus("Loading " + other + " structure…");
+    load3Dmol()
+      .then(function () { return fetchStructure(other); })
+      .then(function () {
+        setStructureStatus(null);
+        renderResidue2(other, otherResnum);
+      })
+      .catch(function (err) {
+        setStructureStatus("Couldn't load the comparison structure (" + err.message + ").");
+        exitCompare();
+      });
+  }
+  function exitCompare() {
+    compareMode = false;
+    var btn = document.getElementById("sp-compare-btn");
+    if (btn) btn.classList.remove("sp-fs-btn-active");
+    var pane2 = document.getElementById("sp-viewer-pane-2");
+    if (pane2) pane2.style.display = "none";
+    resizeStructureViewer();   // pane 1 back to the full row width
+  }
+
+  // Both viewers already share one coordinate frame (superposition), so
+  // "synced rotation" is just: on any mouse/touch/wheel interaction with
+  // EITHER viewer's canvas, copy its current view onto the other. 3Dmol
+  // updates the camera synchronously inside ITS OWN listener on the same
+  // element (attached first, during createViewer) — by the time this
+  // listener runs, getView() already reflects that interaction.
+  // Deliberately NOT requestAnimationFrame-throttled: this page already
+  // learned that lesson once (the category-toggle redesign hit real jank
+  // from rAF-dependent timing) — a plain synchronous copy on every event
+  // costs one extra render() per input event, no worse than what 3Dmol's
+  // OWN drag handler is already doing on that same element, and it can't
+  // go stale or get silently dropped the way an rAF callback can. No
+  // reentrancy guard needed either: copying a view onto the OTHER canvas
+  // via setView()+render() doesn't itself dispatch a mouse/wheel DOM event,
+  // so there's no ping-pong loop to guard against.
+  function syncFromPane1() {
+    if (!compareMode || !structureViewer || !structureViewer2) return;
+    structureViewer2.setView(structureViewer.getView());
+    structureViewer2.render();
+  }
+  function syncFromPane2() {
+    if (!compareMode || !structureViewer || !structureViewer2) return;
+    structureViewer.setView(structureViewer2.getView());
+    structureViewer.render();
+  }
+  function wireCompareSync() {
+    var v1 = document.getElementById("sp-viewer"), v2 = document.getElementById("sp-viewer-2");
+    ["mousemove", "wheel", "touchmove"].forEach(function (evt) {
+      v1.addEventListener(evt, syncFromPane1, { passive: true });
+      v2.addEventListener(evt, syncFromPane2, { passive: true });
+    });
   }
 
   // Click ANY residue box on the Map (curated variant or not — this is
@@ -1761,7 +1992,7 @@
   function boot() {
     updateLastUpdatedDate();
     loadGnomadLive();   // fires in the background; popups just check GNOMAD_LIVE whenever opened
-    var files = ["data_variants.js", "data_overrides.js", "data_papers.js"];
+    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_residue_map.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;
     files.forEach(function (f) {

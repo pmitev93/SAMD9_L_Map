@@ -41,13 +41,15 @@ patient/population variants.
 | `data_papers.js` | Paper repository — each paper stored once, referenced by a key. |
 | `data_overrides.js` | Manual label tweaks (nudge / line length). |
 | `data_residue_map.js` | SAMD9↔SAMD9L residue-number correspondence, for the 3D panel's "Compare" view. Generated — see below, don't hand-edit. |
+| `data_site_distances.js` | Per-variant distance (Å) to the nearest known functional site, for the Table's "Nearest functional site" column. Generated — see below, don't hand-edit. |
 | `Conservation_Mutational_Landscape_Both.xlsx` | Master variant spreadsheet. |
-| `structures/` | AlphaFold models the 3D panel loads (`SAMD9_AF.pdb`, `SAMD9L_AF.pdb`) plus `SAMD9L_AF_aligned.pdb` — SAMD9L superposed onto SAMD9's frame. Generated — see below. |
+| `structures/` | AlphaFold models the 3D panel loads (`SAMD9_AF.pdb`, `SAMD9L_AF.pdb`) plus `SAMD9L_AF_aligned.pdb` — SAMD9L superposed onto SAMD9's frame. Generated — see below. `structures/cryoem_ref/` holds the real SAMD9 cryo-EM structures (RCSB 9ZJR, 9ZJU) the functional-site distances are grounded in — reference data, not something the page itself loads. |
 | `tools/` | Build scripts + the renderer/CSS that get embedded into `index.html`. |
 
 The `data_*.js` files are **plain text you edit by hand**. After editing,
-just **refresh the page** — no build step needed. `data_residue_map.js` is the
-one exception — it's generated, not hand-edited (see below).
+just **refresh the page** — no build step needed. `data_residue_map.js` and
+`data_site_distances.js` are the exception — both generated, not hand-edited
+(see below).
 
 ### Re-run the structure alignment
 Only needed if either AlphaFold model gets updated (`structures/SAMD9_AF.pdb` /
@@ -63,6 +65,25 @@ SAMD9L) and `data_residue_map.js` (the residue correspondence the panel's
 "Compare" button uses to find the analogous position on the other protein).
 Prints the achieved RMSD and pair count — worth a sanity glance after a
 re-run.
+
+### Re-run the functional-site distances
+Only needed if `data_variants.js` gains variants at residues not covered
+before, or the reference cryo-EM structures in `structures/cryoem_ref/` get
+replaced (e.g. once SAMD9L's own cryo-EM structure is public — see that
+script's header for what changes then). Depends on `align_structures.py`
+having already been run (uses its `data_residue_map.js` output). Requires
+the same `biopython`/`numpy`:
+```
+python3 tools/functional_sites.py
+```
+For every curated variant, finds the distance (in that protein's AlphaFold
+model) to the nearest of two site types — both defined from the REAL SAMD9
+cryo-EM structures, not guessed: the nucleotide pocket (residues near the
+actual bound ATP/Mg density) and the dimer interface (residues near the
+other chain in the symmetric dimer). SAMD9L has no public cryo-EM structure
+yet, so its site residues are the SAMD9 ones carried across via
+`data_residue_map.js` — a homology transfer, flagged as such in the script's
+own comments, worth re-deriving once SAMD9L's structure clears review.
 
 ## How to…
 

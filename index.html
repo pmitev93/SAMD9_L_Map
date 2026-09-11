@@ -13325,6 +13325,17 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     return m ? +m[1] : null;
   }
 
+  // Distance (Å, in that protein's AlphaFold model) from a curated variant's
+  // residue to the nearest known functional site — precomputed offline from
+  // the REAL SAMD9 cryo-EM structures (tools/functional_sites.py), not
+  // guessed; see that script's own header for exactly how, and for the
+  // SAMD9L caveat (homology-transferred, no public SAMD9L structure yet).
+  // { distance, site } or null (e.g. an alignment-gap residue with no
+  // AlphaFold coordinate at all).
+  function siteFor(protein, residue) {
+    return (window.SITE_DISTANCES && window.SITE_DISTANCES[protein + ":" + residue]) || null;
+  }
+
   // ---- data: read from the data_*.js globals (loaded via <script src>, which
   //      works even on a double-clicked file). Edit a data_*.js + refresh = live.
   var DATA = [], OV = {}, PAPERS = {}, DETAILS = {};
@@ -13661,7 +13672,16 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     document.addEventListener("click", function (e) {
       var m = e.target.closest && e.target.closest(".vtick,.vlabel");
       if (m) { e.stopPropagation(); openPopup(m, pop); }
-      else if (!(e.target.closest && e.target.closest("#variant-popup"))) hide(pop);
+      // A variant sphere in the 3D viewer (renderAllVariants, below) opens
+      // its OWN popup via a 3Dmol shape callback that fires on the
+      // underlying 'mouseup', one tick before the browser's own synthetic
+      // 'click' on the same interaction reaches here — without this
+      // exclusion that later click would immediately re-close what the
+      // callback just opened. Any other click inside either viewer (empty
+      // space, a plain atom, a drag) just leaves the popup alone rather
+      // than closing it.
+      else if (!(e.target.closest && (e.target.closest("#variant-popup") ||
+                 e.target.closest("#sp-viewer, #sp-viewer-2")))) hide(pop);
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(pop); });
     window.addEventListener("resize", function () { hide(pop); });
@@ -13889,6 +13909,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
         segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
         '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
+        '<button type="button" class="sp-fs-btn" id="sp-allvariants-btn">All Variants</button>' +
         '<button type="button" class="sp-fs-btn" id="sp-compare-btn">Compare</button>' +
         '<button type="button" class="sp-fs-btn" id="sp-fs-btn">Fullscreen</button>' +
       "</div>" +
@@ -13912,6 +13933,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
     panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
     panel.querySelector("#sp-neighbors-btn").addEventListener("click", toggleNeighbors);
+    panel.querySelector("#sp-allvariants-btn").addEventListener("click", toggleAllVariants);
     panel.querySelector("#sp-compare-btn").addEventListener("click", toggleCompare);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
@@ -14013,6 +14035,10 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   function toggleNeighbors() {
     showingNeighbors = !showingNeighbors;
     document.getElementById("sp-neighbors-btn").classList.toggle("sp-fs-btn-active", showingNeighbors);
+    // Mutually exclusive with "All Variants" — both draw into the same
+    // addShape/addLabel buckets on the SAME viewer, so showing both at once
+    // would just be visual noise on top of each other, not a combined view.
+    if (showingNeighbors && showingAllVariants) toggleAllVariants();
     if (showingNeighbors) renderNeighbors(); else clearNeighbors();
   }
 
@@ -14026,6 +14052,74 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     }
     var text = document.getElementById("sp-neighbors");
     if (text) { text.innerHTML = ""; text.style.display = "none"; }
+  }
+
+  // ---- All curated variants on the structure at once, colored like the Map ----
+  var showingAllVariants = false;
+
+  function toggleAllVariants() {
+    showingAllVariants = !showingAllVariants;
+    document.getElementById("sp-allvariants-btn").classList.toggle("sp-fs-btn-active", showingAllVariants);
+    if (showingAllVariants && showingNeighbors) toggleNeighbors();
+    if (showingAllVariants) renderAllVariants(); else clearAllVariants();
+  }
+
+  function clearAllVariants() {
+    if (structureViewer && loadedProtein) {
+      structureViewer.removeAllShapes();
+      applyStructureStyle(loadedProtein);
+      if (currentResnum != null) highlightResidue(currentResnum);
+      structureViewer.render();
+    }
+  }
+
+  // A sphere per curated variant on the CURRENT protein (its own category
+  // color — same CFG the Map/legend use), skipping whatever categories are
+  // currently hidden via the category toggles so this stays consistent with
+  // the Map/Table rather than a separate, disconnected filter state. Each
+  // sphere is independently clickable — opens the SAME popup a Map tick
+  // would (openVariantPopupAt, below), not a simplified stand-in.
+  function renderAllVariants() {
+    if (!structureViewer || !loadedProtein) return;
+    var protein = loadedProtein;
+    structureViewer.removeAllShapes();
+    DATA.filter(function (v) {
+      return v.protein === protein && !document.body.classList.contains("hide-cat-" + v.category);
+    }).forEach(function (v) {
+      var atom = structureViewer.selectedAtoms({ resi: v.residue, atom: "CA" })[0];
+      if (!atom) return;
+      var color = (CFG[v.category] || CFG.Other).color;
+      structureViewer.addSphere({
+        center: { x: atom.x, y: atom.y, z: atom.z }, radius: .9, color: color,
+        clickable: true,
+        callback: function (shape, viewer, event) {
+          if (event && event.stopPropagation) event.stopPropagation();
+          openVariantPopupAt(v, event ? event.clientX : window.innerWidth / 2, event ? event.clientY : window.innerHeight / 2);
+        }
+      });
+    });
+    structureViewer.render();
+  }
+
+  // Opens the exact same popup a Map tick/label does (openPopup, setupPopup
+  // above), for a click that didn't originate on a real DOM marker — a
+  // variant sphere in the 3D view. openPopup only needs an element with the
+  // right data-* attributes and a getBoundingClientRect(); a zero-size,
+  // invisible div positioned at the click's screen coordinates satisfies
+  // that with no changes to openPopup itself, then is discarded — openPopup
+  // reads it synchronously (position, attributes) and never needs it again.
+  function openVariantPopupAt(variant, clientX, clientY) {
+    var pop = window.__vpop;
+    if (!pop) return;
+    var anchor = document.createElement("div");
+    anchor.style.cssText = "position:fixed; left:" + clientX + "px; top:" + clientY + "px; width:0; height:0;";
+    anchor.setAttribute("data-protein", variant.protein);
+    anchor.setAttribute("data-mutation", variant.label);
+    anchor.setAttribute("data-category", variant.category);
+    anchor.setAttribute("data-origin", variant.origin || "");
+    document.body.appendChild(anchor);
+    openPopup(anchor, pop);
+    anchor.remove();
   }
 
   // Residues with any atom within NEIGHBOR_RADIUS of the selected residue,
@@ -14153,18 +14247,34 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
 
   // Entry point: setupResidueClick() below calls this with whatever residue
   // the user just clicked on the Map.
+  // Nearby Residues / All Variants / Compare all read atoms straight off
+  // structureViewer's CURRENTLY LOADED model — clickable the instant the
+  // panel opens, but a click before that model finishes loading (the very
+  // first residue of a session, or a slow connection) would silently do
+  // nothing (0 atoms match, 0 markers drawn, no error). Disabling them for
+  // the loading window is simpler than making each one queue/retry.
+  function setActionButtonsEnabled(enabled) {
+    ["sp-neighbors-btn", "sp-allvariants-btn", "sp-compare-btn"].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.disabled = !enabled;
+    });
+  }
+
   function showResidueIn3D(protein, resnum, label) {
     buildStructurePanel();
     document.getElementById("structure-panel").classList.add("sp-open");
     document.body.classList.add("structure-panel-open");
     document.getElementById("sp-title").textContent = protein + " — " + (label || ("residue " + resnum));
     setStructureStatus("Loading " + protein + " structure…");
+    setActionButtonsEnabled(false);
 
     load3Dmol()
       .then(function () { return fetchStructure(protein); })
       .then(function () {
         setStructureStatus(null);
         renderResidue(protein, resnum);
+        setActionButtonsEnabled(true);
+        updateCompareButton(protein, resnum);   // may re-disable Compare specifically (no analog at this residue)
       })
       .catch(function (err) {
         setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
@@ -14237,10 +14347,13 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       loadedProtein = protein;
     }
     structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
-    structureViewer.removeAllShapes();   // clear any prior residue's "nearby" polar-contact lines
+    structureViewer.removeAllShapes();   // clear any prior residue's "nearby" lines / "all variants" spheres
     showingNeighbors = false;
+    showingAllVariants = false;
     var neighborsBtn = document.getElementById("sp-neighbors-btn");
     if (neighborsBtn) neighborsBtn.classList.remove("sp-fs-btn-active");
+    var allVariantsBtn = document.getElementById("sp-allvariants-btn");
+    if (allVariantsBtn) allVariantsBtn.classList.remove("sp-fs-btn-active");
     var neighborsText = document.getElementById("sp-neighbors");
     if (neighborsText) { neighborsText.innerHTML = ""; neighborsText.style.display = "none"; }
     applyStructureStyle(protein);
@@ -14561,18 +14674,23 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
     { key: "variant",      label: "Variant",             width: 130 },
     { key: "conservation", label: 'Conservation<br><span class="vtbl-th-sub">score</span>', width: 100 },
     { key: "domain",       label: "Domain",              width: 260 },
+    { key: "site",         label: 'Nearest functional<br><span class="vtbl-th-sub">site</span>', width: 170 },
     { key: "category",     label: "Category",           width: 210 },
     { key: "method",       label: "Method",              width: 150 },
     { key: "gnomad",       label: 'gnomAD<br><span class="vtbl-th-sub">frequency</span>',   width: 120 },
     { key: "hom",          label: 'gnomAD<br><span class="vtbl-th-sub">homozygotes</span>', width: 130 },
     { key: "source",       label: "Source" }
   ];
-  var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
+  var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Nearest functional site", "Distance (Å)", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
   var SORT_VAL = {
     protein:      function (r) { return r.protein; },
     variant:      function (r) { return r.label.toLowerCase(); },
     conservation: function (r) { return r.conservation == null ? -1 : r.conservation; },
     domain:       function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
+    // No site data (residue not found in the AlphaFold model — an
+    // alignment-gap position) sorts to the end in both directions: always
+    // Infinity, never negative, so ascending doesn't put "unknown" first.
+    site:         function (r) { return r.site ? r.site.distance : Infinity; },
     category:     function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
     method:       function (r) { return (r.method || "").toLowerCase(); },
     gnomad:       function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
@@ -14643,6 +14761,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
         protein: v.protein, residue: v.residue, label: v.label, category: v.category,
         domain: dom.name, domainKey: dom.key,
         conservation: conservationFor(v.protein, v.residue),
+        site: siteFor(v.protein, v.residue),
         method: d && d.method,
         gnomadAF: gc.af, gnomadText: gc.text, gnomadHom: gc.hom,
         sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
@@ -14698,12 +14817,16 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
       var consCell = r.conservation != null
         ? '<span class="cs-box vtbl-cons Score' + r.conservation + '">' + r.conservation + "</span>"
         : "—";
+      var siteCell = r.site
+        ? r.site.distance + " Å<div class=\"vtbl-pmid\">" + esc(r.site.site) + "</div>"
+        : "—";
       return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '" data-domain="' + esc(r.domain) +
         '" data-conservation="' + (r.conservation == null ? "" : r.conservation) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
         "<td>" + consCell + "</td>" +
         '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
+        "<td>" + siteCell + "</td>" +
         '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         // <wbr> (a soft break hint) let the browser's greedy line-fill still
         // choose to break at the LATER space instead — "Viral infection/flow"
@@ -14880,6 +15003,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   function exportRowValues(r) {
     return [
       r.protein, r.label, r.conservation != null ? r.conservation : "", r.domain,
+      r.site ? r.site.site : "", r.site ? r.site.distance : "",
       (CFG[r.category] || CFG.Other).legend.replace(" (unannotated)", ""),
       r.method || "", r.gnomadText, r.gnomadHom != null ? r.gnomadHom : "",
       r.sourceTitle || "", r.pmid || ""
@@ -14941,10 +15065,11 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
         cell(v[0]) + cell(v[1]) +
         cell(v[2], null, r.conservation != null ? "Number" : "String") +
         cell(v[3], "dom_" + r.domainKey) +
-        cell(v[4], "cat_" + r.category) +
-        cell(v[5]) + cell(v[6]) +
-        cell(v[7], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
-        cell(v[8]) + cell(v[9]) +
+        cell(v[4]) + cell(v[5], null, r.site ? "Number" : "String") +
+        cell(v[6], "cat_" + r.category) +
+        cell(v[7]) + cell(v[8]) +
+        cell(v[9], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
+        cell(v[10]) + cell(v[11]) +
         "</Row>";
     }).join("");
     return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>' +
@@ -14989,7 +15114,7 @@ body.hide-cat-gnomADmis [data-category="gnomADmis"] { display:none !important; }
   function boot() {
     updateLastUpdatedDate();
     loadGnomadLive();   // fires in the background; popups just check GNOMAD_LIVE whenever opened
-    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_residue_map.js"];
+    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_residue_map.js", "data_site_distances.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;
     files.forEach(function (f) {

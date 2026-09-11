@@ -380,6 +380,22 @@ td[data-pos] { cursor:pointer; }
 .sp-fs-btn.sp-fs-btn-active:hover { background:#2b2f36; }
 .sp-fs-btn:disabled { opacity:.4; cursor:not-allowed; }
 .sp-fs-btn:disabled:hover { background:#fff; }
+/* All Variants' category picker — same dropdown-panel pattern as the
+   Table's Domain/Conservation multi-selects (.vtbl-domain-panel), just
+   scoped to the 3D panel and its own independent state
+   (structureVariantCats, variant_renderer.js) rather than the Map's
+   category toggles. */
+.sp-av-wrap { position:relative; }
+.sp-av-panel {
+  position:absolute; top:calc(100% + 6px); left:0; z-index:20; width:230px;
+  background:#fff; border:1px solid rgba(120,140,175,.35); border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12); padding:.5em;
+}
+.sp-av-panel label {
+  display:flex; align-items:center; gap:.6em; padding:.3em .4em; border-radius:7px;
+  font-size:.85em; cursor:pointer; white-space:nowrap;
+}
+.sp-av-panel label:hover { background:rgba(90,90,95,.08); }
 .sp-body { position:relative; flex:1; min-height:0; }
 .sp-status {
   position:absolute; top:1.2em; left:0; right:0; z-index:1;
@@ -388,10 +404,19 @@ td[data-pos] { cursor:pointer; }
 /* Compare (toggleCompare(), variant_renderer.js) splits this row into two
    panes — #sp-viewer-pane-2 is display:none until then, so flex naturally
    gives the one visible pane the full row width with no extra CSS needed
-   for the non-comparing case. */
+   for the non-comparing case.
+   Pane 1 (#sp-viewer) is always whichever protein the user actually
+   CLICKED, but the ask is SAMD9 always visually left / SAMD9L always
+   visually right — .sp-swap-panes (toggled in toggleCompare() when pane 1
+   holds SAMD9L) reorders them visually via flex `order` without moving the
+   actual $3Dmol viewer instances between containers. The divider border
+   tracks whichever pane is CURRENTLY on the right (order:2), not DOM
+   order, so it stays on the shared inner edge either way. */
 .sp-viewer-row { position:absolute; inset:0; display:flex; }
-.sp-viewer-pane { position:relative; flex:1; min-width:0; }
-.sp-viewer-pane + .sp-viewer-pane { border-left:1px solid #e2e2e2; }
+.sp-viewer-pane { position:relative; flex:1; min-width:0; order:1; }
+#sp-viewer-pane-2 { order:2; border-left:1px solid #e2e2e2; }
+.sp-viewer-row.sp-swap-panes #sp-viewer-pane { order:2; border-left:1px solid #e2e2e2; }
+.sp-viewer-row.sp-swap-panes #sp-viewer-pane-2 { order:1; border-left:0; }
 #sp-viewer, #sp-viewer-2 { position:absolute; inset:0; }
 .sp-pane-cap {
   position:absolute; bottom:.6em; left:.6em; z-index:1; pointer-events:none;
@@ -402,6 +427,12 @@ td[data-pos] { cursor:pointer; }
   position:absolute; bottom:.7em; left:0; right:0; z-index:1;
   text-align:center; color:#9a9a9e; font-size:11px; pointer-events:none;
 }
+/* In Compare, the (whole-body-width, centered) hint sits right where the
+   RIGHT pane's own bottom-left caption pill is (that pill's left:.6em
+   lands near the panel's horizontal center once split in two) — the two
+   overlapped. Each pane's caption already says which protein it is; the
+   generic hint doesn't add anything a split view still needs. */
+#structure-panel.sp-comparing .sp-clickhint { display:none; }
 /* "T50 is in proximity to..." / "...forms polar interactions with..." —
    toggleNeighbors()/renderNeighbors() (variant_renderer.js). Empty +
    display:none until the Nearby Residues button is actually clicked. */
@@ -409,6 +440,13 @@ td[data-pos] { cursor:pointer; }
   flex:none; padding:.7em 1.1em; border-top:1px solid #eee;
   font-size:13px; color:#444; line-height:2.1;
 }
+/* In Compare, renderNeighbors() computes for both panes — one heading per
+   protein so the two lists don't read as one merged one. */
+.sp-nb-protein {
+  font-weight:700; font-size:.78em; text-transform:uppercase; letter-spacing:.06em;
+  color:#9a9a9e; margin-top:.6em;
+}
+.sp-nb-protein:first-child { margin-top:0; }
 /* Pills: colored by ConSurf conservation (--pill-c, set inline per pill —
    neighborPillHtml(), variant_renderer.js), same color-mix technique as the
    Table's .vtbl-cat/.vtbl-dom chips. A pill with a curated variant reuses

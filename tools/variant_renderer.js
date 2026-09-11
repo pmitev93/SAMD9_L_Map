@@ -912,7 +912,10 @@
         segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
         '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
-        '<button type="button" class="sp-fs-btn" id="sp-allvariants-btn">All Variants</button>' +
+        '<div class="sp-av-wrap" id="sp-av-wrap">' +
+          '<button type="button" class="sp-fs-btn" id="sp-allvariants-btn">All Variants ▾</button>' +
+          '<div class="sp-av-panel" id="sp-av-panel" hidden></div>' +
+        "</div>" +
         '<button type="button" class="sp-fs-btn" id="sp-compare-btn">Compare</button>' +
         '<button type="button" class="sp-fs-btn" id="sp-fs-btn">Fullscreen</button>' +
       "</div>" +
@@ -936,7 +939,12 @@
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
     panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
     panel.querySelector("#sp-neighbors-btn").addEventListener("click", toggleNeighbors);
-    panel.querySelector("#sp-allvariants-btn").addEventListener("click", toggleAllVariants);
+    panel.querySelector("#sp-allvariants-btn").addEventListener("click", function (e) {
+      e.stopPropagation();
+      document.getElementById("sp-av-panel").toggleAttribute("hidden");
+    });
+    panel.querySelector("#sp-av-panel").innerHTML = avPanelHtml();
+    panel.querySelector("#sp-av-panel").addEventListener("change", onAllVariantsCategoryChange);
     panel.querySelector("#sp-compare-btn").addEventListener("click", toggleCompare);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
@@ -949,6 +957,12 @@
     });
     setupDrag(panel.querySelector("#sp-drag"));
     wireCompareSync();
+    document.addEventListener("click", function (e) {
+      var avPanel = document.getElementById("sp-av-panel");
+      if (avPanel && !avPanel.hasAttribute("hidden") && !e.target.closest("#sp-av-wrap")) {
+        avPanel.setAttribute("hidden", "");
+      }
+    });
   }
 
   function toggleFullscreen() {
@@ -1041,7 +1055,7 @@
     // Mutually exclusive with "All Variants" — both draw into the same
     // addShape/addLabel buckets on the SAME viewer, so showing both at once
     // would just be visual noise on top of each other, not a combined view.
-    if (showingNeighbors && showingAllVariants) toggleAllVariants();
+    if (showingNeighbors && showingAllVariants()) { resetAllVariants(); clearAllVariants(); }
     if (showingNeighbors) renderNeighbors(); else clearNeighbors();
   }
 
@@ -1053,18 +1067,59 @@
       if (currentResnum != null) highlightResidue(currentResnum);
       structureViewer.render();
     }
+    // In Compare, Nearby Residues computes for BOTH panes (renderNeighbors,
+    // below) — clearing has to undo both, not just pane 1.
+    if (structureViewer2 && loadedProtein2) {
+      structureViewer2.removeAllShapes();
+      structureViewer2.removeAllLabels();
+      applyStructureStyle2(loadedProtein2);
+      if (currentResnum2 != null) highlightResidue2(currentResnum2);
+      structureViewer2.render();
+    }
     var text = document.getElementById("sp-neighbors");
     if (text) { text.innerHTML = ""; text.style.display = "none"; }
   }
 
   // ---- All curated variants on the structure at once, colored like the Map ----
-  var showingAllVariants = false;
-
-  function toggleAllVariants() {
-    showingAllVariants = !showingAllVariants;
-    document.getElementById("sp-allvariants-btn").classList.toggle("sp-fs-btn-active", showingAllVariants);
-    if (showingAllVariants && showingNeighbors) toggleNeighbors();
-    if (showingAllVariants) renderAllVariants(); else clearAllVariants();
+  // Independent of the Map's OWN category toggles — this is its own
+  // dedicated picker (the ask was "let the user select which ones they
+  // want" specifically for the 3D view, not just inherit whatever's
+  // currently shown/hidden on the Map). "Showing" is derived, not a
+  // separate flag: true whenever at least one category is checked.
+  var structureVariantCats = null;
+  function initStructureVariantCats() {
+    if (structureVariantCats) return;
+    structureVariantCats = {};
+    Object.keys(CFG).forEach(function (cat) { structureVariantCats[cat] = CFG[cat].on !== false; });
+  }
+  function showingAllVariants() {
+    initStructureVariantCats();
+    return Object.keys(structureVariantCats).some(function (c) { return structureVariantCats[c]; });
+  }
+  function avPanelHtml() {
+    initStructureVariantCats();
+    return Object.keys(CFG).map(function (cat) {
+      return '<label><input type="checkbox" data-av-cat="' + cat + '" ' + (structureVariantCats[cat] ? "checked" : "") + ">" +
+        '<span style="--vt-c:' + CFG[cat].color + '">' + esc(CFG[cat].legend) + "</span></label>";
+    }).join("");
+  }
+  function onAllVariantsCategoryChange(e) {
+    if (!e.target.matches('input[data-av-cat]')) return;
+    structureVariantCats[e.target.getAttribute("data-av-cat")] = e.target.checked;
+    var active = showingAllVariants();
+    document.getElementById("sp-allvariants-btn").classList.toggle("sp-fs-btn-active", active);
+    if (active && showingNeighbors) toggleNeighbors();
+    if (active) renderAllVariants(); else clearAllVariants();
+  }
+  // Resets the picker to its default (GoF+LoF, matching CFG's own on:true
+  // defaults) and closes/clears it — called wherever a fresh residue pick
+  // already resets Nearby Residues, so the two stay in sync.
+  function resetAllVariants() {
+    structureVariantCats = null;
+    var panel = document.getElementById("sp-av-panel");
+    if (panel) panel.innerHTML = avPanelHtml();
+    var btn = document.getElementById("sp-allvariants-btn");
+    if (btn) btn.classList.remove("sp-fs-btn-active");
   }
 
   function clearAllVariants() {
@@ -1076,18 +1131,16 @@
     }
   }
 
-  // A sphere per curated variant on the CURRENT protein (its own category
-  // color — same CFG the Map/legend use), skipping whatever categories are
-  // currently hidden via the category toggles so this stays consistent with
-  // the Map/Table rather than a separate, disconnected filter state. Each
-  // sphere is independently clickable — opens the SAME popup a Map tick
-  // would (openVariantPopupAt, below), not a simplified stand-in.
+  // A sphere per curated variant on the CURRENT protein, in a category
+  // checked in the picker above (its own CFG color — same as the Map/
+  // legend). Each sphere is independently clickable — opens the SAME popup
+  // a Map tick would (openVariantPopupAt, below), not a simplified stand-in.
   function renderAllVariants() {
     if (!structureViewer || !loadedProtein) return;
     var protein = loadedProtein;
     structureViewer.removeAllShapes();
     DATA.filter(function (v) {
-      return v.protein === protein && !document.body.classList.contains("hide-cat-" + v.category);
+      return v.protein === protein && structureVariantCats[v.category];
     }).forEach(function (v) {
       var atom = structureViewer.selectedAtoms({ resi: v.residue, atom: "CA" })[0];
       if (!atom) return;
@@ -1156,12 +1209,17 @@
       esc(text) + "</span>";
   }
 
-  function renderNeighbors() {
-    if (!structureViewer || !loadedProtein || currentResnum == null) return;
-    var protein = loadedProtein, resnum = currentResnum;
-    var targetAtoms = structureViewer.selectedAtoms({ resi: resnum });
-    if (!targetAtoms.length) return;
-    var nearAtoms = structureViewer.selectedAtoms({ within: { distance: NEIGHBOR_RADIUS, sel: { resi: resnum } } })
+  // Computes + draws nearby/polar-contact markers on ONE given viewer, and
+  // returns the text summary as an HTML fragment (doesn't touch #sp-neighbors
+  // itself — renderNeighbors, below, calls this once or twice and assembles
+  // the final text, so this stays agnostic to whether it's being combined
+  // with a second pane's result). applyStyleFn/highlightFn let the same
+  // logic drive either pane — applyStructureStyle/highlightResidue for pane
+  // 1, applyStructureStyle2/highlightResidue2 for pane 2 (Compare).
+  function computeNeighborsFor(viewer, protein, resnum, applyStyleFn, highlightFn) {
+    var targetAtoms = viewer.selectedAtoms({ resi: resnum });
+    if (!targetAtoms.length) return null;
+    var nearAtoms = viewer.selectedAtoms({ within: { distance: NEIGHBOR_RADIUS, sel: { resi: resnum } } })
       .filter(function (a) { return a.resi !== resnum; });
 
     // One representative atom per nearby residue (prefer CA — a sensible,
@@ -1185,19 +1243,19 @@
     });
     var polarResnums = Object.keys(polarResidues).map(Number).sort(function (a, b) { return a - b; });
 
-    applyStructureStyle(protein);
-    highlightResidue(resnum);
-    structureViewer.removeAllShapes();
-    structureViewer.removeAllLabels();
+    applyStyleFn(protein);
+    highlightFn(resnum);
+    viewer.removeAllShapes();
+    viewer.removeAllLabels();
     if (nearbyResnums.length) {
-      structureViewer.addStyle({ resi: nearbyResnums }, { stick: { colorscheme: "Jmol", radius: .13 } });
+      viewer.addStyle({ resi: nearbyResnums }, { stick: { colorscheme: "Jmol", radius: .13 } });
     }
     // addLine's dashed mode is a real WebGL line — most browsers/GPUs clamp
     // gl.lineWidth to 1px regardless of the requested width, so it barely
     // shows. addCylinder({dashed:true}) draws actual thin dashed CYLINDERS
     // instead, genuinely thicker via `radius`, not subject to that clamp.
     lines.forEach(function (pair) {
-      structureViewer.addCylinder({
+      viewer.addCylinder({
         start: { x: pair[0].x, y: pair[0].y, z: pair[0].z },
         end:   { x: pair[1].x, y: pair[1].y, z: pair[1].z },
         radius: .045, dashed: true, dashLength: .25, gapLength: .2,
@@ -1210,14 +1268,14 @@
     var dpr = window.devicePixelRatio || 1;
     nearbyResnums.forEach(function (r) {
       var rep = nearbyReps[r];
-      var lbl = structureViewer.addLabel((AA_3TO1[rep.resn] || rep.resn) + r, {
+      var lbl = viewer.addLabel((AA_3TO1[rep.resn] || rep.resn) + r, {
         position: { x: rep.x, y: rep.y, z: rep.z },
         backgroundColor: "#39424f", backgroundOpacity: .78,
         fontColor: "white", fontSize: 11 * dpr, padding: 3 * dpr, borderThickness: 0
       });
       if (lbl && lbl.sprite && dpr !== 1) lbl.sprite.scale.set(1 / dpr, 1 / dpr, 1);
     });
-    structureViewer.render();
+    viewer.render();
 
     var selfPill = neighborPillHtml(protein, resnum, targetAtoms[0].resn, true);
     var nearbyPills = nearbyResnums.length
@@ -1226,12 +1284,33 @@
     var polarPills = polarResnums.length
       ? polarResnums.map(function (r) { return neighborPillHtml(protein, r, polarResidues[r], false); }).join("")
       : '<span class="sp-pill-none">none found</span>';
+    return "<div>" + selfPill + " is in proximity to (within " + NEIGHBOR_RADIUS + "Å): " + nearbyPills + "</div>" +
+      "<div>Its side chain forms polar interactions with: " + polarPills + "</div>";
+  }
+
+  // In Compare, computes for BOTH panes (not just whichever residue was
+  // actually clicked) — each fragment gets its own protein-labeled heading
+  // so the two don't read as one merged list. Always assembled SAMD9-then-
+  // SAMD9L, matching the panes' own fixed left-to-right order (pane 1 is
+  // whichever protein was actually CLICKED, which can be either one — see
+  // toggleCompare's own note on .sp-swap-panes), not click order.
+  function renderNeighbors() {
+    if (!structureViewer || !loadedProtein || currentResnum == null) return;
+    var frag1 = computeNeighborsFor(structureViewer, loadedProtein, currentResnum, applyStructureStyle, highlightResidue);
+    var entries = [];
+    if (frag1) entries.push({ protein: loadedProtein, html: frag1 });
+    if (compareMode && structureViewer2 && loadedProtein2 && currentResnum2 != null) {
+      var frag2 = computeNeighborsFor(structureViewer2, loadedProtein2, currentResnum2, applyStructureStyle2, highlightResidue2);
+      if (frag2) entries.push({ protein: loadedProtein2, html: frag2 });
+    }
+    if (compareMode) entries.sort(function (a, b) { return a.protein === "SAMD9L" ? 1 : b.protein === "SAMD9L" ? -1 : 0; });
+    var parts = entries.map(function (en) {
+      return compareMode ? '<div class="sp-nb-protein">' + esc(en.protein) + "</div>" + en.html : en.html;
+    });
     var text = document.getElementById("sp-neighbors");
     if (text) {
-      text.innerHTML =
-        "<div>" + selfPill + " is in proximity to (within " + NEIGHBOR_RADIUS + "Å): " + nearbyPills + "</div>" +
-        "<div>Its side chain forms polar interactions with: " + polarPills + "</div>";
-      text.style.display = "block";
+      text.innerHTML = parts.join("");
+      text.style.display = parts.length ? "block" : "none";
     }
   }
 
@@ -1239,6 +1318,7 @@
     var panel = document.getElementById("structure-panel");
     if (panel) panel.classList.remove("sp-open");
     document.body.classList.remove("structure-panel-open");
+    syncTopStructureButton();
   }
 
   function setStructureStatus(msg) {
@@ -1270,6 +1350,7 @@
     document.getElementById("sp-title").textContent = protein + " — " + (label || ("residue " + resnum));
     setStructureStatus("Loading " + protein + " structure…");
     setActionButtonsEnabled(false);
+    syncTopStructureButton();
 
     load3Dmol()
       .then(function () { return fetchStructure(protein); })
@@ -1282,6 +1363,61 @@
       .catch(function (err) {
         setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
       });
+  }
+
+  // Entry point for the view-switcher's "3D" button (toggleStructurePanelDirect,
+  // above) — opens a protein's WHOLE structure with nothing highlighted, since
+  // (unlike a Map residue click) there's no specific position to show yet.
+  // Nearby Residues and Compare both need an actual residue, so they stay
+  // disabled until the user clicks one on the Map or on the structure itself.
+  function showStructureOverview(protein) {
+    buildStructurePanel();
+    document.getElementById("structure-panel").classList.add("sp-open");
+    document.body.classList.add("structure-panel-open");
+    document.getElementById("sp-title").textContent = protein;
+    setStructureStatus("Loading " + protein + " structure…");
+    setActionButtonsEnabled(false);
+    syncTopStructureButton();
+
+    load3Dmol()
+      .then(function () { return fetchStructure(protein); })
+      .then(function () {
+        setStructureStatus(null);
+        renderOverview(protein);
+        setActionButtonsEnabled(true);
+        var neighborsBtn = document.getElementById("sp-neighbors-btn");
+        if (neighborsBtn) neighborsBtn.disabled = true;   // no residue yet — nothing to be "nearby" to
+        updateCompareButton(protein, null);
+      })
+      .catch(function (err) {
+        setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
+      });
+  }
+
+  function renderOverview(protein) {
+    var el = document.getElementById("sp-viewer");
+    if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
+    if (loadedProtein !== protein) {
+      structureViewer.removeAllModels();
+      structureViewer.addModel(structureText[protein], "pdb");
+      loadedProtein = protein;
+    }
+    structureViewer.removeAllLabels();
+    structureViewer.removeAllShapes();
+    showingNeighbors = false;
+    resetAllVariants();
+    var neighborsBtn = document.getElementById("sp-neighbors-btn");
+    if (neighborsBtn) neighborsBtn.classList.remove("sp-fs-btn-active");
+    var neighborsText = document.getElementById("sp-neighbors");
+    if (neighborsText) { neighborsText.innerHTML = ""; neighborsText.style.display = "none"; }
+    currentResnum = null;
+    applyStructureStyle(protein);
+    structureViewer.resize();
+    structureViewer.zoomTo();
+    hasFramedView = true;
+    structureViewer.render();
+    var cap1 = document.getElementById("sp-pane-cap-1");
+    if (cap1) cap1.textContent = protein;
   }
 
   var NON_DOMAIN_KEYS = { linker: 1, nterm: 1, cterm: 1, none: 1 };
@@ -1352,11 +1488,9 @@
     structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
     structureViewer.removeAllShapes();   // clear any prior residue's "nearby" lines / "all variants" spheres
     showingNeighbors = false;
-    showingAllVariants = false;
+    resetAllVariants();
     var neighborsBtn = document.getElementById("sp-neighbors-btn");
     if (neighborsBtn) neighborsBtn.classList.remove("sp-fs-btn-active");
-    var allVariantsBtn = document.getElementById("sp-allvariants-btn");
-    if (allVariantsBtn) allVariantsBtn.classList.remove("sp-fs-btn-active");
     var neighborsText = document.getElementById("sp-neighbors");
     if (neighborsText) { neighborsText.innerHTML = ""; neighborsText.style.display = "none"; }
     applyStructureStyle(protein);
@@ -1405,8 +1539,13 @@
     var btn = document.getElementById("sp-compare-btn");
     if (!btn) return;
     var other = otherProtein(protein);
-    var analog = analogousResidue(protein, resnum);
     btn.textContent = "Compare to " + other;
+    if (resnum == null) {
+      btn.disabled = true;
+      btn.title = "Select a residue first";
+      return;
+    }
+    var analog = analogousResidue(protein, resnum);
     btn.disabled = analog == null;
     btn.title = analog == null ? "No analogous position in " + other + " for this residue" : "";
   }
@@ -1474,6 +1613,15 @@
     compareMode = true;
     document.getElementById("sp-compare-btn").classList.add("sp-fs-btn-active");
     document.getElementById("sp-viewer-pane-2").style.display = "block";
+    document.getElementById("structure-panel").classList.add("sp-comparing");
+    // Pane 1 (#sp-viewer) is always whichever protein was CLICKED, pane 2
+    // whichever is being compared against — but the ask is SAMD9 always on
+    // the visual left, SAMD9L always on the right, regardless of click
+    // order. Rather than move actual $3Dmol viewer instances between
+    // containers (not really supported — they're bound to their canvas at
+    // creation), just reorder the two panes visually via flexbox `order`
+    // when pane 1 happens to hold SAMD9L.
+    document.getElementById("sp-viewer-row").classList.toggle("sp-swap-panes", loadedProtein === "SAMD9L");
     resizeStructureViewer();   // pane 1 just shrank from 100% to 50% width
     setStructureStatus("Loading " + other + " structure…");
     load3Dmol()
@@ -1481,6 +1629,9 @@
       .then(function () {
         setStructureStatus(null);
         renderResidue2(other, otherResnum);
+        // Nearby Residues was already showing for pane 1 alone — extend it
+        // to the newly-opened pane 2 rather than leaving it half-stale.
+        if (showingNeighbors) renderNeighbors();
       })
       .catch(function (err) {
         setStructureStatus("Couldn't load the comparison structure (" + err.message + ").");
@@ -1493,6 +1644,13 @@
     if (btn) btn.classList.remove("sp-fs-btn-active");
     var pane2 = document.getElementById("sp-viewer-pane-2");
     if (pane2) pane2.style.display = "none";
+    var panel = document.getElementById("structure-panel");
+    if (panel) panel.classList.remove("sp-comparing");
+    // Text was showing both panes' neighbors — collapse back to pane 1
+    // alone now that pane 2 is gone (its markers just go unseen, harmless).
+    if (showingNeighbors) renderNeighbors();
+    var row = document.getElementById("sp-viewer-row");
+    if (row) row.classList.remove("sp-swap-panes");
     resizeStructureViewer();   // pane 1 back to the full row width
   }
 
@@ -1624,12 +1782,41 @@
     box.id = "view-switcher";
     box.innerHTML =
       '<button type="button" class="vs-btn vs-active" data-view="map">Map</button>' +
-      '<button type="button" class="vs-btn" data-view="table">Table</button>';
+      '<button type="button" class="vs-btn" data-view="table">Table</button>' +
+      '<button type="button" class="vs-btn" id="vs-3d-btn" data-action="3d">3D</button>';
     box.addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest("button[data-view]");
-      if (btn) setView(btn.getAttribute("data-view"));
+      if (btn) { setView(btn.getAttribute("data-view")); return; }
+      var actionBtn = e.target.closest && e.target.closest('button[data-action="3d"]');
+      if (actionBtn) toggleStructurePanelDirect();
     });
     document.body.appendChild(box);
+  }
+  // The view-switcher's "3D" button — unlike Map/Table it's not a THIRD
+  // mutually-exclusive view (the structure panel already coexists with
+  // either of those, docked on the right); it's just a shortcut to open/
+  // close that same panel without first clicking a residue on the Map. If
+  // nothing has ever been shown yet this session, defaults to SAMD9's whole
+  // structure with nothing highlighted; otherwise just reopens/closes
+  // whatever the panel already had (same "persistent panel" behavior a
+  // residue click gets).
+  function toggleStructurePanelDirect() {
+    var panel = document.getElementById("structure-panel");
+    if (panel && panel.classList.contains("sp-open")) { closeStructurePanel(); return; }
+    if (loadedProtein) {
+      buildStructurePanel();
+      document.getElementById("structure-panel").classList.add("sp-open");
+      document.body.classList.add("structure-panel-open");
+      syncTopStructureButton();
+    } else {
+      showStructureOverview("SAMD9");
+    }
+  }
+  function syncTopStructureButton() {
+    var btn = document.getElementById("vs-3d-btn");
+    if (!btn) return;
+    var panel = document.getElementById("structure-panel");
+    btn.classList.toggle("vs-active", !!(panel && panel.classList.contains("sp-open")));
   }
   var currentView = "map";
   function setView(view) {

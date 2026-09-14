@@ -878,7 +878,7 @@
   var loadedSource = null;      // which SOURCE ("alphafold"/"cryoem") of that protein is loaded
   var loadedCryoVariant = null; // which cryoem KEY is loaded, when loadedSource === "cryoem"
   var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
-  var structureColorMode = "conservation";   // "conservation" | "domain"
+  var structureColorMode = "domain";   // "conservation" | "domain"
   var structureBg = "white";                 // "black" | "white"
   var hasFramedView = false;    // true after the first-ever render — gates the one-time zoomTo
                                  // vs. every render after that (incl. switching protein) using

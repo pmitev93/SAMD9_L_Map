@@ -39,7 +39,11 @@ patient/population variants.
   SAM/AlbA region (clicking a residue there shows a clear "not resolved"
   message instead of guessing). **Compare** needs both proteins on
   AlphaFold (only that pair shares one coordinate frame) and is disabled
-  while Cryo-EM is active.
+  while Cryo-EM is active. Cryo-EM itself isn't one structure — the SAMD9
+  paper solved six (monomer, two dimer conformations, a symmetric dimer, and
+  two actual LoF mutant structures) — a second dropdown next to the
+  AlphaFold/Cryo-EM switch picks which one; the mutant ones really do show
+  the mutated residue (e.g. Ala at 837, not Arg) if you click-to-identify it.
 
 ## Files
 
@@ -51,7 +55,7 @@ patient/population variants.
 | `data_overrides.js` | Manual label tweaks (nudge / line length). |
 | `data_residue_map.js` | SAMD9↔SAMD9L residue-number correspondence, for the 3D panel's "Compare" view. Generated — see below, don't hand-edit. |
 | `Conservation_Mutational_Landscape_Both.xlsx` | Master variant spreadsheet. |
-| `structures/` | AlphaFold models the 3D panel loads (`SAMD9_AF.pdb`, `SAMD9L_AF.pdb`) plus `SAMD9L_AF_aligned.pdb` — SAMD9L superposed onto SAMD9's frame (generated, see below) — and `SAMD9_CryoEM.pdb`, the real experimental structure (RCSB 9ZJR) the panel's "Structure: Cryo-EM" option loads for SAMD9. `structures/cryoem_ref/` holds that same entry plus the symmetric-dimer one (9ZJU), kept as raw reference. |
+| `structures/` | AlphaFold models the 3D panel loads (`SAMD9_AF.pdb`, `SAMD9L_AF.pdb`) plus `SAMD9L_AF_aligned.pdb` — SAMD9L superposed onto SAMD9's frame (generated, see below) — and six `SAMD9_CryoEM_*.pdb` files, one per real deposited SAMD9 cryo-EM structure the panel's Cryo-EM dropdown can load (`monomer` 9ZJR, `dimer_sym` 9ZJU, `dimer_shell` 9ZJS, `dimer_wing` 9ZJV, `mutant_R837A` 9ZJW, `mutant_triple` 9ZJZ). `structures/cryoem_ref/` holds the same six entries under their raw PDB IDs, kept as an untouched reference copy. |
 | `tools/` | Build scripts + the renderer/CSS that get embedded into `index.html`. |
 
 The `data_*.js` files are **plain text you edit by hand**. After editing,

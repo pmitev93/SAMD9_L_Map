@@ -794,32 +794,62 @@
   // the same zoom level. Re-run that script if either AlphaFold model updates.
   //
   // cryoem (SAMD9 only — SAMD9L has no public cryo-EM structure yet, see
-  // project notes) is RCSB 9ZJR, the real experimental structure ("Structural
-  // Mechanisms of SAMD9 Autoinhibition and Pathogenic Dysregulation",
-  // bioRxiv 2026.02.02.703423) — its OWN deposited coordinate frame, entirely
-  // unrelated to the AlphaFold superposition above. That's why Compare (which
-  // depends on both proteins sharing one frame) is disabled whenever the
-  // active source isn't "alphafold" (updateCompareButton), and why a source
-  // switch always re-frames the camera from scratch (renderResidue) instead
-  // of preserving zoom/rotation the way a same-source residue click does.
-  // It's also a genuinely partial structure — the flexible SAM+AlbA region
-  // (roughly residues 1-388) wasn't resolved at all; renderResidue handles a
-  // clicked residue landing in a gap explicitly rather than silently
-  // highlighting nothing.
+  // project notes) is real, deposited structures from "Structural Mechanisms
+  // of SAMD9 Autoinhibition and Pathogenic Dysregulation" (bioRxiv
+  // 2026.02.02.703423) — SIX of them, not one: the paper solved the monomer,
+  // two different asymmetric-dimer conformations, a symmetric dimer, AND two
+  // actual LoF mutant structures (verified directly against each file's own
+  // coordinates — 9ZJW really has Ala at 837, 9ZJZ really has
+  // Gln685/Cys686/Cys968 — not just a label). cryoVariant (below) picks
+  // which one; the dropdown that sets it only appears while source ===
+  // "cryoem" (buildStructurePanel/updateStructureSourceSeg).
+  // Each is its OWN deposited coordinate frame, entirely unrelated to the
+  // AlphaFold superposition above (and to EACH OTHER — switching between
+  // two cryo-EM variants reframes the camera fresh, same as switching source
+  // or protein). That's why Compare (which depends on both proteins sharing
+  // one frame) is disabled whenever the active source isn't "alphafold".
+  // Every one of these is also a genuinely partial structure — the flexible
+  // SAM+AlbA region (roughly residues 1-388) wasn't resolved in any of them;
+  // renderResidue handles a clicked residue landing in a gap explicitly
+  // rather than silently highlighting nothing.
   var STRUCTURE_SOURCES = {
     SAMD9: {
       alphafold: { file: "structures/SAMD9_AF.pdb", label: "AlphaFold" },
-      cryoem:    { file: "structures/SAMD9_CryoEM.pdb", label: "Cryo-EM (9ZJR)" }
+      cryoem: {
+        monomer:       { file: "structures/SAMD9_CryoEM_monomer.pdb", label: "Cryo-EM — monomer (9ZJR)" },
+        dimer_sym:     { file: "structures/SAMD9_CryoEM_dimer_sym.pdb", label: "Cryo-EM — symmetric dimer (9ZJU)" },
+        dimer_shell:   { file: "structures/SAMD9_CryoEM_dimer_shell.pdb", label: "Cryo-EM — asymmetric dimer, “shell” (9ZJS)" },
+        dimer_wing:    { file: "structures/SAMD9_CryoEM_dimer_wing.pdb", label: "Cryo-EM — asymmetric dimer, “wing” (9ZJV)" },
+        mutant_R837A:  { file: "structures/SAMD9_CryoEM_mutant_R837A.pdb", label: "Cryo-EM — LoF mutant R837A, dimer (9ZJW)" },
+        mutant_triple: { file: "structures/SAMD9_CryoEM_mutant_triple.pdb", label: "Cryo-EM — LoF mutant R685Q/G686C/I968C, monomer (9ZJZ)" }
+      }
     },
     SAMD9L: {
       alphafold: { file: "structures/SAMD9L_AF_aligned.pdb", label: "AlphaFold" }
     }
   };
   var structureSource = "alphafold";   // "alphafold" | "cryoem" — see STRUCTURE_SOURCES above
+  var cryoVariant = "monomer";         // which key of STRUCTURE_SOURCES[protein].cryoem is active
   // The source actually usable for a given protein — falls back to alphafold
   // when the picked source (cryoem) doesn't exist for it (SAMD9L).
   function effectiveSource(protein) {
     return STRUCTURE_SOURCES[protein][structureSource] ? structureSource : "alphafold";
+  }
+  // The {file,label} config actually in play for a protein+source — for
+  // cryoem this depends on cryoVariant too, so every call site that used to
+  // read STRUCTURE_SOURCES[protein][source] directly goes through this
+  // instead of duplicating the cryoVariant fallback logic.
+  function structureConfigFor(protein, source) {
+    if (source !== "cryoem") return STRUCTURE_SOURCES[protein].alphafold;
+    var variants = STRUCTURE_SOURCES[protein].cryoem;
+    return variants && (variants[cryoVariant] || variants[Object.keys(variants)[0]]);
+  }
+  function structureCacheKey(protein, source) {
+    return protein + ":" + source + (source === "cryoem" ? ":" + cryoVariant : "");
+  }
+  function currentStructureLabel(protein, source) {
+    var cfg = structureConfigFor(protein, source);
+    return cfg ? cfg.label : source;
   }
   // Same 1-9 ConSurf palette as the 2D map's td.ScoreN cells (index.html's
   // inline <style>) — kept as a literal copy, not read off the DOM, since
@@ -846,6 +876,7 @@
   var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
   var loadedProtein = null;     // which protein's model is currently addModel()'d into it
   var loadedSource = null;      // which SOURCE ("alphafold"/"cryoem") of that protein is loaded
+  var loadedCryoVariant = null; // which cryoem KEY is loaded, when loadedSource === "cryoem"
   var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
   var structureColorMode = "conservation";   // "conservation" | "domain"
   var structureBg = "white";                 // "black" | "white"
@@ -888,9 +919,9 @@
   }
 
   function fetchStructure(protein, source) {
-    var key = protein + ":" + source;
+    var key = structureCacheKey(protein, source);
     if (structureText[key]) return Promise.resolve(structureText[key]);
-    var src = STRUCTURE_SOURCES[protein] && STRUCTURE_SOURCES[protein][source];
+    var src = structureConfigFor(protein, source);
     if (!src) return Promise.reject(new Error("no " + source + " structure file for " + protein));
     return fetch(src.file).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
@@ -934,6 +965,10 @@
       "</div>" +
       '<div class="sp-controls">' +
         segHtml("source", "Structure:", [{ value: "alphafold", label: "AlphaFold" }, { value: "cryoem", label: "Cryo-EM" }], structureSource) +
+        '<div class="sp-cryo-wrap" id="sp-cryo-wrap" style="display:none;">' +
+          '<button type="button" class="sp-fs-btn" id="sp-cryo-btn">Monomer (9ZJR) ▾</button>' +
+          '<div class="sp-cryo-panel" id="sp-cryo-panel" hidden>' + cryoPanelHtml() + "</div>" +
+        "</div>" +
         segHtml("color", "Color by:", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
         segHtml("bg", "Background:", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
         '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
@@ -970,6 +1005,16 @@
     });
     panel.querySelector("#sp-av-panel").innerHTML = avPanelHtml();
     panel.querySelector("#sp-av-panel").addEventListener("change", onAllVariantsCategoryChange);
+    panel.querySelector("#sp-cryo-btn").addEventListener("click", function (e) {
+      e.stopPropagation();
+      document.getElementById("sp-cryo-panel").toggleAttribute("hidden");
+    });
+    panel.querySelector("#sp-cryo-panel").addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest("[data-cryo]");
+      if (!btn) return;
+      setCryoVariant(btn.getAttribute("data-cryo"));
+      document.getElementById("sp-cryo-panel").setAttribute("hidden", "");
+    });
     panel.querySelector("#sp-compare-btn").addEventListener("click", toggleCompare);
     panel.querySelector(".sp-controls").addEventListener("click", function (e) {
       var btn = e.target.closest && e.target.closest(".sp-seg-btn");
@@ -987,6 +1032,10 @@
       var avPanel = document.getElementById("sp-av-panel");
       if (avPanel && !avPanel.hasAttribute("hidden") && !e.target.closest("#sp-av-wrap")) {
         avPanel.setAttribute("hidden", "");
+      }
+      var cryoPanel = document.getElementById("sp-cryo-panel");
+      if (cryoPanel && !cryoPanel.hasAttribute("hidden") && !e.target.closest("#sp-cryo-wrap")) {
+        cryoPanel.setAttribute("hidden", "");
       }
     });
   }
@@ -1063,18 +1112,18 @@
     if (structureViewer2) { structureViewer2.setBackgroundColor(color); structureViewer2.render(); }
   }
 
-  // Unlike color mode/background, a source switch DOES need a real re-fetch
-  // + re-render (renderResidue/renderOverview's own sourceChanged branch
-  // handles the reframe) — cryo-EM and AlphaFold are unrelated coordinate
-  // frames for the same protein, not just a restyle of the same model.
-  function setStructureSource(value) {
-    if (structureSource === value) return;
-    structureSource = value;
-    if (compareMode) exitCompare();   // Compare only exists on the AlphaFold pair
+  // Shared by setStructureSource/setCryoVariant below — re-fetches (cache
+  // hits instantly) and re-renders whatever's currently open. Unlike color
+  // mode/background, a source or cryo-variant switch DOES need a real
+  // reload, not just a restyle: cryo-EM and AlphaFold — and each cryo-EM
+  // variant vs every OTHER one — are unrelated coordinate frames for the
+  // same protein (renderResidue/renderOverview's own sourceChanged check
+  // is what forces the fresh reframe rather than preserving zoom/rotation).
+  function reloadCurrentStructure() {
     if (!loadedProtein) return;
     var protein = loadedProtein, resnum = currentResnum;
     var source = effectiveSource(protein);
-    setStructureStatus("Loading " + STRUCTURE_SOURCES[protein][source].label + " structure…");
+    setStructureStatus("Loading " + currentStructureLabel(protein, source) + " structure…");
     setActionButtonsEnabled(false);
     load3Dmol()
       .then(function () { return fetchStructure(protein, source); })
@@ -1086,6 +1135,26 @@
       .catch(function (err) {
         setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
       });
+  }
+  function setStructureSource(value) {
+    if (structureSource === value) return;
+    structureSource = value;
+    if (compareMode) exitCompare();   // Compare only exists on the AlphaFold pair
+    updateCryoPicker(loadedProtein);  // show/hide the variant dropdown for the new source
+    reloadCurrentStructure();
+  }
+  // Which of the six real cryo-EM depositions (STRUCTURE_SOURCES.SAMD9.cryoem)
+  // is active — the dropdown that calls this only exists while source ===
+  // "cryoem" (updateCryoPicker), so no "is this available" guard needed here
+  // the way setStructureSource needs one for SAMD9L.
+  function setCryoVariant(key) {
+    if (cryoVariant === key) return;
+    cryoVariant = key;
+    updateCryoPicker(loadedProtein);
+    if (structureSource === "cryoem") {
+      if (compareMode) exitCompare();
+      reloadCurrentStructure();
+    }
   }
   // Cryo-EM only exists for SAMD9 (see STRUCTURE_SOURCES) — grey out that
   // option entirely on SAMD9L rather than letting it silently fall back,
@@ -1105,12 +1174,33 @@
     seg.querySelectorAll(".sp-seg-btn").forEach(function (b) {
       b.classList.toggle("sp-seg-active", b.getAttribute("data-value") === eff);
     });
+    updateCryoPicker(protein);
+  }
+  // The "which cryo-EM structure" dropdown only makes sense (and only
+  // appears) once cryo-EM is actually the effective source for THIS
+  // protein — otherwise it's just confusing chrome for an inactive choice.
+  function updateCryoPicker(protein) {
+    var wrap = document.getElementById("sp-cryo-wrap");
+    if (!wrap) return;
+    var show = !!protein && effectiveSource(protein) === "cryoem";
+    wrap.style.display = show ? "" : "none";
+    if (!show) return;
+    var cfg = structureConfigFor(protein, "cryoem");
+    var btn = document.getElementById("sp-cryo-btn");
+    if (btn && cfg) btn.textContent = cfg.label.replace(/^Cryo-EM — /, "") + " ▾";
+    var panel = document.getElementById("sp-cryo-panel");
+    if (panel) {
+      panel.querySelectorAll("[data-cryo]").forEach(function (b) {
+        b.classList.toggle("sp-cryo-active", b.getAttribute("data-cryo") === cryoVariant);
+      });
+    }
   }
   function updateStructureFooter(protein) {
     var foot = document.getElementById("sp-foot");
     if (!foot) return;
-    foot.textContent = effectiveSource(protein) === "cryoem"
-      ? "Cryo-EM structure (RCSB 9ZJR) — experimental, but partial: the flexible SAM/AlbA region wasn't resolved."
+    var source = effectiveSource(protein);
+    foot.textContent = source === "cryoem"
+      ? currentStructureLabel(protein, source) + " — experimental, but partial: the flexible SAM/AlbA region wasn't resolved."
       : "AlphaFold model — predicted structure, not experimental.";
   }
 
@@ -1172,6 +1262,17 @@
   function showingAllVariants() {
     initStructureVariantCats();
     return Object.keys(structureVariantCats).some(function (c) { return structureVariantCats[c]; });
+  }
+  // The six real cryo-EM depositions (STRUCTURE_SOURCES.SAMD9.cryoem) —
+  // built once, off SAMD9's own set, since it's the only protein that ever
+  // has one; updateCryoPicker() shows/hides the whole dropdown per protein,
+  // not this list's contents.
+  function cryoPanelHtml() {
+    var variants = STRUCTURE_SOURCES.SAMD9.cryoem;
+    return Object.keys(variants).map(function (key) {
+      return '<button type="button" class="sp-cryo-item' + (key === cryoVariant ? " sp-cryo-active" : "") +
+        '" data-cryo="' + key + '">' + esc(variants[key].label.replace(/^Cryo-EM — /, "")) + "</button>";
+    }).join("");
   }
   function avPanelHtml() {
     initStructureVariantCats();
@@ -1490,11 +1591,13 @@
     var el = document.getElementById("sp-viewer");
     if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
     var source = effectiveSource(protein);
-    if (loadedProtein !== protein || loadedSource !== source) {
+    if (loadedProtein !== protein || loadedSource !== source ||
+        (source === "cryoem" && loadedCryoVariant !== cryoVariant)) {
       structureViewer.removeAllModels();
-      structureViewer.addModel(structureText[protein + ":" + source], "pdb");
+      structureViewer.addModel(structureText[structureCacheKey(protein, source)], "pdb");
       loadedProtein = protein;
       loadedSource = source;
+      loadedCryoVariant = source === "cryoem" ? cryoVariant : null;
     }
     structureViewer.removeAllLabels();
     structureViewer.removeAllShapes();
@@ -1511,7 +1614,7 @@
     hasFramedView = true;
     structureViewer.render();
     var cap1 = document.getElementById("sp-pane-cap-1");
-    if (cap1) cap1.textContent = protein + " (" + STRUCTURE_SOURCES[protein][source].label + ")";
+    if (cap1) cap1.textContent = protein + " (" + currentStructureLabel(protein, source) + ")";
     updateStructureSourceSeg(protein);
     updateStructureFooter(protein);
   }
@@ -1591,12 +1694,14 @@
     // unrelated coordinate frames for the SAME protein (see STRUCTURE_
     // SOURCES's own note), so this also drives the reframe-vs-preserve-zoom
     // decision below exactly like a protein switch does.
-    var sourceChanged = loadedProtein !== protein || loadedSource !== source;
+    var sourceChanged = loadedProtein !== protein || loadedSource !== source ||
+      (source === "cryoem" && loadedCryoVariant !== cryoVariant);
     if (sourceChanged) {
       structureViewer.removeAllModels();
-      structureViewer.addModel(structureText[protein + ":" + source], "pdb");
+      structureViewer.addModel(structureText[structureCacheKey(protein, source)], "pdb");
       loadedProtein = protein;
       loadedSource = source;
+      loadedCryoVariant = source === "cryoem" ? cryoVariant : null;
     }
     structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
     structureViewer.removeAllShapes();   // clear any prior residue's "nearby" lines / "all variants" spheres
@@ -1639,7 +1744,7 @@
     structureViewer.render();
 
     var cap1 = document.getElementById("sp-pane-cap-1");
-    var sourceLabel = STRUCTURE_SOURCES[protein][source].label;
+    var sourceLabel = currentStructureLabel(protein, source);
     if (cap1) {
       cap1.textContent = protein + " (" + sourceLabel + ")" +
         (resolved ? " — " + (AA_3TO1[targetAtoms0Resn(resnum)] || "") + resnum : "");

@@ -328,16 +328,6 @@
     return m ? +m[1] : null;
   }
 
-  // Distance (Å, in that protein's AlphaFold model) from a curated variant's
-  // residue to the nearest known functional site — precomputed offline from
-  // the REAL SAMD9 cryo-EM structures (tools/functional_sites.py), not
-  // guessed; see that script's own header for exactly how, and for the
-  // SAMD9L caveat (homology-transferred, no public SAMD9L structure yet).
-  // { distance, site } or null (e.g. an alignment-gap residue with no
-  // AlphaFold coordinate at all).
-  function siteFor(protein, residue) {
-    return (window.SITE_DISTANCES && window.SITE_DISTANCES[protein + ":" + residue]) || null;
-  }
 
   // ---- data: read from the data_*.js globals (loaded via <script src>, which
   //      works even on a double-clicked file). Edit a data_*.js + refresh = live.
@@ -795,17 +785,42 @@
   // residue pays nothing for this feature. Step 1 of a planned series (see
   // project notes) — AlphaFold only for now, one structure at a time, no
   // superposition/neighbor-highlighting/export yet.
-  // SAMD9L's file is a SUPERPOSED copy (tools/align_structures.py), not the
-  // raw AlphaFold download — coordinates pre-rotated/translated into
+  // SAMD9L's alphafold file is a SUPERPOSED copy (tools/align_structures.py),
+  // not the raw AlphaFold download — coordinates pre-rotated/translated into
   // SAMD9's own frame so the two share one coordinate system. SAMD9 is the
   // fixed reference and needs no transform. That's what lets the camera
   // (renderResidue's center()-based path) carry over an orientation across
   // a protein switch and actually land on the corresponding view, not just
   // the same zoom level. Re-run that script if either AlphaFold model updates.
+  //
+  // cryoem (SAMD9 only — SAMD9L has no public cryo-EM structure yet, see
+  // project notes) is RCSB 9ZJR, the real experimental structure ("Structural
+  // Mechanisms of SAMD9 Autoinhibition and Pathogenic Dysregulation",
+  // bioRxiv 2026.02.02.703423) — its OWN deposited coordinate frame, entirely
+  // unrelated to the AlphaFold superposition above. That's why Compare (which
+  // depends on both proteins sharing one frame) is disabled whenever the
+  // active source isn't "alphafold" (updateCompareButton), and why a source
+  // switch always re-frames the camera from scratch (renderResidue) instead
+  // of preserving zoom/rotation the way a same-source residue click does.
+  // It's also a genuinely partial structure — the flexible SAM+AlbA region
+  // (roughly residues 1-388) wasn't resolved at all; renderResidue handles a
+  // clicked residue landing in a gap explicitly rather than silently
+  // highlighting nothing.
   var STRUCTURE_SOURCES = {
-    SAMD9:  { file: "structures/SAMD9_AF.pdb" },
-    SAMD9L: { file: "structures/SAMD9L_AF_aligned.pdb" }
+    SAMD9: {
+      alphafold: { file: "structures/SAMD9_AF.pdb", label: "AlphaFold" },
+      cryoem:    { file: "structures/SAMD9_CryoEM.pdb", label: "Cryo-EM (9ZJR)" }
+    },
+    SAMD9L: {
+      alphafold: { file: "structures/SAMD9L_AF_aligned.pdb", label: "AlphaFold" }
+    }
   };
+  var structureSource = "alphafold";   // "alphafold" | "cryoem" — see STRUCTURE_SOURCES above
+  // The source actually usable for a given protein — falls back to alphafold
+  // when the picked source (cryoem) doesn't exist for it (SAMD9L).
+  function effectiveSource(protein) {
+    return STRUCTURE_SOURCES[protein][structureSource] ? structureSource : "alphafold";
+  }
   // Same 1-9 ConSurf palette as the 2D map's td.ScoreN cells (index.html's
   // inline <style>) — kept as a literal copy, not read off the DOM, since
   // there's no single shared cartoon-vs-td color source to read from.
@@ -826,10 +841,11 @@
     GLY: "G", HIS: "H", ILE: "I", LEU: "L", LYS: "K", MET: "M", PHE: "F",
     PRO: "P", SER: "S", THR: "T", TRP: "W", TYR: "Y", VAL: "V"
   };
-  var structureText = {};   // protein -> already-fetched PDB text (session cache)
+  var structureText = {};   // "protein:source" -> already-fetched PDB text (session cache)
   var mol3dReady = null;    // becomes a resolved Promise once 3Dmol.js has loaded
   var structureViewer = null;   // one persistent $3Dmol.GLViewer, reused across clicks
   var loadedProtein = null;     // which protein's model is currently addModel()'d into it
+  var loadedSource = null;      // which SOURCE ("alphafold"/"cryoem") of that protein is loaded
   var currentResnum = null;     // last-highlighted residue, for re-applying style on a mode/bg toggle
   var structureColorMode = "conservation";   // "conservation" | "domain"
   var structureBg = "white";                 // "black" | "white"
@@ -871,15 +887,16 @@
     return mol3dReady;
   }
 
-  function fetchStructure(protein) {
-    if (structureText[protein]) return Promise.resolve(structureText[protein]);
-    var src = STRUCTURE_SOURCES[protein];
-    if (!src) return Promise.reject(new Error("no structure file for " + protein));
+  function fetchStructure(protein, source) {
+    var key = protein + ":" + source;
+    if (structureText[key]) return Promise.resolve(structureText[key]);
+    var src = STRUCTURE_SOURCES[protein] && STRUCTURE_SOURCES[protein][source];
+    if (!src) return Promise.reject(new Error("no " + source + " structure file for " + protein));
     return fetch(src.file).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.text();
     }).then(function (text) {
-      structureText[protein] = text;
+      structureText[key] = text;
       return text;
     });
   }
@@ -887,14 +904,21 @@
   // One [data-value] segmented control per group ("color": conservation/
   // domain, "bg": black/white) — shared markup+listener, dispatched by
   // data-group below. Doesn't touch the camera; only setColorMode/
-  // setStructureBackground do, and neither of those moves it either.
-  function segHtml(group, options, active) {
-    return '<div class="sp-seg" data-group="' + group + '">' +
-      options.map(function (o) {
-        return '<button type="button" class="sp-seg-btn' + (o.value === active ? " sp-seg-active" : "") +
-               '" data-value="' + o.value + '">' + o.label + "</button>";
-      }).join("") +
-      "</div>";
+  // setStructureBackground do, and neither of those moves it either. `title`
+  // is a plain-language caption above the segment ("Color by:") — without
+  // one, a first-time visitor sees e.g. "Conservation / Domain" with no cue
+  // that it's a mode switch at all, let alone for what.
+  function segHtml(group, title, options, active) {
+    return '<div class="sp-seg-group">' +
+      '<span class="sp-seg-label">' + esc(title) + "</span>" +
+      '<div class="sp-seg" data-group="' + group + '">' +
+        options.map(function (o) {
+          return '<button type="button" class="sp-seg-btn' + (o.value === active ? " sp-seg-active" : "") +
+                 '"' + (o.disabled ? " disabled" : "") + (o.title ? ' title="' + esc(o.title) + '"' : "") +
+                 ' data-value="' + o.value + '">' + o.label + "</button>";
+        }).join("") +
+      "</div>" +
+    "</div>";
   }
 
   function buildStructurePanel() {
@@ -909,8 +933,9 @@
         '<button type="button" class="sp-close" id="sp-close" aria-label="Close">&times;</button>' +
       "</div>" +
       '<div class="sp-controls">' +
-        segHtml("color", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
-        segHtml("bg", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
+        segHtml("source", "Structure:", [{ value: "alphafold", label: "AlphaFold" }, { value: "cryoem", label: "Cryo-EM" }], structureSource) +
+        segHtml("color", "Color by:", [{ value: "conservation", label: "Conservation" }, { value: "domain", label: "Domain" }], structureColorMode) +
+        segHtml("bg", "Background:", [{ value: "black", label: "Black" }, { value: "white", label: "White" }], structureBg) +
         '<button type="button" class="sp-fs-btn" id="sp-neighbors-btn">Nearby Residues</button>' +
         '<div class="sp-av-wrap" id="sp-av-wrap">' +
           '<button type="button" class="sp-fs-btn" id="sp-allvariants-btn">All Variants ▾</button>' +
@@ -934,7 +959,7 @@
         '<div class="sp-clickhint" id="sp-clickhint">Click an atom on the structure to identify it</div>' +
       "</div>" +
       '<div class="sp-neighbors" id="sp-neighbors" style="display:none;"></div>' +
-      '<div class="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
+      '<div class="sp-foot" id="sp-foot">AlphaFold model — predicted structure, not experimental.</div>';
     document.body.appendChild(panel);
     panel.querySelector("#sp-close").addEventListener("click", closeStructurePanel);
     panel.querySelector("#sp-fs-btn").addEventListener("click", toggleFullscreen);
@@ -954,6 +979,7 @@
       var group = seg.getAttribute("data-group"), value = btn.getAttribute("data-value");
       if (group === "color") setColorMode(value);
       else if (group === "bg") setStructureBackground(value);
+      else if (group === "source") setStructureSource(value);
     });
     setupDrag(panel.querySelector("#sp-drag"));
     wireCompareSync();
@@ -1035,6 +1061,57 @@
     structureBg = color;
     if (structureViewer) { structureViewer.setBackgroundColor(color); structureViewer.render(); }
     if (structureViewer2) { structureViewer2.setBackgroundColor(color); structureViewer2.render(); }
+  }
+
+  // Unlike color mode/background, a source switch DOES need a real re-fetch
+  // + re-render (renderResidue/renderOverview's own sourceChanged branch
+  // handles the reframe) — cryo-EM and AlphaFold are unrelated coordinate
+  // frames for the same protein, not just a restyle of the same model.
+  function setStructureSource(value) {
+    if (structureSource === value) return;
+    structureSource = value;
+    if (compareMode) exitCompare();   // Compare only exists on the AlphaFold pair
+    if (!loadedProtein) return;
+    var protein = loadedProtein, resnum = currentResnum;
+    var source = effectiveSource(protein);
+    setStructureStatus("Loading " + STRUCTURE_SOURCES[protein][source].label + " structure…");
+    setActionButtonsEnabled(false);
+    load3Dmol()
+      .then(function () { return fetchStructure(protein, source); })
+      .then(function () {
+        setActionButtonsEnabled(true);
+        if (resnum != null) renderResidue(protein, resnum);
+        else renderOverview(protein);
+      })
+      .catch(function (err) {
+        setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
+      });
+  }
+  // Cryo-EM only exists for SAMD9 (see STRUCTURE_SOURCES) — grey out that
+  // option entirely on SAMD9L rather than letting it silently fall back,
+  // and reflect whatever source is ACTUALLY in effect (post-fallback) as
+  // the segment's active button, which can differ from the raw
+  // structureSource pick right after switching protein.
+  function updateStructureSourceSeg(protein) {
+    var seg = document.querySelector('#structure-panel .sp-seg[data-group="source"]');
+    if (!seg) return;
+    var available = !!STRUCTURE_SOURCES[protein].cryoem;
+    var cryoBtn = seg.querySelector('[data-value="cryoem"]');
+    if (cryoBtn) {
+      cryoBtn.disabled = !available;
+      cryoBtn.title = available ? "" : "No public cryo-EM structure for " + protein + " yet";
+    }
+    var eff = effectiveSource(protein);
+    seg.querySelectorAll(".sp-seg-btn").forEach(function (b) {
+      b.classList.toggle("sp-seg-active", b.getAttribute("data-value") === eff);
+    });
+  }
+  function updateStructureFooter(protein) {
+    var foot = document.getElementById("sp-foot");
+    if (!foot) return;
+    foot.textContent = effectiveSource(protein) === "cryoem"
+      ? "Cryo-EM structure (RCSB 9ZJR) — experimental, but partial: the flexible SAM/AlbA region wasn't resolved."
+      : "AlphaFold model — predicted structure, not experimental.";
   }
 
   // ---- Nearby residues (5A) + polar contacts ----
@@ -1229,8 +1306,11 @@
   function computeNeighborsFor(viewer, protein, resnum, applyStyleFn, highlightFn) {
     var targetAtoms = viewer.selectedAtoms({ resi: resnum });
     if (!targetAtoms.length) return null;
+    // resn!=="HOH" excludes crystallographic/cryo-EM waters — only present
+    // in the cryo-EM source (AlphaFold has none) and technically a "residue"
+    // in the PDB sense, but not what a reader means by "nearby residue".
     var nearAtoms = viewer.selectedAtoms({ within: { distance: NEIGHBOR_RADIUS, sel: { resi: resnum } } })
-      .filter(function (a) { return a.resi !== resnum; });
+      .filter(function (a) { return a.resi !== resnum && a.resn !== "HOH"; });
 
     // One representative atom per nearby residue (prefer CA — a sensible,
     // stable anchor point for that residue's in-scene label below).
@@ -1363,12 +1443,14 @@
     syncTopStructureButton();
 
     load3Dmol()
-      .then(function () { return fetchStructure(protein); })
+      .then(function () { return fetchStructure(protein, effectiveSource(protein)); })
       .then(function () {
-        setStructureStatus(null);
-        renderResidue(protein, resnum);
         setActionButtonsEnabled(true);
-        updateCompareButton(protein, resnum);   // may re-disable Compare specifically (no analog at this residue)
+        // renderResidue sets its own status (and may re-disable Nearby
+        // Residues/Compare) if this particular residue turns out not to be
+        // resolved in the current source — e.g. a cryo-EM gap — so it has
+        // to run AFTER the blanket enable above, not before.
+        renderResidue(protein, resnum);
       })
       .catch(function (err) {
         setStructureStatus("Couldn't load the 3D structure (" + err.message + ").");
@@ -1390,7 +1472,7 @@
     syncTopStructureButton();
 
     load3Dmol()
-      .then(function () { return fetchStructure(protein); })
+      .then(function () { return fetchStructure(protein, effectiveSource(protein)); })
       .then(function () {
         setStructureStatus(null);
         renderOverview(protein);
@@ -1407,10 +1489,12 @@
   function renderOverview(protein) {
     var el = document.getElementById("sp-viewer");
     if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
-    if (loadedProtein !== protein) {
+    var source = effectiveSource(protein);
+    if (loadedProtein !== protein || loadedSource !== source) {
       structureViewer.removeAllModels();
-      structureViewer.addModel(structureText[protein], "pdb");
+      structureViewer.addModel(structureText[protein + ":" + source], "pdb");
       loadedProtein = protein;
+      loadedSource = source;
     }
     structureViewer.removeAllLabels();
     structureViewer.removeAllShapes();
@@ -1427,7 +1511,9 @@
     hasFramedView = true;
     structureViewer.render();
     var cap1 = document.getElementById("sp-pane-cap-1");
-    if (cap1) cap1.textContent = protein;
+    if (cap1) cap1.textContent = protein + " (" + STRUCTURE_SOURCES[protein][source].label + ")";
+    updateStructureSourceSeg(protein);
+    updateStructureFooter(protein);
   }
 
   var NON_DOMAIN_KEYS = { linker: 1, nterm: 1, cterm: 1, none: 1 };
@@ -1449,6 +1535,15 @@
   // be re-applied whenever a new model is loaded (see renderResidue).
   function applyStructureStyle(protein) {
     structureViewer.setStyle({}, { cartoon: { colorfunc: function (atom) { return residueColor(protein, atom.resi); } } });
+    // The cryo-EM structure (only source with real HETATM records) has the
+    // actual bound ATP+Mg the paper describes — worth showing explicitly,
+    // since cartoon rendering only ever covers the peptide backbone and
+    // would otherwise leave it invisible. A no-op selector match (0 atoms)
+    // on the AlphaFold source, which has no ligand at all.
+    if (loadedSource === "cryoem") {
+      structureViewer.setStyle({ hetflag: true, resn: ["ATP", "ADP", "ANP", "MG"] },
+        { stick: { colorscheme: "yellowCarbon", radius: .18 }, sphere: { scale: .35 } });
+    }
     structureViewer.setClickable({}, true, onStructureAtomClick);
   }
   // Layers a stick+sphere marker onto ONE residue via addStyle (adds a
@@ -1490,10 +1585,18 @@
   function renderResidue(protein, resnum) {
     var el = document.getElementById("sp-viewer");
     if (!structureViewer) structureViewer = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
-    if (loadedProtein !== protein) {
+    var source = effectiveSource(protein);
+    // A switch of EITHER protein or source needs a fresh model load. Source
+    // matters just as much as protein here: cryo-EM and AlphaFold are
+    // unrelated coordinate frames for the SAME protein (see STRUCTURE_
+    // SOURCES's own note), so this also drives the reframe-vs-preserve-zoom
+    // decision below exactly like a protein switch does.
+    var sourceChanged = loadedProtein !== protein || loadedSource !== source;
+    if (sourceChanged) {
       structureViewer.removeAllModels();
-      structureViewer.addModel(structureText[protein], "pdb");
+      structureViewer.addModel(structureText[protein + ":" + source], "pdb");
       loadedProtein = protein;
+      loadedSource = source;
     }
     structureViewer.removeAllLabels();   // clear any "click-to-identify" label from a prior residue
     structureViewer.removeAllShapes();   // clear any prior residue's "nearby" lines / "all variants" spheres
@@ -1504,39 +1607,56 @@
     var neighborsText = document.getElementById("sp-neighbors");
     if (neighborsText) { neighborsText.innerHTML = ""; neighborsText.style.display = "none"; }
     applyStructureStyle(protein);
-    highlightResidue(resnum);
+
+    // Cryo-EM is a genuinely partial structure (SAM+AlbA unresolved, plus
+    // smaller loop gaps — see STRUCTURE_SOURCES) — the clicked residue can
+    // legitimately not exist in it. Handle that explicitly rather than
+    // asking 3Dmol to highlight/zoom to a selection with zero atoms.
+    var resolved = structureViewer.selectedAtoms({ resi: resnum }).length > 0;
+    if (resolved) highlightResidue(resnum); else currentResnum = null;
+
     structureViewer.resize();   // panel may have just become visible; canvas size can be stale otherwise
     // No animation (duration 0 / omitted) — an earlier feature on this page
     // (the category-toggle redesign) hit real jank from animated transitions
     // depending on requestAnimationFrame timing; instant camera moves avoid
     // that whole class of bug here too.
-    if (!hasFramedView) {
-      // Very first click of the session — no established view to preserve,
-      // so frame it fresh. zoomTo() alone frames just the clicked residue's
-      // own atoms — tight enough that the surrounding fold (the actual
-      // point of looking here) barely shows; pull back afterward for
-      // context. Every later click, including a switch to the OTHER
-      // protein, uses center() instead (below) so a zoom level the user set
-      // up by scrolling survives — including across that switch.
-      structureViewer.zoomTo({ resi: resnum });
-      structureViewer.zoom(.4);
+    if (sourceChanged || !hasFramedView) {
+      // First-ever click of the session, OR a protein/source pairing with
+      // no established view to preserve — frame fresh. zoomTo({resi}) alone
+      // frames just the clicked residue's own atoms — tight enough that the
+      // surrounding fold (the actual point of looking here) barely shows;
+      // pull back afterward for context. Every later click that DOESN'T
+      // change protein or source uses center() instead (below) so a zoom
+      // level the user set up by scrolling survives.
+      if (resolved) { structureViewer.zoomTo({ resi: resnum }); structureViewer.zoom(.4); }
+      else structureViewer.zoomTo();
       hasFramedView = true;
-    } else if (typeof structureViewer.center === "function") {
+    } else if (resolved && typeof structureViewer.center === "function") {
       structureViewer.center({ resi: resnum });
-    } else {
+    } else if (resolved) {
       structureViewer.zoomTo({ resi: resnum });
     }
     structureViewer.render();
 
     var cap1 = document.getElementById("sp-pane-cap-1");
-    if (cap1) cap1.textContent = protein + " — " + (AA_3TO1[targetAtoms0Resn(resnum)] || "") + resnum;
-    updateCompareButton(protein, resnum);
+    var sourceLabel = STRUCTURE_SOURCES[protein][source].label;
+    if (cap1) {
+      cap1.textContent = protein + " (" + sourceLabel + ")" +
+        (resolved ? " — " + (AA_3TO1[targetAtoms0Resn(resnum)] || "") + resnum : "");
+    }
+    setStructureStatus(resolved ? null :
+      "This residue isn't resolved in the " + sourceLabel + " structure (a flexible/disordered region).");
+    updateStructureSourceSeg(protein);
+    updateStructureFooter(protein);
+    if (neighborsBtn) neighborsBtn.disabled = !resolved;
+    updateCompareButton(protein, resolved ? resnum : null);
     // Compare pane already open — keep it following the Map instead of
     // making the user re-click Compare for every new residue. If this
-    // particular residue has no analogous position (an indel column),
-    // just exit rather than show a stale/wrong comparison.
+    // particular residue has no analogous position (an indel column) or
+    // isn't resolved here, just exit rather than show a stale/wrong
+    // comparison.
     if (compareMode) {
-      var analog = analogousResidue(protein, resnum);
+      var analog = resolved ? analogousResidue(protein, resnum) : null;
       if (analog != null) renderResidue2(otherProtein(protein), analog);
       else exitCompare();
     }
@@ -1550,6 +1670,15 @@
     if (!btn) return;
     var other = otherProtein(protein);
     btn.textContent = "Compare to " + other;
+    // Compare depends on both proteins sharing ONE coordinate frame — true
+    // only for the AlphaFold pair (align_structures.py never touched the
+    // cryo-EM structure), so it's unavailable whenever cryo-EM is active,
+    // independent of whether this particular residue has an analog.
+    if (structureSource !== "alphafold") {
+      btn.disabled = true;
+      btn.title = "Compare needs the AlphaFold structure (cryo-EM has its own, unrelated coordinate frame)";
+      return;
+    }
     if (resnum == null) {
       btn.disabled = true;
       btn.title = "Select a residue first";
@@ -1595,12 +1724,17 @@
   // viewing angle of the corresponding fold", more robust than re-deriving
   // a center point from the (sequence-based, not structure-based) residue
   // map — that map is only used to pick WHICH residue to highlight here.
+  // Pane 2 is ALWAYS "alphafold" regardless of pane 1's structureSource —
+  // Compare only exists because the AlphaFold pair shares one coordinate
+  // frame (align_structures.py), so it's disabled outright the moment pane
+  // 1 switches to cryo-EM (updateCompareButton) rather than trying to give
+  // pane 2 its own source toggle too.
   function renderResidue2(protein, resnum) {
     var el = document.getElementById("sp-viewer-2");
     if (!structureViewer2) structureViewer2 = window.$3Dmol.createViewer(el, { backgroundColor: structureBg, antialias: true });
     if (loadedProtein2 !== protein) {
       structureViewer2.removeAllModels();
-      structureViewer2.addModel(structureText[protein], "pdb");
+      structureViewer2.addModel(structureText[protein + ":alphafold"], "pdb");
       loadedProtein2 = protein;
     }
     structureViewer2.removeAllLabels();
@@ -1616,7 +1750,7 @@
 
   function toggleCompare() {
     if (compareMode) { exitCompare(); return; }
-    if (!loadedProtein || currentResnum == null) return;
+    if (!loadedProtein || currentResnum == null || structureSource !== "alphafold") return;
     var other = otherProtein(loadedProtein);
     var otherResnum = analogousResidue(loadedProtein, currentResnum);
     if (otherResnum == null) return;   // button is disabled in this case (updateCompareButton) — belt and suspenders
@@ -1635,7 +1769,7 @@
     resizeStructureViewer();   // pane 1 just shrank from 100% to 50% width
     setStructureStatus("Loading " + other + " structure…");
     load3Dmol()
-      .then(function () { return fetchStructure(other); })
+      .then(function () { return fetchStructure(other, "alphafold"); })
       .then(function () {
         setStructureStatus(null);
         renderResidue2(other, otherResnum);
@@ -1874,23 +2008,18 @@
     { key: "variant",      label: "Variant",             width: 130 },
     { key: "conservation", label: 'Conservation<br><span class="vtbl-th-sub">score</span>', width: 100 },
     { key: "domain",       label: "Domain",              width: 260 },
-    { key: "site",         label: 'Nearest functional<br><span class="vtbl-th-sub">site</span>', width: 170 },
     { key: "category",     label: "Category",           width: 210 },
     { key: "method",       label: "Method",              width: 150 },
     { key: "gnomad",       label: 'gnomAD<br><span class="vtbl-th-sub">frequency</span>',   width: 120 },
     { key: "hom",          label: 'gnomAD<br><span class="vtbl-th-sub">homozygotes</span>', width: 130 },
     { key: "source",       label: "Source" }
   ];
-  var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Nearest functional site", "Distance (Å)", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
+  var EXPORT_HEADERS = ["Protein", "Variant", "Conservation", "Domain", "Category", "Method", "gnomAD frequency", "gnomAD homozygotes", "Source", "PMID"];
   var SORT_VAL = {
     protein:      function (r) { return r.protein; },
     variant:      function (r) { return r.label.toLowerCase(); },
     conservation: function (r) { return r.conservation == null ? -1 : r.conservation; },
     domain:       function (r) { return DOMAIN_FILTER_ORDER.indexOf(r.domain); },
-    // No site data (residue not found in the AlphaFold model — an
-    // alignment-gap position) sorts to the end in both directions: always
-    // Infinity, never negative, so ascending doesn't put "unknown" first.
-    site:         function (r) { return r.site ? r.site.distance : Infinity; },
     category:     function (r) { return (CFG[r.category] || CFG.Other).legend.toLowerCase(); },
     method:       function (r) { return (r.method || "").toLowerCase(); },
     gnomad:       function (r) { return r.gnomadAF == null ? -1 : r.gnomadAF; },
@@ -1961,7 +2090,6 @@
         protein: v.protein, residue: v.residue, label: v.label, category: v.category,
         domain: dom.name, domainKey: dom.key,
         conservation: conservationFor(v.protein, v.residue),
-        site: siteFor(v.protein, v.residue),
         method: d && d.method,
         gnomadAF: gc.af, gnomadText: gc.text, gnomadHom: gc.hom,
         sourceTitle: paper && paper.title, sourceUrl: paper && paper.url, pmid: paper && paper.pmid
@@ -2017,16 +2145,12 @@
       var consCell = r.conservation != null
         ? '<span class="cs-box vtbl-cons Score' + r.conservation + '">' + r.conservation + "</span>"
         : "—";
-      var siteCell = r.site
-        ? r.site.distance + " Å<div class=\"vtbl-pmid\">" + esc(r.site.site) + "</div>"
-        : "—";
       return '<tr data-category="' + esc(r.category) + '" data-protein="' + esc(r.protein) + '" data-domain="' + esc(r.domain) +
         '" data-conservation="' + (r.conservation == null ? "" : r.conservation) + '">' +
         "<td>" + esc(r.protein) + "</td>" +
         '<td class="vtbl-mono">' + esc(r.label) + "</td>" +
         "<td>" + consCell + "</td>" +
         '<td><span class="vtbl-dom" style="--dm-c:' + dcolors[r.domainKey] + '">' + esc(r.domain) + "</span></td>" +
-        "<td>" + siteCell + "</td>" +
         '<td class="vtbl-left"><span class="vtbl-cat" style="--vt-c:' + color + '">' + esc(legend) + "</span></td>" +
         // <wbr> (a soft break hint) let the browser's greedy line-fill still
         // choose to break at the LATER space instead — "Viral infection/flow"
@@ -2203,7 +2327,6 @@
   function exportRowValues(r) {
     return [
       r.protein, r.label, r.conservation != null ? r.conservation : "", r.domain,
-      r.site ? r.site.site : "", r.site ? r.site.distance : "",
       (CFG[r.category] || CFG.Other).legend.replace(" (unannotated)", ""),
       r.method || "", r.gnomadText, r.gnomadHom != null ? r.gnomadHom : "",
       r.sourceTitle || "", r.pmid || ""
@@ -2265,11 +2388,10 @@
         cell(v[0]) + cell(v[1]) +
         cell(v[2], null, r.conservation != null ? "Number" : "String") +
         cell(v[3], "dom_" + r.domainKey) +
-        cell(v[4]) + cell(v[5], null, r.site ? "Number" : "String") +
-        cell(v[6], "cat_" + r.category) +
-        cell(v[7]) + cell(v[8]) +
-        cell(v[9], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
-        cell(v[10]) + cell(v[11]) +
+        cell(v[4], "cat_" + r.category) +
+        cell(v[5]) + cell(v[6]) +
+        cell(v[7], r.gnomadHom > 0 ? "sHomPos" : null, r.gnomadHom != null ? "Number" : "String") +
+        cell(v[8]) + cell(v[9]) +
         "</Row>";
     }).join("");
     return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>' +
@@ -2314,7 +2436,7 @@
   function boot() {
     updateLastUpdatedDate();
     loadGnomadLive();   // fires in the background; popups just check GNOMAD_LIVE whenever opened
-    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_residue_map.js", "data_site_distances.js"];
+    var files = ["data_variants.js", "data_overrides.js", "data_papers.js", "data_residue_map.js"];
     var bust = location.protocol === "file:" ? "" : ("?t=" + Date.now());
     var left = files.length;
     files.forEach(function (f) {

@@ -363,6 +363,11 @@ td[data-pos] { cursor:pointer; }
   display:flex; align-items:center; justify-content:center; gap:.6em;
   flex-wrap:wrap; padding:.6em 1.1em; border-bottom:1px solid #eee; flex:none;
 }
+/* segHtml()'s plain-language caption ("Color by:", "Background:") — without
+   one, a first-time visitor sees e.g. "Conservation / Domain" with no cue
+   it's a mode switch, let alone for what. */
+.sp-seg-group { display:flex; align-items:center; gap:.5em; }
+.sp-seg-label { font-size:.78em; font-weight:600; color:#888; white-space:nowrap; }
 .sp-seg { display:flex; gap:.2em; background:#f2f3f5; border-radius:9px; padding:.2em; }
 .sp-seg-btn {
   border:0; background:none; cursor:pointer; font-family:inherit; font-weight:600;
@@ -370,6 +375,10 @@ td[data-pos] { cursor:pointer; }
 }
 .sp-seg-btn:hover { background:rgba(90,90,95,.08); }
 .sp-seg-btn.sp-seg-active { background:#2b2f36; color:#fff; }
+/* Cryo-EM greyed out on SAMD9L (updateStructureSourceSeg(), variant_
+   renderer.js — no public structure for it yet). */
+.sp-seg-btn:disabled { opacity:.4; cursor:not-allowed; }
+.sp-seg-btn:disabled:hover { background:none; }
 .sp-fs-btn {
   font-family:inherit; font-size:.82em; font-weight:600; cursor:pointer;
   padding:.5em .9em; border-radius:9px; border:1px solid rgba(120,140,175,.35);
@@ -457,6 +466,16 @@ td[data-pos] { cursor:pointer; }
 .sp-pill, .sp-pill-none {
   display:inline-block; padding:2px 9px; margin:1px 3px 1px 0; border-radius:999px;
   font-size:12px; font-weight:600; white-space:nowrap; vertical-align:middle;
+  /* A variant pill also carries .vlabel (reused so its click can open the
+     normal popup — see below) — .vlabel sets its OWN line-height:1.05,
+     tuned for the Map's compact ticks, uncontested since plain (non-
+     variant) pills have no such override and just inherit .sp-neighbors'
+     line-height:2.1 instead. That mismatch was the actual bug report — a
+     variant pill's line box came out under two-thirds the height of a
+     plain one, reading as a visibly smaller oval next to it. One explicit
+     value here beats both by cascade order (this rule is declared after
+     .vlabel) and applies identically to every pill. */
+  line-height:1.6;
 }
 /* --pill-c is a ConSurf conservation color (neighborPillHtml(), variant_
    renderer.js) — score 5 ("average") is literal white. Mixing its BORDER
